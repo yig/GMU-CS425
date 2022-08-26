@@ -63,6 +63,12 @@ Then type `xmake` on the command line. Unless something has gone wrong, you shou
 Hello, World!
 ```
 
+Some useful `xmake` commands:
+
+* `xmake run -d helloworld` launches the program in a debugger.
+* `xmake f --menu` opens a command-line menu system you can use to switch between debug and release modes.
+* `xmake f -m debug` and `xmake f -m release` directly switch between debug and release mode.
+
 ## Setting up version control
 
 Before going any further, let's set up version control with git. You can use git on the command line or using your favorite git gui. Before we proceed with git, we need to create a `.gitignore` file at the top level of our project directory so we don't add build products or other extraneous files to our git repository. Put this inside:
@@ -80,7 +86,16 @@ Thumbs.db
 
 Now you should initialize your git repository and make a first commit.
 
-You have reached the first checkpoint. Upload your code. Run `xmake clean` and then zip your entire directory.
+**You have reached the first checkpoint.** Upload your code. Run `xmake clean` and then zip your entire directory. Your directly tree should look like:
+
+```
+.git/
+    ... lots of stuff
+.gitignore
+xmake.lua
+demo/
+    helloworld.cpp
+```
 
 ## Starting your engine
 
@@ -132,6 +147,10 @@ Namespaces are another important organizing principle in modern C++. By wrapping
 In any large software project, it's a good idea to make a header file containing common types. For example, you might create a file `Types.h` which declares what a real-number type and string type are throughout your project. For example:
 
 ```
+#pragma once
+
+#include <string>
+
 namespace Foo {
     typedef double real;
     typedef std::string string;
@@ -142,33 +161,27 @@ namespace Foo {
 
 You will need to `#include <string>` in order to have access to the C++ standard library's string type.
 
-This header is also a good place for "forward declarations". Because C++ uses file-based compilation units rather than some kind of module system (that is, until the very recent C++20 standard), we need to be careful to avoid including the same header file multiple times. The easiest way to do this is by putting the line `#pragma once` at the top of every header file. While technically not standard, it's supported by all the major C++ compilers and a lot less typing and redundancy than the header guards you may have seen in C or in C++ in the past. However, `#pragma once` won't solve circular dependency problems, where, for example, the `GraphicsManager` needs to know about the `ResourceManager` and vice versa. The solution is to partially declare a class in advance. Writing `class Engine;` in our `Types.h` file is enough to let the compiler know that there is an `Engine` class in the `Foo` namespace. The forward declaration satisfies the compiler enough to let us declare a pointer or reference to the `Engine`. Before we actually use the `Engine` in a `.cpp` file, we will have to include its header. (Another solution to circular dependencies is the so-called ["pimpl pattern"](https://www.fluentcpp.com/2017/09/22/make-pimpl-using-unique_ptr/).)
+This header is also a good place for "forward declarations". Because C++ uses file-based compilation units rather than some kind of module system (that is, until the very recent C++20 standard), we need to be careful to avoid including the same header file multiple times. The easiest way to do this is by putting the line `#pragma once` at the top of every header file. While technically not standard, it's [supported by all the major C++ compilers](https://en.wikipedia.org/wiki/Pragma_once#Portability) and a lot less typing and redundancy than the [header guards](https://en.wikipedia.org/wiki/Include_guard) you may have seen in C or in C++ in the past. However, `#pragma once` won't solve circular dependency problems, where, for example, the `GraphicsManager` needs to know about the `ResourceManager` and vice versa. The solution is to partially declare a class in advance. Writing `class Engine;` in our `Types.h` file is enough to let the compiler know that there is an `Engine` class in the `Foo` namespace. The forward declaration satisfies the compiler enough to let us declare a pointer or reference to the `Engine`. Before we actually use the `Engine` in a `.cpp` file, we will have to include its header. (Another solution to circular dependencies is the so-called ["pimpl pattern"](https://www.fluentcpp.com/2017/09/22/make-pimpl-using-unique_ptr/).)
 
 ## What is the Engine?
 
-The `Engine` class is actually quite small and simple. In fact, it could just be a nested namespace named `Engine`. Data-wise, it stores all the managers (they could be global variables or members of the `Engine` class). All the managers get a reference to the engine so they can access each other. It takes some basic parameters are input (size of the window, whether to go full-screen, etc.). `Engine::Startup()` calls `Startup()` on the managers in the right order. `Engine::Shutdown()` does the same. Finally, `Engine` needs a method to run the game loop. That function should take some callbacks so that the game can have a chance to run a setup function and to run an update function each time through the loop. Here is pseudocode in class form:
+The `Engine` class is actually quite small and simple. In fact, it could just be a nested namespace named `Engine`. Data-wise, it stores all the managers (they could be global variables or members of the `Engine` class). All the managers get a reference to the engine so they can access each other. It takes some basic parameters are input (size of the window, whether to go full-screen, etc.). `Engine::Startup()` calls `Startup()` on the managers in the right order. `Engine::Shutdown()` does the same. Finally, `Engine` needs a method to run the game loop. That function should take a callback so that the game can have a chance to run an update function each time through the loop. Here is pseudocode in class form:
 
 ```
 class Engine:
     public:
         GraphicsManager graphics
         InputManager input
-    
-    private:
-        def Startup():
+        
+        def Startup( GameParameters ):
             graphics.Startup()
             input.Startup()
         
         def Shutdown():
             input.Shutdown()
             graphics.Shutdown()
-    
-    public:
-        def Start( GameParameters, SetupCallback, UpdateCallback ):
-            self.Startup()
-            
-            SetupCallback()
-            
+        
+        def RunGameLoop( UpdateCallback ):
             while( True ):
                 input.Update()
                 
@@ -177,8 +190,6 @@ class Engine:
                 graphics.Draw()
                 
                 // Manage timestep
-            
-            self.Shutdown()
 }
 ```
 
@@ -230,7 +241,11 @@ This code expects a few parameters: the `window_width` and `window_height`, a na
 
 Finally, this is a good time to mention that I recommend a proper logging library rather than outputting to `std::cout` and `std::cerr`. You have a lot of options. I used [spdlog](https://github.com/gabime/spdlog). That way I can do things like: `spdlog::error( "Failed to create a window." );` or `spdlog::info( "Calling UpdateCallback()." );`. To use spdlog, you have to include it (`#include "spdlog/spdlog.h"`) and add it to your `xmake.lua` (`add_requires("spdlog")` near the top and `add_packages("spdlog")` in your `illengine` target).
 
-You have reached the second checkpoint. Commit your code to your git repository. Upload it for grading. Run `xmake clean` and then zip your entire directory.
+**You have reached the second checkpoint.** Commit your code to your git repository. Upload it for grading. Run `xmake clean` and then zip your entire directory. This checkpoint should contain:
+
+* A graphics manager class that creates a window
+* A game engine class that starts up the graphics manager and runs a game loop 60 times per second
+* `demo/helloworld.cpp` modified to create an engine
 
 ---
 
@@ -238,3 +253,6 @@ You have reached the second checkpoint. Commit your code to your git repository.
 
 * 2022-08-22: First week.
 * 2022-08-23: First two checkpoints.
+* 2022-08-23: `Types.h` example is more complete. It now has a `#pragma once` and an `#include`.
+* 2022-08-23: Added links for pragma once and header guards.
+* 2022-08-25: Added `xmake` commands to switch to debug mode and run with a debugger. Simplified Engine pseudocode. Added clearer checkpoint guidelines.
