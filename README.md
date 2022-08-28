@@ -193,7 +193,7 @@ class Engine:
 }
 ```
 
-This is just pseudocode. In practice, the engine probably needs to pass a reference to itself to all the managers so that they can access each other. (Another possibility is to make an Engine global variable.) Eventually, we will have even more managers. For this next checkpoint, you don't need to create an input manager.
+This is just pseudocode. In practice, the engine probably needs to pass a reference (or pointer) to itself to all the managers so that they can access each other. (You can do this in the constructor of Engine or in the Startup methods. Another possibility is to make an Engine global variable.) Eventually, we will have even more managers. For this next checkpoint, you don't need to create an input manager.
 
 You can manage the timestep using C++'s `std::this_thread::sleep_for()` and passing it a C++ `std::chrono::duration<>`.
 You can get a double-valued timer by calling `glfwGetTime()` (which you can subtract and create a `std::chrono::duration<double>` from). See below for how to include `GLFW`. You don't need GLFW for this. You can instead use the C++ standard library directly by subtracting two `std::chrono::time_point`s, which you can get via `std::chrono::steady_clock::now()`. For example, `const auto t1 = std::chrono::steady_clock::now()` stores the current time in a variable `t1`. You can create a 0.1 second duration via `const auto one_tenth_of_a_second = std::chrono::duration<real>( 1./10. )`. You will need to `#include <thread>` and `#include <chrono>` to access the C++ standard library's functionality.
@@ -206,7 +206,7 @@ At this point, all we want from the graphics manager is to create a window. We w
 add_requires("glfw")
 ```
 
-Inside `target("illengine")`, add it as a package:
+Inside `target("illengine")`, add it as a public package:
 
 ```
     add_packages("glfw")
@@ -246,8 +246,35 @@ Finally, this is a good time to mention that I recommend a proper logging librar
 **You have reached the second checkpoint.** Commit your code to your git repository. Upload it for grading. Run `xmake clean` and then zip your entire directory. This checkpoint should contain:
 
 * A graphics manager class that creates a window.
-* A game engine class that starts up the graphics manager and runs a game loop 60 times per second.
+* A game engine class that starts up the graphics manager and runs a game loop 60 times per second. Your game engine won't take a user update callback yet.
 * `demo/helloworld.cpp` modified to start up your engine, run its main loop, and shut it down when the main loop terminates.
+
+## Detecting input
+
+It's time to create an input manager. The input manager provides an interface to the various input hardware state, such as which keyboard/mouse/joystick buttons are pressed and where the mouse or joystick is. Each time the game loop runs, the engine gives the input manager a chance to process input events (`input.Update()` in the pseudocode above). A fancy input manager lets users map physical actions (e.g. pressing a hardware button) to game actions. We will start with a simple input manager that just makes GLFW's input state available for querying by users of our engine. The input manager's `Update()` method only needs to call `glfwPollEvents();`. We will create a method called something like `isKeyPressed` that takes a key name as a parameter and returns a boolean. It will be a thin wrapped around [`glfwGetKey()`](https://www.glfw.org/docs/3.3/group__input.html#gadd341da06bc8d418b4dc3a3518af9ad2). You can make the key name an `int` and just pass it along directly to GLFW, or you can create your own `enum class` for key names that you expose to users. Your enum can choose the same numbers for keys as GLFW (see [here](https://www.glfw.org/docs/3.3/group__keys.html); you can cast your `enum class` to an `int`). It is fine to simply ask users to use GLFW key names (e.g. `GLFW_KEY_LEFT`). In that case, your input manager header should also include the GLFW header, and your `xmake.lua` should change `add_packages("glfw")` to `add_packages("glfw", {public = true})`.
+
+It's time to add a user update callback to your game engine. In C++, a reasonable type to use for the user's update callback is: `std::function<void(Engine&)>`. That is, the user's callback is a function that takes an `Engine&` as a parameter and doesn't return anything. If you have an `Engine` global variable, then you can just use `std::function<void()>`, which is a function that takes no parameters and returns nothing. You can typedef that and then use it as a parameter to your game loop. Example syntax:
+
+```
+typedef std::function<void(Engine&)> UpdateCallback;
+void RunGameLoop( UpdateCallback& callback );
+```
+
+You will need to `#include <functional>` to access `std::function`. It's a general type that can take any kind of function a C++ user might want to pass. The user of your engine can create a [lambda](https://en.cppreference.com/w/cpp/language/lambda) function to pass, as in:
+
+```
+engine.RunGameLoop( [&]( Engine& ) {
+    // code that will run inside the game loop
+    } );
+```
+
+Modify your `helloworld` function to pass a callback when running your engine's main loop. The callback should print or log a message when at least one key of your choosing is pressed.
+
+**You have reached the third checkpoint.** Upload your code. Run `xmake clean` and then zip your entire directory.
+
+* Your engine should have an input manager that lets users detect key presses.
+* Your engine should take a user callback to execute in its main loop.
+* Your `demo/helloworld.cpp` should pass a callback that prints or logs a message when a key is pressed.
 
 ---
 
@@ -259,3 +286,4 @@ Finally, this is a good time to mention that I recommend a proper logging librar
 * 2022-08-23: Added links for pragma once and header guards.
 * 2022-08-25: Added `xmake` commands to switch to debug mode and run with a debugger. Simplified Engine pseudocode. Added clearer checkpoint guidelines.
 * 2022-08-28: Clarified the relationship of the Engine pseudocode to the checkpoints. Clarified checkpoint.
+* 2022-08-28: Described input manager and its checkpoint.
