@@ -165,7 +165,7 @@ This header is also a good place for "forward declarations". Because C++ uses fi
 
 ## What is the Engine?
 
-The `Engine` class is actually quite small and simple. In fact, it could just be a nested namespace named `Engine`. Data-wise, it stores all the managers (they could be global variables or members of the `Engine` class). All the managers get a reference to the engine so they can access each other. It takes some basic parameters are input (size of the window, whether to go full-screen, etc.). `Engine::Startup()` calls `Startup()` on the managers in the right order. `Engine::Shutdown()` does the same. Finally, `Engine` needs a method to run the game loop. That function should take a callback so that the game can have a chance to run an update function each time through the loop. Here is pseudocode in class form:
+The `Engine` class is actually quite small and simple. In fact, it could just be a nested namespace named `Engine`. Data-wise, it stores all the managers (they could be global variables or members of the `Engine` class). All the managers get a reference to the engine so they can access each other. It takes some basic parameters are input (size of the window, whether to go full-screen, etc.). `Engine::Startup()` calls `Startup()` on the managers in the right order. `Engine::Shutdown()` does the same. Finally, `Engine` needs a method to run the game loop. That function should take a callback so that the game can have a chance to run an update function each time through the loop. Here is pseudocode in class form for an engine with graphics and input managers:
 
 ```
 class Engine:
@@ -192,6 +192,8 @@ class Engine:
                 // Manage timestep
 }
 ```
+
+This is just pseudocode. In practice, the engine probably needs to pass a reference to itself to all the managers so that they can access each other. (Another possibility is to make an Engine global variable.) Eventually, we will have even more managers. For this next checkpoint, you don't need to create an input manager.
 
 You can manage the timestep using C++'s `std::this_thread::sleep_for()` and passing it a C++ `std::chrono::duration<>`.
 You can get a double-valued timer by calling `glfwGetTime()` (which you can subtract and create a `std::chrono::duration<double>` from). See below for how to include `GLFW`. You don't need GLFW for this. You can instead use the C++ standard library directly by subtracting two `std::chrono::time_point`s, which you can get via `std::chrono::steady_clock::now()`. For example, `const auto t1 = std::chrono::steady_clock::now()` stores the current time in a variable `t1`. You can create a 0.1 second duration via `const auto one_tenth_of_a_second = std::chrono::duration<real>( 1./10. )`. You will need to `#include <thread>` and `#include <chrono>` to access the C++ standard library's functionality.
@@ -237,15 +239,15 @@ glfwMakeContextCurrent( window );
 glfwSwapInterval(1);
 ```
 
-This code expects a few parameters: the `window_width` and `window_height`, a name for the window (`window_name`), and a boolean to specify whether the window should be fullscreen (`window_fullscreen`). You can hard-code some reasonable values or you can find a way to take parameters. You may notice that this code snippet is asking for an OpenGL-compatible window. That's because we will use `sokol_gfx`'s OpenGL backend for simplicity.
+This code expects a few parameters: the `window_width` and `window_height`, a name for the window (`window_name`), and a boolean to specify whether the window should be fullscreen (`window_fullscreen`). You can hard-code some reasonable values or you can find a way to take parameters. You may notice that this code snippet is asking for an OpenGL-compatible window. That's because we will use `sokol_gfx`'s OpenGL backend for cross-platform simplicity.
 
 Finally, this is a good time to mention that I recommend a proper logging library rather than outputting to `std::cout` and `std::cerr`. You have a lot of options. I used [spdlog](https://github.com/gabime/spdlog). That way I can do things like: `spdlog::error( "Failed to create a window." );` or `spdlog::info( "Calling UpdateCallback()." );`. To use spdlog, you have to include it (`#include "spdlog/spdlog.h"`) and add it to your `xmake.lua` (`add_requires("spdlog")` near the top and `add_packages("spdlog")` in your `illengine` target).
 
 **You have reached the second checkpoint.** Commit your code to your git repository. Upload it for grading. Run `xmake clean` and then zip your entire directory. This checkpoint should contain:
 
-* A graphics manager class that creates a window
-* A game engine class that starts up the graphics manager and runs a game loop 60 times per second
-* `demo/helloworld.cpp` modified to create an engine
+* A graphics manager class that creates a window.
+* A game engine class that starts up the graphics manager and runs a game loop 60 times per second.
+* `demo/helloworld.cpp` modified to start up your engine, run its main loop, and shut it down when the main loop terminates.
 
 ---
 
@@ -256,3 +258,4 @@ Finally, this is a good time to mention that I recommend a proper logging librar
 * 2022-08-23: `Types.h` example is more complete. It now has a `#pragma once` and an `#include`.
 * 2022-08-23: Added links for pragma once and header guards.
 * 2022-08-25: Added `xmake` commands to switch to debug mode and run with a debugger. Simplified Engine pseudocode. Added clearer checkpoint guidelines.
+* 2022-08-28: Clarified the relationship of the Engine pseudocode to the checkpoints. Clarified checkpoint.
