@@ -257,7 +257,7 @@ It's time to add a user update callback to your game engine. In C++, a reasonabl
 
 ```
 typedef std::function<void()> UpdateCallback;
-void RunGameLoop( UpdateCallback& callback );
+void RunGameLoop( const UpdateCallback& callback );
 ```
 
 You will need to `#include <functional>` to access `std::function`. It's a general type that can take any kind of function a C++ user might want to pass. The user of your engine can create a [lambda](https://en.cppreference.com/w/cpp/language/lambda) function to pass, as in:
