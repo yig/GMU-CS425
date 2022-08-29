@@ -256,7 +256,7 @@ It's time to create an input manager. The input manager provides an interface to
 It's time to add a user update callback to your game engine. In C++, a reasonable type to use for the user's update callback is: `std::function<void(Engine&)>`. That is, the user's callback is a function that takes an `Engine&` as a parameter and doesn't return anything. If you have an `Engine` global variable, then you can just use `std::function<void()>`, which is a function that takes no parameters and returns nothing. You can typedef that and then use it as a parameter to your game loop. Example syntax:
 
 ```
-typedef std::function<void(Engine&)> UpdateCallback;
+typedef std::function<void()> UpdateCallback;
 void RunGameLoop( UpdateCallback& callback );
 ```
 
