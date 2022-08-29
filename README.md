@@ -206,7 +206,7 @@ At this point, all we want from the graphics manager is to create a window. We w
 add_requires("glfw")
 ```
 
-Inside `target("illengine")`, add it as a public package:
+Inside `target("illengine")`, add it as a package:
 
 ```
     add_packages("glfw")
@@ -287,3 +287,4 @@ Modify your `helloworld` function to pass a callback when running your engine's 
 * 2022-08-25: Added `xmake` commands to switch to debug mode and run with a debugger. Simplified Engine pseudocode. Added clearer checkpoint guidelines.
 * 2022-08-28: Clarified the relationship of the Engine pseudocode to the checkpoints. Clarified checkpoint.
 * 2022-08-28: Described input manager and its checkpoint.
+* 2022-08-29: Fixed a typo.
