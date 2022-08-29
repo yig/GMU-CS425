@@ -193,7 +193,7 @@ class Engine:
 }
 ```
 
-This is just pseudocode. In practice, the engine probably needs to pass a reference (or pointer) to itself to all the managers so that they can access each other. (You can do this in the constructor of Engine or in the Startup methods. Another possibility is to make an Engine global variable.) Eventually, we will have even more managers. For this next checkpoint, you don't need to create an input manager.
+This is just pseudocode. In practice, the engine probably needs to pass a reference (or pointer) to itself to all the managers so that they can access each other. (You can do this in the constructor of Engine or in the Startup methods. Another possibility is to make an engine global variable. In C++17, you can declare it right in the engine header as an [inline variable](https://stackoverflow.com/a/47502744). For example, if your class were named `Foo`, you could declare `inline Foo gFoo`, where the `g` prefix is [Hungarian notation](https://en.wikipedia.org/wiki/Hungarian_notation).) Eventually, we will have even more managers. For this next checkpoint, you don't need to create an input manager.
 
 You can manage the timestep using C++'s `std::this_thread::sleep_for()` and passing it a C++ `std::chrono::duration<>`.
 You can get a double-valued timer by calling `glfwGetTime()` (which you can subtract and create a `std::chrono::duration<double>` from). See below for how to include `GLFW`. You don't need GLFW for this. You can instead use the C++ standard library directly by subtracting two `std::chrono::time_point`s, which you can get via `std::chrono::steady_clock::now()`. For example, `const auto t1 = std::chrono::steady_clock::now()` stores the current time in a variable `t1`. You can create a 0.1 second duration via `const auto one_tenth_of_a_second = std::chrono::duration<real>( 1./10. )`. You will need to `#include <thread>` and `#include <chrono>` to access the C++ standard library's functionality.
@@ -287,4 +287,4 @@ Modify your `helloworld` function to pass a callback when running your engine's 
 * 2022-08-25: Added `xmake` commands to switch to debug mode and run with a debugger. Simplified Engine pseudocode. Added clearer checkpoint guidelines.
 * 2022-08-28: Clarified the relationship of the Engine pseudocode to the checkpoints. Clarified checkpoint.
 * 2022-08-28: Described input manager and its checkpoint.
-* 2022-08-29: Fixed a typo.
+* 2022-08-29: More details about making the engine a global variable. Fixed a typo.
