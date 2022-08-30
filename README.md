@@ -68,6 +68,7 @@ Some useful `xmake` commands:
 * `xmake run -d helloworld` launches the program in a debugger.
 * `xmake f --menu` opens a command-line menu system you can use to switch between debug and release modes.
 * `xmake f -m debug` and `xmake f -m release` directly switch between debug and release mode.
+* `xmake watch` will re-run `xmake` automatically when any code changes. `xmake watch -r -t helloworld` will do the same and then run the `helloworld` target.
 
 ## Setting up version control
 
@@ -298,3 +299,4 @@ You may have noticed that there's no way to quit your program (without asking yo
 * 2022-08-28: Described input manager and its checkpoint.
 * 2022-08-29: More details about making the engine a global variable. Fixed a typo.
 * 2022-08-29: Re-ordered the engine as a global variable discussion. More about engine configuration parameters. Described an alternative to the RunGameLoop pseudocode which itself calls Startup and Shutdown. Added the glfw call for the graphics manager's shutdown. Discussed the input manager accessing the graphics manager's window. Discussed exiting the game loop.
+* 2022-08-29: Described the new `xmake watch` command.
