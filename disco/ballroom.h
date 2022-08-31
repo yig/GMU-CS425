@@ -5,7 +5,7 @@
 
 namespace disco {
 
-class Dancer;
+struct Dancer;
 
 class Party {
 public:

@@ -26,6 +26,9 @@ Create a file `xmake.lua` and put the following inside:
 ```
 add_rules("mode.debug", "mode.release")
 
+set_policy("build.warning", true) -- show warnings
+set_warnings("all") -- warn about many things
+
 target("helloworld")
     set_kind("binary")
     set_languages("cxx17")
@@ -33,7 +36,7 @@ target("helloworld")
     add_files("demo/helloworld.cpp")
 ```
 
-This declares that we want to support debug and release builds in general.
+This declares that we want to support debug and release builds in general, and that we want to see lots of compiler warnings.
 It also declares a target program named `helloworld`.
 (It would have declared a library if instead of `binary` we had written `static` or `shared`.)
 We want to use the C++17 standard.
@@ -300,3 +303,4 @@ You may have noticed that there's no way to quit your program (without asking yo
 * 2022-08-29: Re-ordered the engine as a global variable discussion. More about engine configuration parameters. Described an alternative to the RunGameLoop pseudocode which itself calls Startup and Shutdown. Added the glfw call for the graphics manager's shutdown. Discussed the input manager accessing the graphics manager's window. Discussed exiting the game loop.
 * 2022-08-29: Described the new `xmake watch` command.
 * 2022-08-30: Mentioned ticks and linked to Fix Your Timestep.
+* 2022-08-31: Added compiler warnings.
