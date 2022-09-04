@@ -28,3 +28,19 @@ Hi!
 Hi!
 Hi!
 ```
+
+Lambdas (inline, anonymous functions) are a great way to write callbacks. The following also works:
+
+```
+repeat( 3, [&](){ std::cout << "Hi again!\n"; } );
+```
+
+Compare `[&](){ std::cout << "Hi!\n"; }` to: `printhi(){ std::cout << "Hi!\n"; }`. The square brackets with the `&` let you use variables visible from main by reference. Our callback can affect state outside. For example:
+
+```
+int value = 7;
+repeat( 3, [&](){
+    value += 1;
+} );
+std::cout << "Value: " << value << '\n';
+```
