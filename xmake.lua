@@ -15,6 +15,12 @@ target("callbacks")
     
     add_files("demo/callbacks.cpp")
 
+target("pimpl")
+    set_kind("binary")
+    set_languages("cxx17")
+    
+    add_files("pimpl/*.cpp")
+
 target("disco")
     set_kind("static")
     set_languages("cxx17")
