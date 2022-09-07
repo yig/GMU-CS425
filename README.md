@@ -408,7 +408,7 @@ We won't have to worry about setting many of these fields. The defaults shown ab
 
 `sokol_gfx`'s documentation lives directly [in its header](https://github.com/floooh/sokol/blob/master/sokol_gfx.h). The [samples](https://floooh.github.io/sokol-html5/) are also helpful. There is some backstory in [this blog post](https://floooh.github.io/2017/07/29/sokol-gfx-tour.html). We're following the steps to initialize and use `sokol_gfx` described in its [header file](https://github.com/floooh/sokol/blob/8c4337a15c3edc98626a34fa926f42498d62acac/sokol_gfx.h/#L85) (but there are C++ versions of the functions that take references rather than pointers to the structs, so we can avoid a bunch of noisy `&`s).
 
-First things first. Let's add `sokol` to our `xmake.lua` with `add_requires("sokol")` near the top and `add_packages("sokol")` inside `target("illengine")`. To initalize `sokol_gfx`, we need to call `sg_setup(sg_desc{});`. We must do this after setting up `GLFW` (in our graphics manager's startup function). The curly-braces are C++ for initialize all members to zero if they don't have constructors. (It's called [aggregate initialization](https://en.cppreference.com/w/cpp/language/aggregate_initialization). `sokol_gfx` examples written in C99 use a more convenient initialization syntax; that syntax became part of C++20, where it is called [designated initializers](https://www.cppstories.com/2021/designated-init-cpp20/).) `sokol_gfx` uses zeros to mean default values. `sokol_gfx` is also primarily a C API, so initializing the structs to zero is our responsibility. Let's be responsible and add `sg_shutdown();` to our graphics manager's shutdown function.
+First things first. Let's add `sokol` to our `xmake.lua` with `add_requires("sokol")` near the top and `add_packages("sokol")` inside `target("illengine")`. Include the `sokol_gfx.h` header file in your graphics manager `.cpp` file. To initalize `sokol_gfx`, we need to call `sg_setup(sg_desc{});`. We must do this after setting up `GLFW` (in our graphics manager's startup function). The curly-braces are C++ for initialize all members to zero if they don't have constructors. (It's called [aggregate initialization](https://en.cppreference.com/w/cpp/language/aggregate_initialization). `sokol_gfx` examples written in C99 use a more convenient initialization syntax; that syntax became part of C++20, where it is called [designated initializers](https://www.cppstories.com/2021/designated-init-cpp20/).) `sokol_gfx` uses zeros to mean default values. `sokol_gfx` is also primarily a C API, so initializing the structs to zero is our responsibility. Let's be responsible and add `sg_shutdown();` to our graphics manager's shutdown function.
 
 Before we describe our pipeline, let's describe the data we will use. We will draw every rectangle as a scaled and translated unit square. The vertex data we need for a unit square is:
 
@@ -493,7 +493,7 @@ shader_desc.vs.source = R"(
     void main() {
         gl_Position = projection*transform*vec4( position, 0.0, 1.0 );
         texcoords = texcoords0;
-    })"
+    })";
 ```
 
 The `location=0` and `location=1` match what we put in our `pipeline_desc.layout.attrs[0]` and `pipeline_desc.layout.attrs[1]`. It passes the texture coordinates directly along to the fragment shader. The uniforms are:
