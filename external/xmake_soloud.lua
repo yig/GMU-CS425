@@ -11,6 +11,11 @@ package("soloud")
     set_homepage("https://sol.gfxile.net/soloud/")
     set_license("zlib")
     
+    -- linux needs to link with libpthread and libdl
+    if is_plat("linux") then
+        add_syslinks("pthread", "dl")
+    end
+    
     on_install(function (package)
         local configs = {}
         configs.kind = package:config("shared") and "shared" or "static"
