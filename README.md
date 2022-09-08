@@ -571,7 +571,7 @@ shader_desc.fs.source = R"(
     void main() {
         frag_color = texture( tex, texcoords );
     }
-);
+)";
 shader_desc.fs.images[0].name = "tex"; // The name should match the shader source code.
 shader_desc.fs.images[0].image_type = SG_IMAGETYPE_2D;
 ```
