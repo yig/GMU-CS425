@@ -636,13 +636,13 @@ image_desc.mag_filter = SG_FILTER_LINEAR;
 image_desc.wrap_u = SG_WRAP_CLAMP_TO_EDGE;
 image_desc.wrap_v = SG_WRAP_CLAMP_TO_EDGE;
 image_desc.data.subimage[0][0].ptr = data;
-image_desc.data.subimage[0][0].ptr = size = (size_t)(width * height * 4);
+image_desc.data.subimage[0][0].size = (size_t)(width * height * 4);
 ```
 
 We'll upload the image to the GPU with:
 
 ```
-sg_image image = sg_make_image( desc );
+sg_image image = sg_make_image( image_desc );
 ```
 
 Once it's uploaded, we're done with the data returned by `stbi_load()`. Free that memory with:
