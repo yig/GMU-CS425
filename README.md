@@ -468,12 +468,14 @@ pipeline_desc.colors[0].blend.src_factor_rgb = SG_BLENDFACTOR_SRC_ALPHA;
 pipeline_desc.colors[0].blend.dst_factor_rgb = SG_BLENDFACTOR_ONE_MINUS_SRC_ALPHA;
 ```
 
-The depth-buffer (aka z-buffer) is off by default. We could leave it this way and make sure to draw our images back-to-front. But it's easier to use GPU hardware. Let's turn on the depth buffer. (N.B.: If we have images with non-trivial transparency—pixels whose alpha is not 0 or 1—we'll get wrong colors if we *don't* draw back to front.)
+The depth-buffer (aka z-buffer) is off by default. We could leave it this way and make sure to draw our images back-to-front. But it's easier to use GPU hardware. Let's turn on the depth buffer.
 
 ```
 pipeline_desc.depth.compare = SG_COMPAREFUNC_LESS_EQUAL;
 pipeline_desc.depth.write_enabled = true;
 ```
+
+(*N.B.*: If you have images with non-trivial transparency—pixels whose alpha is not 0 or 1—you'll get wrong colors if you *don't* draw back to front. You will notice this if, for example, your images have feathered or anti-aliased borders. You can instead sort in your graphics manager's `Draw()` function using the `std::sort()` function available when you `#include <algorithm>`. You can sort on an arbitrary field using a lambda. For example, an `std::vector< Sprite > sprites;` could be sorted on the `.z` property via `std::sort( sprites.begin(), sprites.end(), []( const Sprite& lhs, const Sprite& rhs ) { return lhs.z > rhs.z; } );`. This example performs a reverse sort that puts larger z values corresponding to farther `Sprite`s first.)
 
 Now let's tell our pipeline about our vertex data layout. For each vertex, the first two floating point numbers should be grouped into one 2D vector pair and the second two floating point numbers should be grouped into a second 2D vector. We don't need to name them (i.e. position and texcoords). Our shader will do that.
 
@@ -714,3 +716,4 @@ Extensions:
 * 2022-09-07: Mentioned `soloud_wav.h` header. Fixed an anachronism that mentioned the sound manager in detail while describing the resource manager.
 * 2022-09-07: Showed an example of `std::filesystem::path` /. Fixed typos in graphics manager.
 * 2022-09-08: A fix for transparent pixels when not depth sorting.
+* 2022-09-08: Explaining how to depth sort for those who want.
