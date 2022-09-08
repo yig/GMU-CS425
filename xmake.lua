@@ -33,6 +33,12 @@ target("paths")
     
     add_files("demo/paths.cpp")
 
+target("constructor_reference")
+    set_kind("binary")
+    set_languages("cxx17")
+    
+    add_files("demo/constructor_reference.cpp")
+
 target("pimpl")
     set_kind("binary")
     set_languages("cxx17")
