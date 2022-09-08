@@ -1,6 +1,12 @@
 #include <iostream>
+#include <functional>
 
-void repeat( int count, const std::function<void()>& callback ) {
+// This doesn't work (reference isn't const):
+// void repeat( int count, std::function<void()>& callback ) {
+// This does work (const reference):
+// void repeat( int count, const std::function<void()>& callback ) {
+// This works (pass by value):
+void repeat( int count, std::function<void()> callback ) {
     for( int i = 0; i < count; ++i ) {
         callback();
     }

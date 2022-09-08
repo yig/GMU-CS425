@@ -15,6 +15,12 @@ target("callbacks")
     
     add_files("demo/callbacks.cpp")
 
+target("callbacks_with_parameters")
+    set_kind("binary")
+    set_languages("cxx17")
+    
+    add_files("demo/callbacks_with_parameters.cpp")
+
 target("pimpl")
     set_kind("binary")
     set_languages("cxx17")
