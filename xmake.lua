@@ -21,6 +21,18 @@ target("callbacks_with_parameters")
     
     add_files("demo/callbacks_with_parameters.cpp")
 
+target("paths")
+    set_kind("binary")
+    set_languages("cxx17")
+    
+    -- Copy assets
+    after_build(function (target)
+        cprint("Copying data")
+        os.cp("$(projectdir)/data", path.directory(target:targetfile()))
+    end)
+    
+    add_files("demo/paths.cpp")
+
 target("pimpl")
     set_kind("binary")
     set_languages("cxx17")
