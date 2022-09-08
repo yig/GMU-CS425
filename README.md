@@ -508,13 +508,13 @@ We need to tell our pipeline about the uniforms. Let's make a struct. Since this
 ```
 namespace {
 struct Uniforms {
-    glm::mat4 projection;
-    glm::mat4 transform;
+    mat4 projection;
+    mat4 transform;
 };
 }
 ```
 
-That 4x4 matrix type comes from the [glm](https://github.com/g-truc/glm) library, which is like a C++ implementation of the vector math in GLSL. To use it, insert `add_requires("glm")` near the top of the `xmake.lua` and `add_packages("glm")` inside `target("illengine")`. Then we can `#include "glm/glm.hpp"`. You might want to make this a public package and `typedef glm::vec2 vec2;` in your `Types.h` (and possibly also `glm::vec3` and `glm::vec4`). Then your engine's users will have access to a full-featured 2D vector type for specifying positions and velocities (and possibly a 3D or 4D vector type for specifying colors).
+That 4x4 matrix type comes from the [glm](https://github.com/g-truc/glm) library, which is like a C++ implementation of the vector math in GLSL. To use it, insert `add_requires("glm")` near the top of the `xmake.lua` and `add_packages("glm")` inside `target("illengine")`. Then we can `#include "glm/glm.hpp"` and use its namespace in our `.cpp` file (`using namespace glm`). You might want to make this a public package and `typedef glm::vec2 vec2;` in your `Types.h` (and possibly also `glm::vec3` and `glm::vec4`). Then your engine's users will have access to a full-featured 2D vector type for specifying positions and velocities (and possibly a 3D or 4D vector type for specifying colors).
 
 Let's tell the shader about these uniforms:
 
@@ -544,19 +544,19 @@ if( width < height ) {
 }
 ```
 
-What should `transform` be? It depends what you want to support with your engine. You could allow people to scale, translate, and rotate sprites. You could allow them to specify arbitrary anchor points inside your sprite. You could allow them to only scale and translate sprites and assume that sprites are anchored from their center. We'll start with that, since it's simple. We'll also assume sprites have a z value between 0 and 1 that determines their drawing order. Whenever we transform, we always want to scale first, then rotate, and then translate. The glm library has some convenient functions for creating such matrices in another header (`#include "glm/gtc/matrix_transform.hpp")`.
+What should `transform` be? It depends what you want to support with your engine. You could allow people to scale, translate, and rotate sprites. You could allow them to specify arbitrary anchor points inside your sprite. You could allow them to only scale and translate sprites and assume that sprites are anchored from their center. We'll start with that, since it's simple. We'll also assume sprites have a z value between 0 and 1 that determines their drawing order. Whenever we transform, we always want to scale first, then rotate, and then translate. The glm library has some convenient functions for creating such matrices in another header (`#include "glm/gtc/matrix_transform.hpp"`).
 
 ```
-uniforms.transform = glm::translate( mat4{1}, vec3( position, z ) ) * glm::scale( mat4{1}, vec3( scale ) );
+uniforms.transform = translate( mat4{1}, vec3( position, z ) ) * scale( mat4{1}, vec3( scale ) );
 ```
 
 We have one other order of business. The image itself may not be square. Let's make sure to scale the quad down (so it always fits inside the square) so that the image draws with the appropriate aspect ratio:
 
 ```
 if( image_width < image_height ) {
-    uniforms.transform = uniforms.transform * glm::scale( mat4{1}, vec3( real(image_width)/image_height, 1.0, 1.0 ) );
+    uniforms.transform = uniforms.transform * scale( mat4{1}, vec3( real(image_width)/image_height, 1.0, 1.0 ) );
 } else {
-    uniforms.transform = uniforms.transform * glm::scale( mat4{1}, vec3( 1.0, real(image_height)/image_width, 1.0 ) );
+    uniforms.transform = uniforms.transform * scale( mat4{1}, vec3( 1.0, real(image_height)/image_width, 1.0 ) );
 }
 ```
 
