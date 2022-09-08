@@ -580,7 +580,7 @@ We're now ready to make our shader program, add it to the pipeline, and then mak
 
 ```
 pipeline_desc.shader = sg_make_shader( shader_desc );
-sg_pipeline pipeline = sg_make_pipeline;
+sg_pipeline pipeline = sg_make_pipeline( pipeline_desc );
 ```
 
 We now have a graphics pipeline capable of drawing sprites. Whenever we begin drawing a frame, we have to tell `sokol_gfx` what to do with what's already in the frame buffer. We do this with a `sg_pass_action` struct. Let's make one and choose a clear color:
