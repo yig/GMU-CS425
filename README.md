@@ -522,9 +522,9 @@ Let's tell the shader about these uniforms:
 shader_desc.vs.uniform_blocks[0].size = sizeof(Uniforms);
 // The order of `.uniforms[0]` and `.uniforms[1]` must match the order in `Uniforms`
 shader_desc.vs.uniform_blocks[0].uniforms[0].name = "projection";
-shader_desc.vs.uniform_blocks[0].uniforms[0].type = "SG_UNIFORMTYPE_MAT4";
+shader_desc.vs.uniform_blocks[0].uniforms[0].type = SG_UNIFORMTYPE_MAT4;
 shader_desc.vs.uniform_blocks[0].uniforms[1].name = "transform";
-shader_desc.vs.uniform_blocks[0].uniforms[1].type = "SG_UNIFORMTYPE_MAT4";
+shader_desc.vs.uniform_blocks[0].uniforms[1].type = SG_UNIFORMTYPE_MAT4;
 ```
 
 When it's time to draw each sprite, we will create an instance of `Uniforms`, fill out the `projection` and `transform` fields, and then upload it to the GPU. What should `projection` be so that a centered square in the image has dimensions [-100,100]^2? It's a pure scaling matrix. We want to scale the short edge of this square down by 1/100 so that it fits inside OpenGL's [-1,1] normalized device coordinates. The long edge is longer. How much longer? long/short longer. So we want to scale it by (1/(100*long.short)). We can write that in code as:
