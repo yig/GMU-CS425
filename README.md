@@ -578,9 +578,9 @@ shader_desc.fs.source = R"(
     out vec4 frag_color;
     void main() {
         frag_color = texture( tex, texcoords );
-        // If we're not drawing back to front, discard completely transparent pixels so
-        // we don't write to the depth buffer and prevent farther sprites from drawing.
-        if( frag_color.a < 0.001 ) discard;
+        // If we're not drawing back to front, discard very transparent pixels so we
+        // don't write to the depth buffer and prevent farther sprites from drawing.
+        if( frag_color.a < 0.1 ) discard;
     }
 )";
 shader_desc.fs.images[0].name = "tex"; // The name should match the shader source code.
