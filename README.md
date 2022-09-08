@@ -578,6 +578,9 @@ shader_desc.fs.source = R"(
     out vec4 frag_color;
     void main() {
         frag_color = texture( tex, texcoords );
+        // If we're not drawing back to front, discard completely transparent pixels so
+        // we don't write to the depth buffer and prevent farther sprites from drawing.
+        if( frag_color.a < 0.001 ) discard;
     }
 )";
 shader_desc.fs.images[0].name = "tex"; // The name should match the shader source code.
@@ -710,3 +713,4 @@ Extensions:
 * 2022-09-07: Checkpoint 5: Graphics manager. Also mentioned `sokol_time` in the main loop discussion and std::async for background resource loading.
 * 2022-09-07: Mentioned `soloud_wav.h` header. Fixed an anachronism that mentioned the sound manager in detail while describing the resource manager.
 * 2022-09-07: Showed an example of `std::filesystem::path` /. Fixed typos in graphics manager.
+* 2022-09-08: A fix for transparent pixels when not depth sorting.
