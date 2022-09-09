@@ -4,7 +4,9 @@
 #include "table.h"
 #include "kitchen.h"
 
-class HouseImpl {
+#include <iostream>
+
+class House::Vars {
 public:
     int age = 10;
     
@@ -16,9 +18,13 @@ public:
 House::House() {
     // d.reset( new Dresser );
     
-    pImpl = std::make_unique<HouseImpl>();
+    vars = std::make_unique<Vars>();
 }
 
 House::~House() {
     // delete d;
+}
+
+void House::DoSomething() {
+    std::cout << "My dresser has " << vars->d.num_drawers << " drawers.\n";
 }

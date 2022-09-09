@@ -4,8 +4,6 @@
 
 // class Dresser;
 
-class HouseImpl;
-
 class House {
 public:
     // int age = 10;
@@ -15,6 +13,9 @@ public:
     House();
     ~House();
     
+    void DoSomething();
+    
 private:
-    std::unique_ptr< HouseImpl > pImpl;
+    class Vars;
+    std::unique_ptr< Vars > vars;
 };
