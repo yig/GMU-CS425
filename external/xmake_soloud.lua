@@ -1,5 +1,6 @@
 -- Examples:
 -- https://github.com/xmake-io/xmake-repo/tree/master/packages/n/newtondynamics
+-- https://github.com/xmake-io/xmake-repo/blob/dev/packages/z/zlib/xmake.lua
 -- https://github.com/tboox/benchbox
 
 package("soloud")
