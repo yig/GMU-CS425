@@ -418,6 +418,10 @@ First things first. Let's add `sokol` to our `xmake.lua` with `add_requires("sok
 #include "sokol_gfx.h"
 ```
 
+### Startup
+
+Our goal when starting up our graphics manager is to initialize `sokol_gfx` and prepare three structures we will use when drawing: a pipeline (`sg_pipeline`), a set of data bindings for the pipeline to operate on (`sg_bindings`), and how to clear the screen before we begin drawing (`sg_pass_action`). Store these three structures as instance variables.
+
 To initialize `sokol_gfx`, we need to call `sg_setup(sg_desc{});`. We must do this after setting up `GLFW` (in our graphics manager's startup function). The curly-braces are C++ for initialize all members to zero if they don't have constructors. (It's called [aggregate initialization](https://en.cppreference.com/w/cpp/language/aggregate_initialization). `sokol_gfx` examples written in C99 use a more convenient initialization syntax; that syntax became part of C++20, where it is called [designated initializers](https://www.cppstories.com/2021/designated-init-cpp20/).) `sokol_gfx` uses zeros to mean default values. `sokol_gfx` is also primarily a C API, so initializing the structs to zero is our responsibility. Let's be responsible and add `sg_shutdown();` to our graphics manager's shutdown function.
 
 Before we describe our pipeline, let's describe the data we will use. We will draw every rectangle as a scaled and translated unit square. The vertex data we need for a unit square is:
@@ -513,7 +517,7 @@ The `location=0` and `location=1` match what we put in our `pipeline_desc.layout
 * A per-sprite `transform` matrix that transforms the unit square to an appropriately sized and positioned rectangle in our world.
 * A global `projection` matrix that transforms from world coordinates to OpenGL's normalized device coordinates that cover the window. OpenGL's normalized device coordinates run from [-1,1] in x and y and z. That's inconvenient and a non-uniform scale if the window itself isn't square. You can choose anything you like for your world coordinates, so long as you handle the aspect ratio properly. One possibility is what [microStudio](https://microstudio.dev/) does. A square with dimensions [-100,100] is centered inside the window. The short edge of the window will run from -100 to 100. The long edge will run from -N to N, where N ≥ 100.
 
-We need to tell our pipeline about the uniforms. Let's make a struct. Since this `Uniforms` struct won't be seen outside the graphics manager, we can put it in an unnamed namespace:
+We need to tell our pipeline about the uniforms. Let's make a struct. Since this `Uniforms` struct won't be seen outside the graphics manager, we can put it in an unnamed namespace (outside the startup function, somewhere near the top of your graphics `.cpp` file):
 
 ```
 namespace {
@@ -537,40 +541,7 @@ shader_desc.vs.uniform_blocks[0].uniforms[1].name = "transform";
 shader_desc.vs.uniform_blocks[0].uniforms[1].type = SG_UNIFORMTYPE_MAT4;
 ```
 
-When it's time to draw each sprite, we will create an instance of `Uniforms`, fill out the `projection` and `transform` fields, and then upload it to the GPU. What should `projection` be so that a centered square in the image has dimensions [-100,100]^2? It's a pure scaling matrix. We want to scale the short edge of this square down by 1/100 so that it fits inside OpenGL's [-1,1] normalized device coordinates. The long edge is longer. How much longer? long/short longer. So we want to scale it by (1/(100*long.short)). We can write that in code as:
-
-```
-// Start with an identity matrix.
-uniforms.projection = mat4{1};
-// Scale x and y by 1/100.
-uniforms.projection[0][0] = uniforms.projection[1][1] = 1./100.;
-// Scale the long edge by an additional 1/(long/short) = short/long.
-if( width < height ) {
-    uniforms.projection[1][1] *= width;
-    uniforms.projection[1][1] /= height;
-} else {
-    uniforms.projection[0][0] *= height;
-    uniforms.projection[0][0] /= width;
-}
-```
-
-What should `transform` be? It depends what you want to support with your engine. You could allow people to scale, translate, and rotate sprites. You could allow them to specify arbitrary anchor points inside your sprite. You could allow them to only scale and translate sprites and assume that sprites are anchored from their center. We'll start with that, since it's simple. We'll also assume sprites have a z value between 0 and 1 that determines their drawing order. Whenever we transform, we always want to scale first, then rotate, and then translate. The glm library has some convenient functions for creating such matrices in another header (`#include "glm/gtc/matrix_transform.hpp"`).
-
-```
-uniforms.transform = translate( mat4{1}, vec3( position, z ) ) * scale( mat4{1}, vec3( scale ) );
-```
-
-We have one other order of business. The image itself may not be square. Let's make sure to scale the quad down (so it always fits inside the square) so that the image draws with the appropriate aspect ratio:
-
-```
-if( image_width < image_height ) {
-    uniforms.transform = uniforms.transform * scale( mat4{1}, vec3( real(image_width)/image_height, 1.0, 1.0 ) );
-} else {
-    uniforms.transform = uniforms.transform * scale( mat4{1}, vec3( 1.0, real(image_height)/image_width, 1.0 ) );
-}
-```
-
-That's all for our vertex shader. The fragment shader is also very simple. It is given texture coordinates `texcoords` and expects a 2D image `tex` to have been uploaded to the GPU. It uses the texture coordinate to look up a color from the texture:
+The fragment shader is also very simple. It is given texture coordinates `texcoords` and expects a 2D image `tex` to have been uploaded to the GPU. It uses the texture coordinate to look up a color from the texture:
 
 ```
 shader_desc.fs.source = R"(
@@ -611,13 +582,15 @@ sg_bindings bindings{};
 bindings.vertex_buffers[0] = vertex_buffer;
 ```
 
-We also want to attach the sprite's image to the fragment shader. We will do that with
+## Loading data
+
+When drawing, we will want to attach each sprite's image to the fragment shader. We will do that with
 
 ```
 bindings.fs_images[0] = image;
 ```
 
-What is `image`? We haven't loaded any images yet. Let's make a function to load images, just like we did for our sound manager. The load function should have a signature like:
+What is `image`? It's an `sg_image` struct. Let's make a function to load images, just like we did for our sound manager. The load function should have a signature like:
 
 ```
 bool LoadImage( const string& name, const string& path );
@@ -666,23 +639,58 @@ stbi_image_free( data );
 
 Just like with our sound manager, we can create an `std::unordered_map` that maps from the image's `name` to the data we want to store about the image, a little struct containing the `sg_image`, its width, and its height. You can add a call to destroy an image resource. Call `sg_destroy_image( image );` and then erase it from the `std::unordered_map`.
 
-When it's time to draw:
+## Drawing
+
+Add a `Draw()` method to your to your graphics manager that takes a parameter something like `const std::vector< Sprite >& sprites` and draws them. What should a `Sprite` be? It could be a small struct containing an image name, position, scale, and z value. Since we don't yet have an entity manager, the engine itself can't call `Draw()`, since no one is tracking drawable entities. For now, you can call `Draw()` in your main loop's callback function. We'll revisit this later, once we have an entity manager.
+
+When it's time to draw a set of sprites:
 
 1. Get the current frame buffer size with `glfwGetFramebufferSize()`.
 2. Call `sg_begin_default_pass( pass_action, width, height );` to clear the default frame buffer.
-3. Compute `uniforms.projection` from `width` and `height`.
-4. Apply the pipeline with `sg_apply_pipeline( pipeline );`.
+3. Apply the pipeline with `sg_apply_pipeline( pipeline );`.
+4. Make a `Uniforms` struct. Compute `uniforms.projection` from `width` and `height` (see below).
 5. Draw each sprite.
-    1. Update `uniforms.transform` for the sprite and call `sg_apply_uniforms( SG_SHADERSTAGE_VS, 0, SG_RANGE(uniforms) );`.
+    1. Compute `uniforms.transform` for the sprite (see below) and call `sg_apply_uniforms( SG_SHADERSTAGE_VS, 0, SG_RANGE(uniforms) );` to upload them to the GPU.
     2. Apply the sprite's bindings. Update the image in `bindings.fs_images[0]` and then call `sg_apply_bindings(bindings);` You can skip this step if the correct image is already bound (because the previous sprite also used it).
     3. Draw one (`1`) instance of our quad. That is, draw four (`4`) vertices starting at vertex `0` in our vertex buffer. We do this with `sg_draw(0, 4, 1);`
 6. Finish drawing with `sg_end_pass();` followed by `sg_commit();` followed by `glfwSwapBuffers(window);`.
 
-As you can see, we'll need to use the same `pass_action`, `pipeline`, and `bindings` each time we draw. Initialize them when the graphics manager starts up. Store them in instance variables.
+As you can see, we use the same `pass_action`, `pipeline`, and `bindings` each time we draw.
 
-Add a `Draw()` method to your to your graphics manager that takes a parameter something like `const std::vector< Sprite >& sprites` and draws them. What should a `Sprite` be? It could be a small struct containing an image name, position, scale, and z value. Since we don't yet have an entity manager, the engine itself can't call `Draw()`, since no one is tracking drawable entities. For now, you can call `Draw()` in your main loop's callback function. We'll revisit this later, once we have an entity manager.
+How should we set the `Uniforms`'s `projection` and `transform` fields? One option is to choose `projection` so that a centered square in the image has dimensions [-100,100]^2. It's a pure scaling matrix. We want to scale the short edge of this square down by 1/100 so that it fits inside OpenGL's [-1,1] normalized device coordinates. The long edge is longer. How much longer? long/short longer. So we want to scale it by (1/(100*long.short)). We can write that in code as:
 
-Extensions:
+```
+// Start with an identity matrix.
+uniforms.projection = mat4{1};
+// Scale x and y by 1/100.
+uniforms.projection[0][0] = uniforms.projection[1][1] = 1./100.;
+// Scale the long edge by an additional 1/(long/short) = short/long.
+if( width < height ) {
+    uniforms.projection[1][1] *= width;
+    uniforms.projection[1][1] /= height;
+} else {
+    uniforms.projection[0][0] *= height;
+    uniforms.projection[0][0] /= width;
+}
+```
+
+What should `transform` be? It depends what you want to support with your engine. You could allow people to scale, translate, and rotate sprites. You could allow them to specify arbitrary anchor points inside your sprite. You could allow them to only scale and translate sprites and assume that sprites are anchored from their center. We'll start with that, since it's simple. We'll also assume sprites have a z value between 0 and 1 that determines their drawing order. Whenever we transform, we always want to scale first, then rotate, and then translate. The glm library has some convenient functions for creating such matrices in another header (`#include "glm/gtc/matrix_transform.hpp"`).
+
+```
+uniforms.transform = translate( mat4{1}, vec3( position, z ) ) * scale( mat4{1}, vec3( scale ) );
+```
+
+We have one other order of business. The image itself may not be square. Let's make sure to scale the quad down (so it always fits inside the square) so that the image draws with the appropriate aspect ratio:
+
+```
+if( image_width < image_height ) {
+    uniforms.transform = uniforms.transform * scale( mat4{1}, vec3( real(image_width)/image_height, 1.0, 1.0 ) );
+} else {
+    uniforms.transform = uniforms.transform * scale( mat4{1}, vec3( 1.0, real(image_height)/image_width, 1.0 ) );
+}
+```
+
+### Extensions
 
 * Sprites could have a color parameter that tints the image by multiplying `color * texture( tex, texcoords );`.
 * If you really want to draw a lot of sprites efficiently, you must do it with one draw call that tells `sokol_gfx` to draw many instances of the sprite. We won't have a chance to change the uniform data between instances. Instead, we can submit the uniform information as additional vertex attributes that changes once per instance.
@@ -719,3 +727,4 @@ Extensions:
 * 2022-09-08: Explaining how to depth sort for those who want.
 * 2022-09-09: Mentioned initializer lists. Updated pimpl example.
 * 2022-09-16: Warned not to use operator= for SoLoud::Wav.
+* 2022-09-17: Clarified which parts of the graphics manager go in setup and which in the draw method.
