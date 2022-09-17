@@ -69,8 +69,8 @@ Hello, World!
 Some useful `xmake` commands:
 
 * `xmake run -d helloworld` launches the program in a debugger.
-* `xmake f --menu` opens a command-line menu system you can use to switch between debug and release modes.
-* `xmake f -m debug` and `xmake f -m release` directly switch between debug and release mode.
+* `xmake config --menu` opens a command-line menu system you can use to switch between debug and release modes.
+* `xmake config -m debug` and `xmake f -m release` directly switch between debug and release mode.
 * `xmake watch` will re-run `xmake` automatically when any code changes. `xmake watch -r -t helloworld` will do the same and then run the `helloworld` target.
 
 ## Setting up version control
