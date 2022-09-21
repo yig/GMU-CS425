@@ -68,9 +68,12 @@ Hello, World!
 
 Some useful `xmake` commands:
 
+* `xmake` compiles all targets.
+* `xmake run <target>` runs the given target.
 * `xmake run -d helloworld` launches the program in a debugger.
 * `xmake config --menu` opens a command-line menu system you can use to switch between debug and release modes.
 * `xmake config -m debug` and `xmake f -m release` directly switch between debug and release mode.
+* `xmake project -k xcode -m debug` or `xmake project -k vsxmake -m debug` to generate an Xcode project on macOS or a Visual Studio solution on Windows. You make prefer debugging directly in the IDE. [[docs](https://xmake.io/#/plugin/builtin_plugins)]
 * `xmake watch` will re-run `xmake` automatically when any code changes. `xmake watch -r -t helloworld` will do the same and then run the `helloworld` target.
 
 ## Setting up version control
@@ -728,3 +731,4 @@ if( image_width < image_height ) {
 * 2022-09-09: Mentioned initializer lists. Updated pimpl example.
 * 2022-09-16: Warned not to use operator= for SoLoud::Wav.
 * 2022-09-17: Clarified which parts of the graphics manager go in setup and which in the draw method.
+* 2022-09-20: Mentioned `xmake project` command.
