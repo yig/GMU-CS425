@@ -750,7 +750,7 @@ ECS.ForEach<Position,Velocity>( [&]( EntityID e, Position& p, Velocity& v ) {
 
 This code tells the ECS to execute the callback function `[&]( EntityID e, Position& p, Velocity& v ) { p.x += v.x * dt; p.y += v.y * dt; }` for each entity with the components. Since the for each function is in one place, it would be trivial to parallelize it on multiple threads.
 
-In this checkpoint, modify your graphics manager's draw method to iterate over all entities with `Position` and `Sprite` and draw them. Do this instead of taking a vector of Sprites as a parameter.
+In this checkpoint, modify your graphics manager's draw method to iterate over all entities with a `Sprite` and draw them. Do this instead of taking a vector of `Sprite`s as a parameter.
 In the next checkpoint, your script manager will iterate over all entities with a `Script` component and run the named script.
 
 ### Requirements
@@ -903,7 +903,7 @@ That’s it!
 
 * Your engine should have an entity component system that lets users create entities, attach components to them, and run algorithms over the components.
 * Your graphics manager's draw method should iterate over your ECS entities rather than taking a parameter.
-* Your `demo/helloworld.cpp` should draw sprites using the ECS.
+* Your `demo/helloworld.cpp` should create entities with a `Sprite` component. You can re-use the `Sprite` class you made for the previous checkpoint as the component.
 
 ---
 
