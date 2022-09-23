@@ -496,6 +496,8 @@ pipeline_desc.layout.attrs[0].format = SG_VERTEXFORMAT_FLOAT2;
 pipeline_desc.layout.attrs[1].format = SG_VERTEXFORMAT_FLOAT2;
 ```
 
+If you have more data per vertex in your `vertices` array, you must also describe it in the `pipeline_desc.layout.attrs` array. Otherwise, the GPU will send the wrong data to your shader.
+
 Let's define our shader. We'll need to make a shader description struct:
 
 ```
