@@ -551,7 +551,7 @@ shader_desc.vs.uniform_blocks[0].uniforms[1].name = "transform";
 shader_desc.vs.uniform_blocks[0].uniforms[1].type = SG_UNIFORMTYPE_MAT4;
 ```
 
-If you'd like to add additional uniforms (like a color tint), you can add it to your `Uniforms` struct and describe it in `shader_desc.vs.uniform_blocks[0].uniforms[]`.
+If you'd like to add additional uniforms, you can add it to your `Uniforms` struct and describe it in `shader_desc.vs.uniform_blocks[0].uniforms[]`.
 
 The fragment shader is also very simple. It is given texture coordinates `texcoords` and expects a 2D image `tex` to have been uploaded to the GPU. It uses the texture coordinate to look up a color from the texture:
 
@@ -572,7 +572,7 @@ shader_desc.fs.images[0].name = "tex"; // The name should match the shader sourc
 shader_desc.fs.images[0].image_type = SG_IMAGETYPE_2D;
 ```
 
-If you want your fragment shader to have access to the uniforms, copy `shader_desc.fs.uniform_blocks[0] = shader_desc.vs.uniform_blocks[0]`.
+If you want your fragment shader to have access to the same uniforms as your vertex shader, copy `shader_desc.fs.uniform_blocks[0] = shader_desc.vs.uniform_blocks[0]`. If you'd like it to have a separate set of uniforms, declare a different struct with different members. Describe that struct in `shader_desc.fs.uniform_blocks[0]`.
 
 We're now ready to make our shader program, add it to the pipeline, and then make the entire pipeline:
 
@@ -664,7 +664,7 @@ When it's time to draw a set of sprites:
 3. Apply the pipeline with `sg_apply_pipeline( pipeline );`.
 4. Make a `Uniforms` struct. Compute `uniforms.projection` from `width` and `height` (see below).
 5. Draw each sprite.
-    1. Compute `uniforms.transform` for the sprite (see below) and call `sg_apply_uniforms( SG_SHADERSTAGE_VS, 0, SG_RANGE(uniforms) );` to upload them to the GPU. If you want your fragment shader to have access to the uniforms as well, also call `sg_apply_uniforms( SG_SHADERSTAGE_FS, 0, SG_RANGE(uniforms) );`.
+    1. Compute `uniforms.transform` for the sprite (see below) and call `sg_apply_uniforms( SG_SHADERSTAGE_VS, 0, SG_RANGE(uniforms) );` to upload them to the GPU. If you want your fragment shader to have access to the uniforms as well, also call `sg_apply_uniforms( SG_SHADERSTAGE_FS, 0, SG_RANGE(uniforms) );`. (If you created a separate struct of uniforms for your fragment shader, pass the instance of that to `SG_RANGE()`.)
     2. Apply the sprite's bindings. Update the image in `bindings.fs_images[0]` and then call `sg_apply_bindings(bindings);` You can skip this step if the correct image is already bound (because the previous sprite also used it).
     3. Draw one (`1`) instance of our quad. That is, draw four (`4`) vertices starting at vertex `0` in our vertex buffer. We do this with `sg_draw(0, 4, 1);`
 6. Finish drawing with `sg_end_pass();` followed by `sg_commit();` followed by `glfwSwapBuffers(window);`.
