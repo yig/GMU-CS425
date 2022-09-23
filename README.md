@@ -433,10 +433,10 @@ Before we describe our pipeline, let's describe the data we will use. We will dr
 // A vertex buffer containing a textured square.
 const float vertices[] = {
     // positions      // texcoords
-    -1.0f,  -1.0f,    0.0f,  0.0f,
-     1.0f,  -1.0f,    1.0f,  0.0f,
-    -1.0f,   1.0f,    0.0f,  1.0f,
-     1.0f,   1.0f,    1.0f,  1.0f,
+    -1.0f,  -1.0f,    0.0f,  1.0f,
+     1.0f,  -1.0f,    1.0f,  1.0f,
+    -1.0f,   1.0f,    0.0f,  0.0f,
+     1.0f,   1.0f,    1.0f,  0.0f,
 };
 ```
 
@@ -934,3 +934,4 @@ That’s it!
 * 2022-09-17: Clarified which parts of the graphics manager go in setup and which in the draw method.
 * 2022-09-20: Mentioned `xmake project` command.
 * 2022-09-23: Checkpoint 6: Entity Component System
+* 2022-09-23: Fixed graphics manager texture coordinates. V was flipped.
