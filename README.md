@@ -704,6 +704,207 @@ if( image_width < image_height ) {
 * Your engine should have a graphics manager that lets users draw images to the screen.
 * Your `demo/helloworld.cpp` should load one or more images during startup and draw one or more sprites inside the main loop.
 
+## Game Objects (Entity Component System)
+
+Your engine is now capable of playing sounds, drawing graphics, and reading input. It's time to add a notion of game objects. This will allow users of your engine to populate their games with objects and update them in response to user input and the passage of time (such as physics). This will also give your graphics manager something to draw every frame. Rather than creating a game object base class that all user classes derive from, we will implement a modern game architecture design called [Entity Component System (ECS)](https://github.com/SanderMertens/ecs-faq). The key idea is to separate data (Components) from game Entities (integers IDs) and algorithms (Systems). This has several advantages:
+
+1. You avoid awkward OOP hierarchies (do drawable objects subclass physics body objects or vice versa).
+2. When a game's requirements change, you don't have to refactor your OOP classes.
+3. It makes efficient use of our computing hardware (data locality and opportunities for parallelism).
+
+### Components
+
+Components are simple structs; they contain data and no methods. In fact, any struct your engine's users create can be used as Components. You may declare some common structs in your `Types.h` or in your managers. Some examples:
+
+```
+struct Position { real x, y; }; // or: struct Position : public vec2 {};
+struct Velocity { real x, y; }; // or: struct Velocity : public vec2 {};
+struct Gravity { real meters_per_second; }
+struct Sprite { string image; real size; };
+struct Health { real percent; };
+struct Script { string name; };
+```
+
+An ECS stores components together in memory. This data locality leads to good cache efficiency.
+
+### Entities
+
+Every entity in the game—what the user would have made an object for if using object oriented programming—will be identified with a unique ID (an integer). Users of your ECS will be able to create an entity by asking the ECS for an unused unique ID. (Some implementations require the programmer to declare all components associated with an entity when creating the entity. Others, including the implementation described below, allow users to dynamically add Components to an entity. Users don't need to "register" their components in advance.) For example:
+
+```
+ECS.Get<Position>( entity ) = Position{0,0};
+ECS.Get<Position>( entity ).x += 10;
+ECS.Get<Health>( entity ) = Health{100};
+```
+
+### Systems
+
+Systems are the algorithms. They iterate over all entities with a given set of components. For example, here is a physics system that iterates over entities with `Position` and `Velocity`:
+
+```
+ECS.ForEach<Position,Velocity>( [&]( EntityID e, Position& p, Velocity& v ) {
+    p.x += v.x * dt;
+    p.y += v.y * dt;
+} );
+```
+
+This code tells the ECS to execute the callback function `[&]( EntityID e, Position& p, Velocity& v ) { p.x += v.x * dt; p.y += v.y * dt; }` for each entity with the components. Since the for each function is in one place, it would be trivial to parallelize it on multiple threads.
+
+In this checkpoint, modify your graphics manager's draw method to iterate over all entities with `Position` and `Sprite` and draw them. Do this instead of taking a vector of Sprites as a parameter.
+In the next checkpoint, your script manager will iterate over all entities with a `Script` component and run the named script.
+
+### Requirements
+
+The basic functionality you must implement is a class for your entity component system that has at least the following functionality:
+
+* A method to **create** a new entity (returning its entity ID) or to return an unused entity ID: `EntityID Create();` or `EntityID UnusedEntity();`. It is fine if your `Create()` requires the user to specify all components for the entity.
+* A method to **destroy** an entity, removing all of its components: `void Destroy( EntityID e );`
+* A method to **get** a given component for an entity. By returning a reference `&`, callers can also set the component: `template< typename T > T& Get( EntityID e );`
+* A method to iterate over all entities with a given set of entities and call a callback function once **for each** entity: `template< typename... EntitiesThatHaveTheseComponents > void ForEach( callback );`
+
+### Implementation Possibility
+
+You are free to implement your ECS any way you like so long as it implements the above methods. It makes for a fun and challenging puzzle. Here is a sketch for a sparse set implementation of an ECS. You are free to use it. I am leaving the implementation of `Create()` or `UnusedEntity()` as an exercise for you to solve on your own.
+
+First, we need to define the `EntityID` type:
+
+```
+typedef long EntityID;
+```
+
+We could have used a `uint64_t` or `int64_t` instead of a `long` by including `<cstdint>`.
+
+We need a sparse set to store each component. The simplest (but not best performing) option is `std::unordered_map< EntityID, T >`, where `T` is the type of the component. We will have many such maps, one per type. We need some way for users to access a component with type `T` for a given `EntityID`:
+
+```
+template< typename T >
+T& Get( EntityID entity ) {
+    return GetAppropriateSparseSet<T>()[ entity ];
+}
+```
+
+This declares a function `Get()` that takes an `EntityID` parameter. The function is templated on a type `T`, which means the compiler will generate code for it for each type `T` that anyone calls it with. By returning a reference (`T&`), the caller can do:
+```
+Get<Position>(entity).x // Get access to the position’s x component.
+Get<Position>(entity) = p; // Set the component given another Position p.
+```
+
+How will we store all of these sparse sets? In an `std::vector`. C++ is statically typed. We can’t directly create a vector of heterogeneous types, such as `{ SparseSet<Position>, SparseSet<Health> }`. Instead, we will create a `SparseSetHolder` superclass and store a vector of pointers to the superclasses in our ECS:
+
+```
+std::vector< std::unique_ptr< SparseSetHolder > > m_components;
+```
+
+How will we know which element in the vector stores the component we are looking for? We will create a function that returns a deterministic index for each unique type it sees. It uses static variables to always returns the same index for the same type.
+
+```
+typedef int ComponentIndex;
+template<typename T> ComponentIndex GetComponentIndex() {
+    static ComponentIndex index = GetNextIndex(); // Only calls GetNextIndex() the first time this function is called.
+    return index;
+}
+ComponentIndex GetNextIndex() {
+    static ComponentIndex index = -1; // Returns the sequence 0, 1, 2, … every time this is called.
+    index += 1;
+    return index;
+}
+```
+
+(If you allow the user to create multiple instances of your ECS (multiple worlds), be aware that `GetComponentIndex()` values are global across all instances. So if ECS one has Position components and ECS two doesn't, there will be a gap in ECS two's `m_components` vector. This is fine, so long as your `GetAppropriateSparseSet()` can handle it. Alternatively, `m_components` could be an `std::unordered_map` that uses `std::type_index(typeid(T))` to get a unique integer for each type. You don't have to worry about any of this if your engine stores one global ECS instance.)
+
+We need a `SparseSetHolder` subclass for each type, and a superclass for operations we'll need without knowing about the type being held by the subclass.
+```
+class SparseSetHolder {
+public:
+    // A virtual destructor, since we store pointers to this superclass yet have subclasses with destructors that need to run.
+    virtual ~SparseSetHolder() = default;
+    virtual bool Has( EntityID ) const = 0;
+    virtual void Drop( EntityID ) = 0;
+};
+// Subclasses are templated on the component type they hold.
+template< typename T > class SparseSet : public SparseSetHolder {
+public:
+    std::unordered_map< EntityID, T > data;
+    bool Has( EntityID e ) const override { return data.count( e ) > 0; };
+    void Drop( EntityID e ) override { data.erase( e ); };
+};
+```
+
+Now we can write a templated function to return a reference to the underlying `unordered_map`:
+```
+template< typename T >
+std::unordered_map< EntityID, T >&
+GetAppropriateSparseSet() {
+    // Get the index for T’s SparseSet
+    const ComponentIndex index = GetComponentIndex<T>();
+    // If we haven’t seen it yet, it must be past the end.
+    // Since component indices are shared by all ECS instances,
+    // it could happen that index is more than one past the end.
+    if( index >= m_components.size() ) { m_components.resize( index+1 ); }
+    assert( index < m_components.size() );
+    // Create the actual sparse set if needed.
+    if( m_components[ index ] == nullptr ) m_components[index] = std::make_unique< SparseSet<T> >();
+    // It’s safe to cast the SparseSetHolder to its subclass and return the std::unordered_map< EntityID, T > inside.
+    return static_cast< SparseSet<T>& >( *m_components[ index ] ).data;
+}
+```
+
+Now we can write the rest of our user-facing (public) functions:
+```
+// Destroy the entity by removing all components.
+void Destroy( EntityID e ) {
+    for( const auto& comps : m_components ) { comps->Drop( e ); }
+}
+```
+
+The `ForEach` function can be used like: `ForEach<Position,Velocity,Health>( callback )`. It takes multiple templated types. The idea behind this implementation is to find the container for the first component. That gives us candidate `EntityID`s. We will iterate over those `EntityID`s and call the callback for entities that have all the other components.
+```
+typedef std::function<void( EntityID )> ForEachCallback;
+template<typename EntitiesThatHaveThisComponent, typename... AndAlsoTheseComponents>
+void ForEach( const ForEachCallback& callback ) {
+    // Iterate over elements of the first container.
+    auto& container = GetAppropriateSparseSet<EntitiesThatHaveThisComponent>();
+    for( const auto& [entity, value] : container ) {
+        // We know it has the first component.
+        // Skip the entity if it doesn't have the remaining components.
+        // This `if constexpr` is evaluated at compile time. It is needed when AndAlsoTheseComponents is empty.
+        // https://stackoverflow.com/questions/48405482/variadic-template-no-matching-function-for-call/48405556#48405556
+        if constexpr (sizeof...(AndAlsoTheseComponents) > 0) {
+            if( !HasAll<AndAlsoTheseComponents...>( entity ) ) {
+                continue;
+            }
+        }
+        callback( entity );
+    }
+}
+```
+The `HasAll<Position,Velocity,Health>()` helper method is easier to write:
+```
+// Returns true if the entity has all types.
+template <typename T, typename... Rest>
+bool HasAll( EntityID entity ) {
+    bool result = true;
+    // https://stackoverflow.com/questions/48405482/variadic-template-no-matching-function-for-call/48405556#48405556
+    if constexpr (sizeof...(Rest) > 0) { result = HasAll<Rest...>(entity); }
+    return result && GetAppropriateSparseSet<T>().count( entity ) > 0;
+}
+```
+
+That’s it!
+
+### Extensions
+
+* `ForEach` whose inner for loop iterates over the smallest sparse set among all the given components.
+* A `ParallelForEach` that uses a thread pool.
+* A more efficient sparse set that stores its component data in a single, dense, contiguous chunk of memory with no gaps. `unordered_map` doesn't actually do that.
+* Support for [range-based for loops](https://stackoverflow.com/questions/8164567/how-to-make-my-custom-type-to-work-with-range-based-for-loops).
+
+**You have reached the sixth checkpoint.** Upload your code. Run `xmake clean` and then zip your entire directory. For this checkpoint:
+
+* Your engine should have an entity component system that lets users create entities, attach components to them, and run algorithms over the components.
+* Your graphics manager's draw method should iterate over your ECS entities rather than taking a parameter.
+* Your `demo/helloworld.cpp` should draw sprites using the ECS.
+
 ---
 
 ## ChangeLog
@@ -732,3 +933,4 @@ if( image_width < image_height ) {
 * 2022-09-16: Warned not to use operator= for SoLoud::Wav.
 * 2022-09-17: Clarified which parts of the graphics manager go in setup and which in the draw method.
 * 2022-09-20: Mentioned `xmake project` command.
+* 2022-09-23: Checkpoint 6: Entity Component System
