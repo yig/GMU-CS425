@@ -431,16 +431,21 @@ Before we describe our pipeline, let's describe the data we will use. We will dr
 
 ```
 // A vertex buffer containing a textured square.
-const float vertices[] = {
-    // positions      // texcoords
-    -1.0f,  -1.0f,    0.0f,  1.0f,
-     1.0f,  -1.0f,    1.0f,  1.0f,
-    -1.0f,   1.0f,    0.0f,  0.0f,
-     1.0f,   1.0f,    1.0f,  0.0f,
+const struct {
+    // position
+    float x, y;
+    // texcoords
+    float u, v;
+} vertices[] = {
+      // position       // texcoords
+    { -1.0f,  -1.0f,    0.0f,  1.0f },
+    {  1.0f,  -1.0f,    1.0f,  1.0f },
+    { -1.0f,   1.0f,    0.0f,  0.0f },
+    {  1.0f,   1.0f,    1.0f,  0.0f },
 };
 ```
 
-Notice that this is just a 1D array of floats. Later we will tell the GPU pipeline about the layout of this data: each vertex has two floats for the position (x and y) and two floats for the texture coordinates (u and v). For now, let's copy this data to GPU memory. We will do that with `sg_make_buffer()`, which takes an `sg_buffer_desc` struct. The only field we need to fill is `.data`, which stores a pointer to our data and the number of bytes. Our `vertices` data was declared on the stack, so we can just give it `vertices` and `sizeof(vertices)`. Let's create one, zero-initialized, and then set its `.data` field.
+This is declaring an array of (anonymous) structs with the attributes we want for each vertex: two floats for the position (x and y) and two floats for the texture coordinates (u and v). We could have declared position as a `glm::vec2`, which is also two floats in memory. Later we will tell the GPU pipeline about the precise memory layout of this data. If you want to add more attributes, add more members to the struct. For now, let's copy this data to GPU memory. We will do that with `sg_make_buffer()`, which takes an `sg_buffer_desc` struct. The only field we need to fill is `.data`, which stores a pointer to our data and the number of bytes. Our `vertices` data was declared on the stack, so we can just give it `vertices` and `sizeof(vertices)`. Let's create one, zero-initialized, and then set its `.data` field.
 
 ```
 sg_buffer_desc buffer_desc{};
@@ -484,7 +489,7 @@ pipeline_desc.depth.write_enabled = true;
 
 (*N.B.*: If you have images with non-trivial transparency—pixels whose alpha is not 0 or 1—you'll get wrong colors if you *don't* draw back to front. You will notice this if, for example, your images have feathered or anti-aliased borders. You can instead sort in your graphics manager's `Draw()` function using the `std::sort()` function available when you `#include <algorithm>`. You can sort on an arbitrary field using a lambda. For example, an `std::vector< Sprite > sprites;` could be sorted on the `.z` property via `std::sort( sprites.begin(), sprites.end(), []( const Sprite& lhs, const Sprite& rhs ) { return lhs.z > rhs.z; } );`. This example performs a reverse sort that puts larger z values corresponding to farther `Sprite`s first.)
 
-Now let's tell our pipeline about our vertex data layout. For each vertex, the first two floating point numbers should be grouped into one 2D vector pair and the second two floating point numbers should be grouped into a second 2D vector. We don't need to name them (i.e. position and texcoords). Our shader will do that.
+Now let's tell our pipeline about our vertex data layout. For each vertex, the first two floating point numbers should be grouped into one 2D vector pair (layout location 0) and the second two floating point numbers should be grouped into a second 2D vector (layout location 1). We don't need to name them (i.e. position and texcoords). Our shader will do that.
 
 ```
 pipeline_desc.layout.attrs[0].format = SG_VERTEXFORMAT_FLOAT2;
@@ -515,7 +520,7 @@ shader_desc.vs.source = R"(
     })";
 ```
 
-The `location=0` and `location=1` match what we put in our `pipeline_desc.layout.attrs[0]` and `pipeline_desc.layout.attrs[1]`. It passes the texture coordinates directly along to the fragment shader. The uniforms are:
+The `layout(location=0)` and `layout(location=1)` match what we put in our `pipeline_desc.layout.attrs[0]` and `pipeline_desc.layout.attrs[1]`. It passes the texture coordinates directly along to the fragment shader. The uniforms are:
 
 * A per-sprite `transform` matrix that transforms the unit square to an appropriately sized and positioned rectangle in our world.
 * A global `projection` matrix that transforms from world coordinates to OpenGL's normalized device coordinates that cover the window. OpenGL's normalized device coordinates run from [-1,1] in x and y and z. That's inconvenient and a non-uniform scale if the window itself isn't square. You can choose anything you like for your world coordinates, so long as you handle the aspect ratio properly. One possibility is what [microStudio](https://microstudio.dev/) does. A square with dimensions [-100,100] is centered inside the window. The short edge of the window will run from -100 to 100. The long edge will run from -N to N, where N ≥ 100.
@@ -935,3 +940,4 @@ That’s it!
 * 2022-09-20: Mentioned `xmake project` command.
 * 2022-09-23: Checkpoint 6: Entity Component System
 * 2022-09-23: Fixed graphics manager texture coordinates. V was flipped.
+* 2022-09-23: Changed the description of vertex attributes to make it clearer how to send more.
