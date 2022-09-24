@@ -978,7 +978,7 @@ lua.new_usertype<Person>("Person",
     );
 ```
 
-You may wish to expose your `vec2` and `vec3` types. Here is a fancy version that exposes their different constructors and also the `+`, `-`, and `*` functionality that lets us multiply a `vec3` by a scalar or add or subtract two `vec3`s:
+You may wish to expose your `vec2` and `vec3` types. Here is a fancy/gnarly version that exposes their different constructors and also the `+`, `-`, and `*` functionality that lets us multiply a `vec3` by a scalar or add or subtract two `vec3`s:
 ```
 lua.new_usertype<glm::vec3>("vec3",
     sol::constructors<glm::vec3(), glm::vec3(float), glm::vec3(float, float, float)>(),
