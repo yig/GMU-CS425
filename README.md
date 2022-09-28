@@ -763,9 +763,15 @@ ECS.ForEach<Position,Velocity>( [&]( EntityID e, Position& p, Velocity& v ) {
 } );
 ```
 
-This code tells the ECS to execute the callback function `[&]( EntityID e, Position& p, Velocity& v ) { p.x += v.x * dt; p.y += v.y * dt; }` for each entity with the components. Since the for each function is in one place, it would be trivial to parallelize it on multiple threads.
+This code tells the ECS to execute the callback function `[&]( EntityID e, Position& p, Velocity& v ) { p.x += v.x * dt; p.y += v.y * dt; }` for each entity with the components. Since the for each function is in one place, it would be trivial to parallelize it on multiple threads. This callback function is a lambda (local function) that has access to all the variables in the enclosing scope by reference (because of the `[&]`). The body of the lambda (`{ ... }`) gets executed as if it had been in the body of a for loop like this:
+```
+for( EntityID e, Position& p, Velocity& v : ECS.EntitiesWithComponents<Position,Velocity> ) {
+    p.x += v.x * dt;
+    p.y += v.y * dt;
+}
+```
 
-In this checkpoint, modify your graphics manager's draw method to iterate over all entities with a `Sprite` (or a `Sprite` and a `Position`, depending on what you put in your `Sprite` component) and draw them. Do this instead of taking a vector of `Sprite`s as a parameter, which is what you did for checkpoint 5. In the next checkpoint, your script manager will iterate over all entities with a `Script` component and run the named script. In general, your managers should declare the components (`struct`s) that they will iterate over in their headers (or in `Types.h`).
+In this checkpoint, modify your graphics manager's draw method to iterate over all entities with a `Sprite` (or a `Sprite` and a `Position`, depending on what you put in your `Sprite` component) and draw them. Do this instead of iterating over a vector of `Sprite`s passed as a parameter, which is what you did for checkpoint 5. In the next checkpoint, your script manager will iterate over all entities with a `Script` component and run the named script. In general, your managers should declare the components (`struct`s) that they will iterate over in their headers (or in `Types.h`).
 
 ### Requirements
 
@@ -1043,3 +1049,4 @@ If you wish, you can organize the functionality you expose to Lua with [somethin
 * 2022-09-23: Described extra uniforms and preparing uniforms for the fragment shader.
 * 2022-09-23: Described a file watcher resource manager extension. Clarified that managers should declare their own components.
 * 2022-09-24: Checkpoint 7: Script Manager.
+* 2022-09-27: Reminder about lambdas in ECS example.
