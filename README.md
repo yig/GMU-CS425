@@ -784,7 +784,7 @@ The basic functionality you must implement is a class for your entity component 
 
 ### Implementation Possibility
 
-You are free to implement your ECS any way you like so long as it implements the above methods. It makes for a fun and challenging puzzle. Here is a sketch for a sparse set implementation of an ECS. You are free to use it. I am leaving the implementation of `Create()` or `UnusedEntity()` as an exercise for you to solve on your own. This implementation makes heavy use of templated functions. Templated functions have to be defined—not just declared—in header (`.h`) files. This is because the compiler uses the template to generate code customized for the types used when it is called.
+You are free to implement your ECS any way you like so long as it implements the above methods. It makes for a fun and challenging puzzle. Here is a sketch for a sparse set implementation of an ECS. You are free to use it. I am leaving the implementation of `Create()` or `UnusedEntity()` as an exercise for you to solve on your own. This implementation makes heavy use of templated functions. There will only be a `.h` file for this implementation. Templated functions have to be defined—not just declared—in header (`.h`) files. This is because the compiler uses the template to generate code customized for the types used when it is called.
 
 First, we need to define the `EntityID` type:
 
@@ -1050,4 +1050,4 @@ If you wish, you can organize the functionality you expose to Lua with [somethin
 * 2022-09-23: Described a file watcher resource manager extension. Clarified that managers should declare their own components.
 * 2022-09-24: Checkpoint 7: Script Manager.
 * 2022-09-27: Reminder about lambdas in ECS example.
-* 2022-09-28: Reminder that templates have to live in headers.
+* 2022-09-28: Reminder that templates have to live in headers, so ECS will be header only.
