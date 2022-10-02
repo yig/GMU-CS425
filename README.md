@@ -912,6 +912,20 @@ bool HasAll( EntityID entity ) {
 
 That’s it!
 
+Note that this `ForEach()` function doesn't pass the components by reference to the callback. Use `Get<Component>(entity)` in the callback. For example, you could replace a for loop over an `std::vector<Sprite> sprites`:
+```
+for( Sprite& sprite : sprites ) {
+    // inside the loop
+}
+```
+with
+```
+ECS.ForEach<Sprite>( [&]( EntityID entity ) {
+    Sprite& sprite = ECS.Get<Sprite>(entity);
+    // inside the loop
+} );
+```
+
 ### Extensions
 
 * `ForEach` whose inner for loop iterates over the smallest sparse set among all the given components.
@@ -1051,3 +1065,4 @@ If you wish, you can organize the functionality you expose to Lua with [somethin
 * 2022-09-24: Checkpoint 7: Script Manager.
 * 2022-09-27: Reminder about lambdas in ECS example.
 * 2022-09-28: Reminder that templates have to live in headers, so ECS will be header only.
+* 2022-10-02: Added an example of how to replace a `for` loop with `ForEach` using the ECS.
