@@ -815,6 +815,8 @@ How will we store all of these sparse sets? In an `std::vector`. C++ is statical
 std::vector< std::unique_ptr< SparseSetHolder > > m_components;
 ```
 
+> 💣 Gotcha: If you try to make a copy of a `unique_ptr`, such as by returning a copy of this vector or passing your entity component system class by value, you will get an obtuse error message. You almost certainly want to return or pass by reference instead. (We don't want multiple instances reading and writing and freeing the same memory.)
+
 How will we know which element in the vector stores the component we are looking for? We will create a function that returns a deterministic index for each unique type it sees. It uses static variables to always returns the same index for the same type.
 
 ```
@@ -1066,3 +1068,4 @@ If you wish, you can organize the functionality you expose to Lua with [somethin
 * 2022-09-27: Reminder about lambdas in ECS example.
 * 2022-09-28: Reminder that templates have to live in headers, so ECS will be header only.
 * 2022-10-02: Added an example of how to replace a `for` loop with `ForEach` using the ECS.
+* 2022-10-02: Added gotcha about copying a unique_ptr.
