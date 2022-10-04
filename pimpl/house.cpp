@@ -6,8 +6,7 @@
 
 #include <iostream>
 
-class House::Vars {
-public:
+struct House::Vars {
     int age = 10;
     
     Dresser d;
@@ -16,14 +15,10 @@ public:
 };
 
 House::House() {
-    // d.reset( new Dresser );
-    
     vars = std::make_unique<Vars>();
 }
 
-House::~House() {
-    // delete d;
-}
+House::~House() {}
 
 void House::DoSomething() {
     std::cout << "My dresser has " << vars->d.num_drawers << " drawers.\n";
