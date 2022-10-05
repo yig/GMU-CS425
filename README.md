@@ -928,6 +928,8 @@ ECS.ForEach<Sprite>( [&]( EntityID entity ) {
 } );
 ```
 
+If your ECS is global (or lives inside a global variable), you can make your `EntityID` type support component access directly, as in `entity.Get<Sprite>()`. See [here](demo/entity_get.cpp) for an example.
+
 ### Extensions
 
 * `ForEach` whose inner for loop iterates over the smallest sparse set among all the given components.
@@ -1070,3 +1072,4 @@ If you wish, you can organize the functionality you expose to Lua with [somethin
 * 2022-10-02: Added an example of how to replace a `for` loop with `ForEach` using the ECS.
 * 2022-10-02: Added gotcha about copying a unique_ptr.
 * 2022-10-04: Added inline global example.
+* 2022-10-04: Added EntityID.Get<>() example.

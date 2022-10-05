@@ -63,3 +63,9 @@ target("globals")
     set_languages("cxx17")
     
     add_files("globals/*.cpp")
+
+target("entity_get")
+    set_kind("binary")
+    set_languages("cxx17")
+    
+    add_files("demo/entity_get.cpp")
