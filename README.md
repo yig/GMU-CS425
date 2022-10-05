@@ -75,6 +75,7 @@ Some useful `xmake` commands:
 * `xmake config -m debug` and `xmake f -m release` directly switch between debug and release mode.
 * `xmake project -k xcode -m debug` or `xmake project -k vsxmake -m debug` to generate an Xcode project on macOS or a Visual Studio solution on Windows. You make prefer debugging directly in the IDE. [[docs](https://xmake.io/#/plugin/builtin_plugins)]
 * `xmake watch` will re-run `xmake` automatically when any code changes. `xmake watch -r -t helloworld` will do the same and then run the `helloworld` target.
+* If you are having trouble with `xmake`, run with the flags `-vwD` to print a lot of diagnostic output.
 
 ## Setting up version control
 
@@ -1073,3 +1074,4 @@ If you wish, you can organize the functionality you expose to Lua with [somethin
 * 2022-10-02: Added gotcha about copying a unique_ptr.
 * 2022-10-04: Added inline global example.
 * 2022-10-04: Added EntityID.Get<>() example.
+* 2022-10-04: Mentioned `xmake -vwD` for diagnostic output.
