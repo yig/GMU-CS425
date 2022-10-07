@@ -3,6 +3,8 @@ add_rules("mode.debug", "mode.release")
 set_policy("build.warning", true) -- show warnings
 set_warnings("all") -- warn about many things
 
+add_requires("sol2", "lua")
+
 target("helloworld")
     set_kind("binary")
     set_languages("cxx17")
@@ -69,3 +71,10 @@ target("entity_get")
     set_languages("cxx17")
     
     add_files("demo/entity_get.cpp")
+
+target("lua_parameters")
+    set_kind("binary")
+    set_languages("cxx17")
+    
+    add_packages("sol2", "lua")
+    add_files("demo/lua_parameters.cpp")
