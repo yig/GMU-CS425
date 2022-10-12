@@ -70,7 +70,7 @@ Some useful `xmake` commands:
 
 * `xmake` compiles all targets.
 * `xmake run <target>` runs the given target.
-* `xmake run -d helloworld` launches the program in a debugger.
+* `xmake run -d helloworld` launches the program in a debugger. If you are using a debugger, you will want to compile in debug mode.
 * `xmake config --menu` opens a command-line menu system you can use to switch between debug and release modes.
 * `xmake config -m debug` and `xmake f -m release` directly switch between debug and release mode.
 * `xmake project -k xcode -m debug` or `xmake project -k vsxmake -m debug` to generate an Xcode project on macOS or a Visual Studio solution on Windows. You make prefer debugging directly in the IDE. [[docs](https://xmake.io/#/plugin/builtin_plugins)]
@@ -1077,3 +1077,4 @@ If you wish, you can organize the functionality you expose to Lua with [somethin
 * 2022-10-04: Mentioned `xmake -vwD` for diagnostic output.
 * 2022-10-06: Added `demo/lua_parameters.cpp` example. Clarified that you really type the `...` for lua parameters.
 * 2022-10-07: Added a note about explicitly declaring lambda return value to be by reference for scripting.
+* 2022-10-12: Mention that running in a debugger should compile in debug mode.
