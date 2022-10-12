@@ -1002,6 +1002,7 @@ lua.new_usertype<Person>("Person",
     "age", &Person::age
     );
 ```
+You can access the `.name` and `.age` members of a `Person` in Lua. You can create a new `Person` inside a Lua script via `Person.new()`.
 
 You may wish to expose your `vec2` and `vec3` types. Here is a fancy/gnarly version that exposes their different constructors and also the `+`, `-`, and `*` functionality that lets us multiply a `vec3` by a scalar or add or subtract two `vec3`s:
 ```
@@ -1078,3 +1079,4 @@ If you wish, you can organize the functionality you expose to Lua with [somethin
 * 2022-10-06: Added `demo/lua_parameters.cpp` example. Clarified that you really type the `...` for lua parameters.
 * 2022-10-07: Added a note about explicitly declaring lambda return value to be by reference for scripting.
 * 2022-10-12: Mention that running in a debugger should compile in debug mode.
+* 2022-10-12: Mention how to new a user type in Lua.
