@@ -301,7 +301,7 @@ Our resource management needs are pretty basic. We will create an `assets` direc
     set_rundir("$(projectdir)")
 ```
 
-(I used to instead recommend the following snippet to copy `assets` next to the executable. It's a waste of space and makes it harder to implement live reloading.)
+(I used to instead recommend the following snippet to copy `assets` next to the executable. I no longer do. It's duplicates disk space, requires you to run `xmake` each time you change an asset, and makes it harder to implement live reloading. I'm leaving the snippet here in case you want or need it for scenarios in which you don't run using `xmake run`.)
 
 ```
     -- Copy assets
