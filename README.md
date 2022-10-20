@@ -76,6 +76,7 @@ Some useful `xmake` commands:
 * `xmake project -k xcode -m debug` or `xmake project -k vsxmake -m debug` to generate an Xcode project on macOS or a Visual Studio solution on Windows. You make prefer debugging directly in the IDE. [[docs](https://xmake.io/#/plugin/builtin_plugins)]
 * `xmake watch` will re-run `xmake` automatically when any code changes. `xmake watch -r -t helloworld` will do the same and then run the `helloworld` target.
 * If you are having trouble with `xmake`, run with the flags `-vwD` to print a lot of diagnostic output.
+* `xmake run -w <path> <target>` runs the target with path as the working directory.
 
 ## Setting up version control
 
@@ -294,7 +295,13 @@ You may have noticed that there's no way to quit your program (without asking yo
 
 ## Resources and the Resource Manager
 
-Our resource management needs are pretty basic. We will create an `assets` directory to organize all the things that we'll want to access from our game. Modern build systems (like cmake and xmake) perform out of source builds, which means that the executable will be created in a funky location in some separate build directory. Since we'll want to load files from the `assets` directory, we'll need to tell xmake to copy `assets` next to the executable. Add the following snippet to `xmake.lua` somewhere inside the `target("helloworld")`:
+Our resource management needs are pretty basic. We will create an `assets` directory to organize all the things that we'll want to access from our game. Modern build systems (like cmake and xmake) perform out of source builds, which means that the executable will be created in a funky location in some separate build directory. Since we'll want to load files from the `assets` directory, let's tell xmake to run the executable with the working directory set to the project directory, rather than the build directory. Add the following snippet to `xmake.lua` somewhere inside the `target("helloworld")`:
+
+```
+    set_rundir(os.projectdir())
+```
+
+(I used to instead recommend the following snippet to copy `assets` next to the executable. It's a waste of space and makes it harder to implement live reloading.)
 
 ```
     -- Copy assets
@@ -304,7 +311,7 @@ Our resource management needs are pretty basic. We will create an `assets` direc
     end)
 ```
 
-At this point, reading a file from a path like `assets/sounds/coin.wav` should just work from your engine. This is what we assumed above for the sound manager. For the most straightforward cases, we could skip creating a resource manager altogether. However, it's a good idea to centralize our path handling. For that, you can make a resource manager that simply provides a method that resolves paths. The method would take in a partial path and return a path to a real file. Our `xmake.lua` will copy assets so that paths like `assets/sounds/coin.wav` just work, so the most basic resource manager would have a resolve path method that simply returns its input. You should create at least this resource manager now, and then use it to resolve paths in your sound manager (and any manager that loads resources). A better resource manager would have a method to set the path root (it could default to `assets` or not) which could let users resolve `sounds/coin.wav`. Use [`std::filesystem::path`](https://en.cppreference.com/w/cpp/filesystem/path) to append `path` to the root path. `std::filesystem::path` is neat. It overloads `/` so that you can do things like `relative_to_foo = std::filesystem::path("foo") / relative_path`. You can create an `std::filesystem::path` from an `std::string` and vice versa.
+At this point, reading a file from a path like `assets/sounds/coin.wav` should just work from your engine. This is what we assumed above for the sound manager. For the most straightforward cases, we could skip creating a resource manager altogether. However, it's a good idea to centralize our path handling. For that, you can make a resource manager that simply provides a method that resolves paths. The method would take in a partial path and return a path to a real file. Our `xmake.lua` sets the working directory so paths like `assets/sounds/coin.wav` just work, so the most basic resource manager would have a resolve path method that simply returns its input. You should create at least this resource manager now, and then use it to resolve paths in your sound manager (and any manager that loads resources). A better resource manager would have a method to set the path root (it could default to `assets` or not) which could let users resolve `sounds/coin.wav`. Use [`std::filesystem::path`](https://en.cppreference.com/w/cpp/filesystem/path) to append `path` to the root path. `std::filesystem::path` is neat. It overloads `/` so that you can do things like `relative_to_foo = std::filesystem::path("foo") / relative_path`. You can create an `std::filesystem::path` from an `std::string` and vice versa.
 
 ### Extensions
 
@@ -1081,3 +1088,4 @@ If you wish, you can organize the functionality you expose to Lua with [somethin
 * 2022-10-12: Mention that running in a debugger should compile in debug mode.
 * 2022-10-12: Mention how to new a user type in Lua.
 * 2022-10-19: Straightened curly quotes.
+* 2022-10-19: Recommend setting the working directory instead of copying assets.
