@@ -1,8 +1,11 @@
 #include <iostream>
 #include <cstdint> // For int64_t
 
-// See `docs/entity_get_in_an_unordered_map.txt` for some additional code you need to
-// to write when using the `EntityID` struct in an `std::unordered_map`.
+// If you want to use the `EntityID` struct directly as the key for a data structure
+// like an `std::unordered_map` or `std::unordered_set`, use its `.id`.
+// Otherwise, you will have to write additional code to tell the data structure
+// how to hash and compare `EntityID`s. See `docs/entity_get_in_an_unordered_map.txt`
+// for details.
 
 // An EntityID struct that stores the actual ID and supports `.Get<Component>()`
 struct EntityID {
