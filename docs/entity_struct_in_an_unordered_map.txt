@@ -1,0 +1,34 @@
+You can't put a custom type like the `struct EntityID` in an `std::unordered_map` without a little gnarly C++. The issue is that `std::unordered_map` needs two things when using custom types as keys: a hash function and equality comparison. Equality comparison is easy enough. Add:
+
+```
+bool operator==(const EntityID& other) const { return id == other.id; }
+```
+
+inside the struct EntityID.
+
+The hash function isn't bad, either, since `EntityID` just wraps an integer. There are two ways to do it. One is to define a hash function directly. We can wrap the `std::hash` function for the int:
+
+```
+struct EntityIDHash
+{
+    std::size_t operator()(EntityID const& s) const noexcept
+    {
+        return std::hash<EntityID::IDType>{}(s.id);
+    }
+};
+```
+
+(Why we have to create a struct that can be called like a function, rather than just a function, is beyond me.) Then anywhere you refer to the `std::unordered_map< EntityID, T >`, you will have to write `std::unordered_map< EntityID, T, EntityIDHash >` to use this hash function. (You could `typedef` this.)
+
+The other solution injects the hash function for a custom type into the std namespace. This is allowed. It lets you keep `std::unordered_map< EntityID, T >` declarations as is without adding a third template parameter. Following the example at the bottom of <https://en.cppreference.com/w/cpp/utility/hash>:
+
+```
+namespace std {
+    template<> struct hash<EntityID>
+    {
+        std::size_t operator()(EntityID const& s) const noexcept { return std::hash<EntityID::IDType>{}(s.id); }
+    };
+}
+```
+
+The `std::unordered_map` will automatically use this definition. You will have to insert this `namespace std { ... }` after declaring the `EntityID` struct and before using it in an `std::unordered_map`. This will probably mean closing and reopening whatever namespace contains the `EntityID` around the `namespace std { ... }`. (You will also need to add that namespace's `name::` before `EntityID` in the `namespace std { ... }` code.)

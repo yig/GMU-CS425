@@ -1,6 +1,9 @@
 #include <iostream>
 #include <cstdint> // For int64_t
 
+// See `docs/entity_get_in_an_unordered_map.txt` for some additional code you need to
+// to write when using the `EntityID` struct in an `std::unordered_map`.
+
 // An EntityID struct that stores the actual ID and supports `.Get<Component>()`
 struct EntityID {
     // The id is a 64-bit integer.
