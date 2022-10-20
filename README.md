@@ -806,11 +806,11 @@ T& Get( EntityID entity ) {
 
 This declares a function `Get()` that takes an `EntityID` parameter. The function is templated on a type `T`, which means the compiler will generate code for it for each type `T` that anyone calls it with. By returning a reference (`T&`), the caller can do:
 ```
-Get<Position>(entity).x // Get access to the position’s x component.
+Get<Position>(entity).x // Get access to the position's x component.
 Get<Position>(entity) = p; // Set the component given another Position p.
 ```
 
-How will we store all of these sparse sets? In an `std::vector`. C++ is statically typed. We can’t directly create a vector of heterogeneous types, such as `{ SparseSet<Position>, SparseSet<Health> }`. Instead, we will create a `SparseSetHolder` superclass and store a vector of pointers to the superclasses in our ECS:
+How will we store all of these sparse sets? In an `std::vector`. C++ is statically typed. We can't directly create a vector of heterogeneous types, such as `{ SparseSet<Position>, SparseSet<Health> }`. Instead, we will create a `SparseSetHolder` superclass and store a vector of pointers to the superclasses in our ECS:
 
 ```
 std::vector< std::unique_ptr< SparseSetHolder > > m_components;
@@ -858,16 +858,16 @@ Now we can write a templated function to return a reference to the underlying `u
 template< typename T >
 std::unordered_map< EntityID, T >&
 GetAppropriateSparseSet() {
-    // Get the index for T’s SparseSet
+    // Get the index for T's SparseSet
     const ComponentIndex index = GetComponentIndex<T>();
-    // If we haven’t seen it yet, it must be past the end.
+    // If we haven't seen it yet, it must be past the end.
     // Since component indices are shared by all ECS instances,
     // it could happen that index is more than one past the end.
     if( index >= m_components.size() ) { m_components.resize( index+1 ); }
     assert( index < m_components.size() );
     // Create the actual sparse set if needed.
     if( m_components[ index ] == nullptr ) m_components[index] = std::make_unique< SparseSet<T> >();
-    // It’s safe to cast the SparseSetHolder to its subclass and return the std::unordered_map< EntityID, T > inside.
+    // It's safe to cast the SparseSetHolder to its subclass and return the std::unordered_map< EntityID, T > inside.
     return static_cast< SparseSet<T>& >( *m_components[ index ] ).data;
 }
 ```
@@ -913,7 +913,7 @@ bool HasAll( EntityID entity ) {
 }
 ```
 
-That’s it!
+That's it!
 
 Note that this `ForEach()` function doesn't pass the components by reference to the callback. Use `Get<Component>(entity)` in the callback. For example, you could replace a for loop over an `std::vector<Sprite> sprites`:
 ```
@@ -1080,3 +1080,4 @@ If you wish, you can organize the functionality you expose to Lua with [somethin
 * 2022-10-07: Added a note about explicitly declaring lambda return value to be by reference for scripting.
 * 2022-10-12: Mention that running in a debugger should compile in debug mode.
 * 2022-10-12: Mention how to new a user type in Lua.
+* 2022-10-19: Straightened curly quotes.
