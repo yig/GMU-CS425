@@ -298,7 +298,7 @@ You may have noticed that there's no way to quit your program (without asking yo
 Our resource management needs are pretty basic. We will create an `assets` directory to organize all the things that we'll want to access from our game. Modern build systems (like cmake and xmake) perform out of source builds, which means that the executable will be created in a funky location in some separate build directory. Since we'll want to load files from the `assets` directory, let's tell xmake to run the executable with the working directory set to the project directory, rather than the build directory. Add the following snippet to `xmake.lua` somewhere inside the `target("helloworld")`:
 
 ```
-    set_rundir(os.projectdir())
+    set_rundir("$(projectdir)")
 ```
 
 (I used to instead recommend the following snippet to copy `assets` next to the executable. It's a waste of space and makes it harder to implement live reloading.)
