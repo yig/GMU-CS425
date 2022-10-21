@@ -78,3 +78,10 @@ target("lua_parameters")
     
     add_packages("sol2", "lua")
     add_files("demo/lua_parameters.cpp")
+
+target("lua_globals")
+    set_kind("binary")
+    set_languages("cxx17")
+    
+    add_packages("sol2", "lua")
+    add_files("demo/lua_globals.cpp")
