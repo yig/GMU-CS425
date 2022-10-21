@@ -749,6 +749,7 @@ struct Script { string name; };
 ```
 
 An ECS stores components together in memory. This data locality leads to good cache efficiency.
+(If you make components that are simply subclasses of other types, you may need to define a constructor that takes the superclass as a parameter. For example, if your `Position` is simply a subclass of `vec2`, you may want to define a constructor that takes a `vec2`, as in `Position( const vec2& v ) : vec2( v ) {}`. If you do that, tell the compiler that you still want the default constructor, too: `Position() = default;`)
 
 ### Entities
 
@@ -1089,3 +1090,4 @@ If you wish, you can organize the functionality you expose to Lua with [somethin
 * 2022-10-12: Mention how to new a user type in Lua.
 * 2022-10-19: Straightened curly quotes.
 * 2022-10-19: Recommend setting the working directory instead of copying assets.
+* 2022-10-21: Suggest that components that are simple subclasses should provide a constructor that takes the superclass.
