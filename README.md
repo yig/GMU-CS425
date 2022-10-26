@@ -964,7 +964,7 @@ At this point, you have a working game engine. Someone can use your engine to ma
 
 Official documentation for the Lua programming language is its [reference manual](https://www.lua.org/manual/). There is also an official book, *Programming in Lua*. The [first edition](https://www.lua.org/pil/contents.html) is freely available online.
 
-To embed Lua in our engines, we will use the [`sol`](https://sol2.readthedocs.io/en/latest/) C++ binding library. (You will sometimes see it referred to as `sol2` and `sol3`.) `sol` makes it as easy as possible to interface C++ code with Lua code and vice versa. (It really is as easy as possible! The [developer](https://thephd.dev/) is involved in the C++ (and C) language standards.) You'll be able to declare Lua functions that are written in C++ and expose C++ types to Lua (for use in Lua scripts). You'll be able to call Lua code from C++ (for executing the scripts). The `sol` documentation has a lot of examples. Look over [the tutorial](https://sol2.readthedocs.io/en/latest/tutorial/tutorial-top.html) to get a feel for how to use it.
+To embed Lua in our engines, we will use the [`sol`](https://sol2.readthedocs.io/en/latest/) C++ binding library. (You will sometimes see it referred to as `sol2` and `sol3`.) `sol` makes it as easy as possible to interface C++ code with Lua code and vice versa. (It really is as easy as possible! The [developer](https://thephd.dev/) is involved in the C++ (and C) language standards.) You'll be able to declare Lua functions that are written in C++ and expose C++ types to Lua (for use in Lua scripts). You'll be able to call Lua code from C++ (for executing the scripts). The `sol` documentation has a lot of examples. Look over [the tutorial](https://sol2.readthedocs.io/en/latest/tutorial/tutorial-top.html) to get a feel for how to use it. (If you are using the `gcc` compiler, and it gets very slow during this checkpoint, try switching to release mode. `gcc` has a [known bug](https://stackoverflow.com/questions/33443626/gcc-compilation-very-slow-large-file/33456247#33456247).)
 
 You will have a lot of architectural freedom in this checkpoint. Should the scripting manager startup first, and then other managers (sound, input, ECS) make calls to the scripting manager to expose their functionality to Lua? Or should the scripting manager startup last and take on the task of exposing the other managers' functionality itself? You are free to make these architectural choices (and discuss them with each other). I will describe scripting functionality that our engines must support. I will also give examples of how to use the `sol` library.
 
@@ -1043,6 +1043,16 @@ If you wish, you can organize the functionality you expose to Lua with [somethin
 * Your engine should have a script manager that lets users run Lua scripts on demand or attach a `Script` component to entities that will be run automatically in the game loop.
 * Your engine should expose to Lua scripts the ability to query input state, quit the game, play sounds, and manipulate sprites.
 
+## What's Next?
+
+You don't need anything else. You might want:
+
+* Text rendering. Some options:
+  * [`sokol_debugtext`](https://github.com/floooh/sokol/blob/master/util/sokol_debugtext.h) is easy to integrate, but you are limited to simple, monospaced fonts.
+  * [`sokol_fontstash`](https://github.com/floooh/sokol/blob/master/util/sokol_fontstash.h) lets you load arbitrary TrueType fonts and render text dynamically. It will require a small amount of integration into your code.
+  * [`text2image`](https://github.com/justinmeiners/text2image) draws image data into a buffer and then saves it to a file. You could use that directly with no code changes to your graphics manager. With small modifications, you could avoid the round trip to and from the filesystem. Modify `text2image` to return the image data and your graphics manager to load an image from memory. The overhead of rendering text to an image (on the CPU and then uploading it to the GPU) is irrelevant if your text doesn't change often.
+* A GUI for inspecting and editing your game state. [Dear ImGui](https://github.com/ocornut/imgui) and [`Nuklear`](https://github.com/Immediate-Mode-UI/Nuklear) are good for that. `sokol_gfx` [comes with](https://github.com/floooh/sokol/tree/master/util) integrations for both. You will have to do some additional work to hook them up to `GLFW`'s event handling (since we're not using `sokol_app` for our event handling).
+
 ---
 
 ## ChangeLog
@@ -1091,3 +1101,5 @@ If you wish, you can organize the functionality you expose to Lua with [somethin
 * 2022-10-19: Straightened curly quotes.
 * 2022-10-19: Recommend setting the working directory instead of copying assets.
 * 2022-10-21: Suggest that components that are simple subclasses should provide a constructor that takes the superclass.
+* 2022-10-26: Mentioned gcc slow compile with sol in debug mode.
+* 2022-10-26: Added What's Next? discussion of text rendering and debug GUI.
