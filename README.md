@@ -1052,6 +1052,8 @@ You don't need anything else. You might want:
   * [`sokol_fontstash`](https://github.com/floooh/sokol/blob/master/util/sokol_fontstash.h) lets you load arbitrary TrueType fonts and render text dynamically. It will require a small amount of integration into your code.
   * [`text2image`](https://github.com/justinmeiners/text2image) draws image data into a buffer and then saves it to a file. You could use that directly with no code changes to your graphics manager. With small modifications, you could avoid the round trip to and from the filesystem. Modify `text2image` to return the image data and your graphics manager to load an image from memory. The overhead of rendering text to an image (on the CPU and then uploading it to the GPU) is irrelevant if your text doesn't change often.
 * A GUI for inspecting and editing your game state. [Dear ImGui](https://github.com/ocornut/imgui) and [Nuklear](https://github.com/Immediate-Mode-UI/Nuklear) are good for that. `sokol_gfx` [comes with](https://github.com/floooh/sokol/tree/master/util) integrations for both. You will have to do some additional work to hook them up to `GLFW`'s event handling (since we're not using `sokol_app` for our event handling).
+  * To avoid the hooks making your graphics manager code look ugly, I recommend making a GUI manager with its own draw method. Your graphics manager can call that at the appropriate time.
+  * For Dear ImGui, you can `add_requires("imgui", {configs = {glfw_opengl3 = true}})` and `add_packages("imgui")`. You can then include `imgui_impl_glfw.h` and `util/sokol_imgui.h`. Call `simgui_setup()` followed by `ImGui_ImplGlfw_InitForOther()` on startup. Call `ImGui_ImplGlfw_Shutdown()` followed by `simgui_shutdown()` at shutdown. Call `ImGui_ImplGlfw_NewFrame()` at the beginning of draw and `simgui_render()` at the end.
 
 ---
 
@@ -1103,3 +1105,4 @@ You don't need anything else. You might want:
 * 2022-10-21: Suggest that components that are simple subclasses should provide a constructor that takes the superclass.
 * 2022-10-26: Mentioned gcc slow compile with sol in debug mode.
 * 2022-10-26: Added What's Next? discussion of text rendering and debug GUI.
+* 2022-10-28: More information about Dear ImGui integration.
