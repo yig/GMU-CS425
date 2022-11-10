@@ -1054,6 +1054,10 @@ You don't need anything else. You might want:
 * A GUI for inspecting and editing your game state. [Dear ImGui](https://github.com/ocornut/imgui) and [Nuklear](https://github.com/Immediate-Mode-UI/Nuklear) are good for that. `sokol_gfx` [comes with](https://github.com/floooh/sokol/tree/master/util) integrations for both. You will have to do some additional work to hook them up to `GLFW`'s event handling (since we're not using `sokol_app` for our event handling).
   * To avoid the hooks making your graphics manager code look ugly, I recommend making a GUI manager with its own draw method. Your graphics manager can call that at the appropriate time.
   * For Dear ImGui, you can `add_requires("imgui", {configs = {glfw_opengl3 = true}})` and `add_packages("imgui")`. You can then include `imgui_impl_glfw.h` and `util/sokol_imgui.h`. Call `simgui_setup()` followed by `ImGui_ImplGlfw_InitForOther()` on startup. Call `ImGui_ImplGlfw_Shutdown()` followed by `simgui_shutdown()` at shutdown. Call `ImGui_ImplGlfw_NewFrame()` at the beginning of draw and `simgui_render()` at the end.
+* Networking. This is a big topic. Some options (in `xrepo`):
+  * [ENet](http://enet.bespin.org/): The tutorial is quite easy to follow and mentions how you would incorporate this into a game loop.
+  * [Asio](http://think-async.com/Asio/): This is a very general library. There isn't a tutorial as well-documented as ENet.
+  * [brynet](https://github.com/IronsDu/brynet): The examples aren't well documented.
 
 ---
 
@@ -1106,3 +1110,4 @@ You don't need anything else. You might want:
 * 2022-10-26: Mentioned gcc slow compile with sol in debug mode.
 * 2022-10-26: Added What's Next? discussion of text rendering and debug GUI.
 * 2022-10-28: More information about Dear ImGui integration.
+* 2022-11-10: Mentioned some networking libraries.
