@@ -76,6 +76,7 @@ Some useful `xmake` commands:
 * `xmake project -k xcode -m debug` or `xmake project -k vsxmake -m debug` to generate an Xcode project on macOS or a Visual Studio solution on Windows. You make prefer debugging directly in the IDE. [[docs](https://xmake.io/#/plugin/builtin_plugins)]
 * `xmake watch` will re-run `xmake` automatically when any code changes. `xmake watch -r -t helloworld` will do the same and then run the `helloworld` target.
 * If you are having trouble with `xmake`, run with the flags `-vwD` to print a lot of diagnostic output.
+* If you install or remove a compiler, run `xmake g -c` to clear the global compiler detection cache.
 * `xmake run -w <path> <target>` runs the target with path as the working directory.
 
 ## Setting up version control
@@ -1111,3 +1112,4 @@ You don't need anything else. You might want:
 * 2022-10-26: Added What's Next? discussion of text rendering and debug GUI.
 * 2022-10-28: More information about Dear ImGui integration.
 * 2022-11-10: Mentioned some networking libraries.
+* 2022-11-26: Clear the global compiler detection cache with `xmake g -c`
