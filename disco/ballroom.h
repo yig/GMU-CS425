@@ -14,7 +14,7 @@ public:
     PartyGoers WhoIsAtThisParty() const;
     
 private:
-    std::vector< Dancer > mDancers;
+    vector< Dancer > mDancers;
 };
 
 }
