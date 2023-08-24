@@ -96,7 +96,7 @@ Thumbs.db
 
 Now you should initialize your git repository and make a first commit.
 
-**You have reached the first checkpoint.** Upload your code. Run `xmake clean` and then zip your entire directory. Your directly tree should look like:
+**You have reached the first checkpoint.** Upload your code. Run `xmake clean --all` and then zip your entire directory. Your directly tree should look like:
 
 ```
 .git/
@@ -251,7 +251,7 @@ Finally, this is a good time to mention that I recommend a proper logging librar
 
 Modify `demo/helloworld.cpp` to start up your engine, run its main loop, and shut it down when the main loop terminates.
 
-**You have reached the second checkpoint.** Commit your code to your git repository. Upload it for grading. Run `xmake clean` and then zip your entire directory. This checkpoint should contain:
+**You have reached the second checkpoint.** Commit your code to your git repository. Upload it for grading. Run `xmake clean --all` and then zip your entire directory. This checkpoint should contain:
 
 * A graphics manager class that creates a window.
 * A game engine class that starts up the graphics manager and runs a game loop 60 times per second. Your game engine won't take a user update callback yet.
@@ -282,7 +282,7 @@ Modify your `helloworld` function to pass a callback when running your engine's 
 
 You may have noticed that there's no way to quit your program (without asking your operating system to terminate it, e.g., `^C`). Quitting is easy; you just break out of the main loop. The `RunGameLoop()` function will then return. You can do that in response to a key press like escape or Q. If you want to check if someone clicked the window's close box, call the GLFW function `glfwWindowShouldClose(window)`. You can set this programmatically with `glfwSetWindowShouldClose( window, true );`. You can design your own way to encapsulate those. It could be something like `GraphicsManager::ShouldQuit()` and `GraphicsManager::SetShouldQuit(true)` methods.
 
-**You have reached the third checkpoint.** Upload your code. Run `xmake clean` and then zip your entire directory. For this checkpoint:
+**You have reached the third checkpoint.** Upload your code. Run `xmake clean --all` and then zip your entire directory. For this checkpoint:
 
 * Your engine should have an input manager that lets users detect key presses.
 * Your engine should take a user callback to execute in its main loop.
@@ -346,3 +346,4 @@ You may have noticed that there's no way to quit your program (without asking yo
 * 2022-11-26: Clear the global compiler detection cache with `xmake g -c`
 * 2023-08-21: GLFW doesn't initialize an OpenGL context since we'll use WebGPU. Deleted remaining content in anticipation of changes.
 * 2023-08-23: Fixed missing ) in the text.
+* 2023-08-24: xmake clean --all
