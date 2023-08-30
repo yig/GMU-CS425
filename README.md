@@ -78,6 +78,8 @@ Some useful `xmake` commands:
 * If you are having trouble with `xmake`, run with the flags `-vwD` to print a lot of diagnostic output.
 * If you install or remove a compiler, run `xmake g -c` to clear the global compiler detection cache.
 * `xmake run -w <path> <target>` runs the target with path as the working directory.
+* There are some other helpful questions and answers in the [`xmake` FAQ](https://xmake.io/#/guide/faq?id=what-should-i-do-if-the-download-package-failed-to-get-the-local-issuer-certificate).
+* The following error when `xmake` tries to download a package, `error: curl: (60) SSL certificate problem: unable to get local issuer certificate`, can be solved with [this workaround](https://xmake.io/#/guide/faq?id=what-should-i-do-if-the-download-package-failed-to-get-the-local-issuer-certificate): `xmake g --insecure-ssl=y`
 
 ## Setting up version control
 
@@ -351,3 +353,4 @@ You may have noticed that there's no way to quit your program (without asking yo
 * 2023-08-24: xmake clean --all
 * 2023-08-30: mentioned `add_packages("glfw", {public = true})` in checkpoint 2.
 * 2023-08-30: fixed link to `globals.h` example
+* 2023-08-30: added a link to the xmake FAQ and a workaround for curl certificate issues
