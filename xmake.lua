@@ -11,6 +11,13 @@ target("helloworld")
     
     add_files("demo/helloworld.cpp")
 
+target("templates")
+    set_kind("binary")
+    set_languages("cxx17")
+    
+    add_files("demo/templates.cpp")
+
+
 target("callbacks")
     set_kind("binary")
     set_languages("cxx17")
