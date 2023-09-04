@@ -294,7 +294,53 @@ You may have noticed that there's no way to quit your program (without asking yo
 * Your `demo/helloworld.cpp` should pass a callback that prints or logs a message when a key is pressed.
 * Your program should terminate when someone clicks the close box.
 
-## To be continued...
+## Resources and the Resource Manager
+
+Our resource management needs are pretty basic. We will create an `assets` directory to organize all the things that we'll want to access from our game. Modern build systems (like cmake and xmake) perform out of source builds, which means that the executable will be created in a funky location in some separate build directory. Since we'll want to load files from the `assets` directory, let's tell xmake to run the executable with the working directory set to the project directory, rather than the build directory. Add the following snippet to `xmake.lua` somewhere inside the `target("helloworld")`:
+
+```
+    set_rundir("$(projectdir)")
+```
+
+(I used to instead recommend the following snippet to copy `assets` next to the executable. I no longer do. It duplicates disk space, requires you to run `xmake` each time you change an asset, and makes it harder to implement live reloading. I'm leaving the snippet here in case you want or need it for scenarios in which you don't run using `xmake run` and can't set the working directory.)
+
+```
+    -- Copy assets
+    after_build(function (target)
+        cprint("Copying assets")
+        os.cp("$(projectdir)/assets", path.directory(target:targetfile()))
+    end)
+```
+
+At this point, reading a file from a path like `assets/sounds/coin.wav` or `assets/textures/coin.png` should just work from your engine. (*N.B.* Do **not** change the `/` to `\` on Windows. `/` is cross platform. Windows handles `/` just fine.) For the most straightforward cases, we could skip creating a resource manager altogether. However, it's a good idea to centralize our path handling. For that, you can make a resource manager that simply provides a method that resolves paths. The method would take in a partial path and return a path to a real file. Our `xmake.lua` sets the working directory so paths like `assets/textures/coin.png` just work, so the most basic resource manager would have a resolve path method that simply returns its input. You should create at least this resource manager now, and then use it to resolve paths in your sound or graphics manager (and any manager that loads resources). A better resource manager would have a method to set the path root (it could default to `assets` or not) which could let users resolve `textures/coin.png`. Use [`std::filesystem::path`](https://en.cppreference.com/w/cpp/filesystem/path) to append `path` to the root path. `std::filesystem::path` is neat. It overloads `/` so that you can do things like `relative_to_foo = std::filesystem::path("foo") / relative_path`. You can create an `std::filesystem::path` from an `std::string` and vice versa.
+
+### Extensions
+
+Even fancier resource managers could do more. Some possibilities:
+
+* Watch for changes to the file on disk. When there's a change, reload the resource (image, sound, script, etc.). Your users will love this hot loading feature when working on their games. You could implement this with a `WatchPath()` method that looks for changes to the last modification time of the file. `WatchPath()` could take a callback parameter to call when a modification is detected. Your engine could give your resource manager a chance to check for changes in the game loop.
+* Take in a URI, download the linked file, and then return the path to the download file or the file loaded into memory directly. Our sound and graphics and scripting libraries can load from files on disk (via a path) or from files already in memory.
+* Load files to memory asynchronously. Either provide a way for the user to check later if the data is ready, or else let them provide a callback when it is. This would allow resources to be loaded in parallel and could drastically speed up game launch. (It's easy to run a function—even a lambda—in a background thread with [`std::thread`](https://en.cppreference.com/w/cpp/thread/thread/thread) or [`std::async`](https://en.cppreference.com/w/cpp/thread/async). It will be harder to make sure the main thread actually starts loading resources in parallel rather than blocking on the first one. You might also want a thread pool.)
+
+## Sound Manager (optional, bonus)
+
+It's easier (much less code) to play sounds than draw graphics to the screen, so you can warm up with a sound manager or come back to this later. We will use [SoLoud](https://sol.gfxile.net/soloud/) as our sound library. It has a really nice C++ API. (Click the link! Look at the sample code!) I added it to the `xmake` package repository, so we can write `add_requires("soloud")` near the top of our `xmake.lua` and `add_packages("soloud")` in our engine target. (You will need to do `add_packages("soloud", {public = true})` if your sound manager header includes a SoLoud header.)
+
+Let's wrap SoLoud in a sound manager class. The sound manager will contain an instance of `SoLoud::Soloud`. (Yes, the capitalization is different for the namespace and the class.) You'll need to `#include "soloud.h"`. The startup method must call `.init()` and the shutdown method must call `.deinit()` on the `SoLoud::Soloud` instance. More interesting, let's add a method to load, destroy, and play a sound. We will follow a similar pattern for all of our resources (sounds, images, scripts). The load function will always have a signature like:
+
+```
+bool LoadSound( const string& name, const string& path );
+```
+
+This lets our engine's users load a sound and then access it by a convenient name in the destroy and play methods. Loading a sound in SoLoud is easy. We need to instantiate an instance of `SoLoud::Wav`, and then we can call the method `.load( path.c_str() );` on it. (`SoLoud::Wav` is declared in the `soloud_wav.h` header, so `#include` that.) Don't forget to resolve `path` with your resource manager. Keeping track of the `name` is easy, too. Let's use an [`std::unordered_map< string, SoLoud::Wav >`](https://en.cppreference.com/w/cpp/container/unordered_map) as our name-to-sound map. With a map like that (I'll call it `m`, but you should call it something better), we can write `m[ name ].load( path.c_str() );`. That's it! An `std::unordered_map` will instantiate the `SoLoud::Wav` if it doesn't already exist when looking up the value for a key. (If you'd like to know in advance, you can use `m.count( name ) == 0` to check if `m` already has a sound by that name. In C++20, that will shorten to `m.contains( name )`.) Destroying the sound is also easy: `m.erase( name );`. Finally, playing a sound is as simple as telling our `SoLoud::Soloud` instance to `.play( m[ name ] )`. (Don't attempt to copy a `SoLoud::Wav` by assigning it with `=`. Both copies will access and delete the same chunk of memory holding the audio data. When either one is deleted, the other may try to access freed memory. The `SoLoud::Wav` class should have deleted or made `operator=` private.)
+
+Go ahead and load a sound and play it in response to a key changing from not pressed to pressed. (If you play it **if** the key is pressed, you'll play the sound many times—every 1/60 of a second—until the key is released.)
+
+**You have reached the end of the optional sound manager component.**
+
+## Graphics
+
+To be continued...
 
 ---
 
@@ -356,3 +402,4 @@ You may have noticed that there's no way to quit your program (without asking yo
 * 2023-08-30: fixed link to `globals.h` example
 * 2023-08-30: added a link to the xmake FAQ and a workaround for curl certificate issues
 * 2023-08-31: mentioned `xmake repo -u` to update the known packages
+* 2023-09-04: resource manager and optional sound manager added back and revised to use xrepo.
