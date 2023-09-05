@@ -34,13 +34,16 @@ target("paths")
     set_kind("binary")
     set_languages("cxx17")
     
-    -- Copy assets
-    after_build(function (target)
-        cprint("Copying data")
-        os.cp("$(projectdir)/data", path.directory(target:targetfile()))
-    end)
+    -- Set the working directory so the binary sees `data`
+    set_rundir("$(projectdir)")
     
     add_files("demo/paths.cpp")
+
+target("chrono")
+    set_kind("binary")
+    set_languages("cxx17")
+    
+    add_files("demo/chrono_sleep_for.cpp")
 
 target("constructor_reference")
     set_kind("binary")
