@@ -340,7 +340,358 @@ Go ahead and load a sound and play it in response to a key changing from not pre
 
 ## Graphics
 
-To be continued...
+It's time to draw images. Images are the workhorse of 2D engines. Sprites are images, the background is an image, and so on. We want to do our sprite drawing with a GPU so that it's fast. (In fact, almost everything we will do could be used just as easily to draw 3D shapes.) How do we use the hardware-accelerated GPU pipeline to draw an image? We draw a rectangle (two triangles) covered by the image (as a texture map).
+
+The modern way to program GPUs is to describe all the state involved in the GPU's graphics pipeline (shaders, the layout of vertex data, various flags for fixed functionality to turn on and off), upload data to the GPU memory, and then run the pipeline on that data. The graphics API we're using for our engine is called WebGPU. It is a standard designed to unify access to all the major API's (Vulkan, Metal, DirectX) while being high-performance and not overly verbose. The standard was created simultaneously for the web (in JavaScript) and native access (`webgpu.h`). WebGPU is extremely new, but there are good resources out there already. Here is a list of resources you may wish to consult while working on your graphics manager (I did):
+
+* [Learn WebGPU (in C++)](https://eliemichel.github.io/LearnWebGPU/): A C++ tutorial. This was my primary source for learning WebGPU. It covers more topics than we need. If you are looking for more information about something, this is a good place to start.
+* [WebGPU Fundamentals](https://webgpufundamentals.org/): A JavaScript tutorial. This tutorial has nice diagrams.
+* [WebGPU Specification](https://www.w3.org/TR/webgpu/): The API spec. If you are wondering what a parameter is in excruciating detail, this is the place to look. I use it by searching for symbols.
+* [webgpu.h](https://github.com/webgpu-native/webgpu-headers/blob/main/webgpu.h): The official C header developed along with the spec. It's more succinct than the specification, and shows the data structures precisely. I use it by searching for symbols.
+* [WGSL WebGPU Shading Language Specification](https://www.w3.org/TR/WGSL/): This is the specification for the shading language.
+* [I want to talk about WebGPU](https://cohost.org/mcc/post/1406157-i-want-to-talk-about-webgpu): The history of graphics API's and why WebGPU is exciting. At the end, there are excellent overview diagrams that explain using WebGPU.
+* [WebGPU Bind Group best practices](https://toji.dev/webgpu-best-practices/bind-groups.html): An explanation of why there are bind groups.
+* [How to write a renderer for modern graphics APIs](https://blog.mecheye.net/2023/09/how-to-write-a-renderer-for-modern-apis/): An explanation of why modern API's are designed the way they are, and how to manage the fast path.
+* There are two active Discord servers ("Graphics Programming"'s `#webgpu` channel, "WebGPU C++") and a "WebGPU" matrix.org room.
+
+**To be continued...** The rest of this checkpoint is being written. If you are trying to work ahead, skip to the next checkpoint. [Here](https://github.com/yig/GMU-CS425-2022#graphics) is last year's version of this checkpoint, which used the excellent but non-standard [`sokol_gfx` graphics API](https://github.com/floooh/sokol).
+
+**You have reached the fourth checkpoint.** Upload your code. Run `xmake clean --all` and then zip your entire directory. For this checkpoint:
+
+* Your engine should have a resource manager you use to resolve paths, even if it returns those paths unchanged.
+* Your engine should have a graphics manager that lets users draw images to the screen.
+* Your `demo/helloworld.cpp` should load one or more images during startup and draw one or more sprites inside the main loop.
+
+## Game Objects (Entity Component System)
+
+Your engine is now capable of playing sounds, drawing graphics, and reading input. It's time to add a notion of game objects. This will allow users of your engine to populate their games with objects and update them in response to user input and the passage of time (such as physics). This will also give your graphics manager something to draw every frame. Rather than creating a game object base class that all user classes derive from, we will implement a modern game architecture design called [Entity Component System (ECS)](https://github.com/SanderMertens/ecs-faq). The key idea is to separate data (Components) from game Entities (integers IDs) and algorithms (Systems). This has several advantages:
+
+1. You avoid awkward OOP hierarchies (do drawable objects subclass physics body objects or vice versa).
+2. When a game's requirements change, you don't have to refactor your OOP classes.
+3. It makes efficient use of our computing hardware (data locality and opportunities for parallelism).
+4. It's easy to save and load your entities and components to and from a file, and to inspect or edit them with a GUI.
+
+### Components
+
+Components are simple structs; they contain data and no methods. In fact, any struct your engine's users create can be used as Components. You may declare some common structs in your `Types.h` or in your managers. Some examples:
+
+```
+struct Position { real x, y; }; // or: struct Position : public vec2 {};
+struct Velocity { real x, y; }; // or: struct Velocity : public vec2 {};
+struct Gravity { real meters_per_second; }
+struct Sprite { string image; real size; };
+struct Health { real percent; };
+struct Script { string name; };
+```
+
+An ECS stores components together in memory. This data locality leads to good cache efficiency.
+(If you make components that are simply subclasses of other types, you may need to define a constructor that takes the superclass as a parameter. For example, if your `Position` is simply a subclass of `vec2`, you may want to define a constructor that takes a `vec2`, as in `Position( const vec2& v ) : vec2( v ) {}`. If you do that, tell the compiler that you still want the default constructor, too: `Position() = default;`)
+
+### Entities
+
+Every entity in the game—what the user would have made an object for if using object oriented programming—will be identified with a unique ID (an integer). Users of your ECS will be able to create an entity by asking the ECS for an unused unique ID. (Some implementations require the programmer to declare all components associated with an entity when creating the entity. Others, including the implementation described below, allow users to dynamically add Components to an entity. Users don't need to "register" their components in advance.) For example:
+
+```
+ECS.Get<Position>( entity ) = Position{0,0};
+ECS.Get<Position>( entity ).x += 10;
+ECS.Get<Health>( entity ) = Health{100};
+```
+
+### Systems
+
+Systems are the algorithms. They iterate over all entities with a given set of components. For example, here is a physics system that iterates over entities with `Position` and `Velocity`:
+
+```
+ECS.ForEach<Position,Velocity>( [&]( EntityID e, Position& p, Velocity& v ) {
+    p.x += v.x * dt;
+    p.y += v.y * dt;
+} );
+```
+
+This code tells the ECS to execute the callback function `[&]( EntityID e, Position& p, Velocity& v ) { p.x += v.x * dt; p.y += v.y * dt; }` for each entity with the components. Since the for each function is in one place, it would be trivial to parallelize it on multiple threads. This callback function is a lambda (local function) that has access to all the variables in the enclosing scope by reference (because of the `[&]`). The body of the lambda (`{ ... }`) gets executed as if it had been in the body of a for loop like this:
+```
+for( EntityID e, Position& p, Velocity& v : ECS.EntitiesWithComponents<Position,Velocity> ) {
+    p.x += v.x * dt;
+    p.y += v.y * dt;
+}
+```
+
+In this checkpoint, modify your graphics manager's draw method to iterate over all entities with a `Sprite` (or a `Sprite` and a `Position`, depending on what you put in your `Sprite` component) and draw them. Do this instead of iterating over a vector of `Sprite`s passed as a parameter, which is what you did for checkpoint 5. In the next checkpoint, your script manager will iterate over all entities with a `Script` component and run the named script. In general, your managers should declare the components (`struct`s) that they will iterate over in their headers (or in `Types.h`).
+
+### Requirements
+
+The basic functionality you must implement is a class for your entity component system that has at least the following functionality:
+
+* A method to **create** a new entity (returning its entity ID) or to return an unused entity ID: `EntityID Create();` or `EntityID UnusedEntity();`. It is fine if your `Create()` requires the user to specify all components for the entity.
+* A method to **destroy** an entity, removing all of its components: `void Destroy( EntityID e );`
+* A method to **get** a given component for an entity. By returning a reference `&`, callers can also set the component: `template< typename T > T& Get( EntityID e );`
+* A method to iterate over all entities with a given set of entities and call a callback function once **for each** entity: `template< typename... EntitiesThatHaveTheseComponents > void ForEach( callback );`
+
+### Implementation Possibility
+
+You are free to implement your ECS any way you like so long as it implements the above methods. It makes for a fun and challenging puzzle. Here is a sketch for a sparse set implementation of an ECS. You are free to use it. I am leaving the implementation of `Create()` or `UnusedEntity()` as an exercise for you to solve on your own. This implementation makes heavy use of templated functions. There will only be a `.h` file for this implementation. Templated functions have to be defined—not just declared—in header (`.h`) files. This is because the compiler uses the template to generate code customized for the types used when it is called.
+
+First, we need to define the `EntityID` type:
+
+```
+typedef long EntityID;
+```
+
+We could have used a `uint64_t` or `int64_t` instead of a `long` by including `<cstdint>`.
+
+We need a sparse set to store each component. The simplest (but not best performing) option is `std::unordered_map< EntityID, T >`, where `T` is the type of the component. We will have many such maps, one per type. We need some way for users to access a component with type `T` for a given `EntityID`:
+
+```
+template< typename T >
+T& Get( EntityID entity ) {
+    return GetAppropriateSparseSet<T>()[ entity ];
+}
+```
+
+This declares a function `Get()` that takes an `EntityID` parameter. The function is templated on a type `T`, which means the compiler will generate code for it for each type `T` that anyone calls it with. By returning a reference (`T&`), the caller can do:
+```
+Get<Position>(entity).x // Get access to the position's x component.
+Get<Position>(entity) = p; // Set the component given another Position p.
+```
+
+How will we store all of these sparse sets? In an `std::vector`. C++ is statically typed. We can't directly create a vector of heterogeneous types, such as `{ SparseSet<Position>, SparseSet<Health> }`. Instead, we will create a `SparseSetHolder` superclass and store a vector of pointers to the superclasses in our ECS:
+
+```
+std::vector< std::unique_ptr< SparseSetHolder > > m_components;
+```
+
+> 💣 Gotcha: If you try to make a copy of a `unique_ptr`, such as by returning a copy of this vector or passing your entity component system class by value, you will get an obtuse error message. You almost certainly want to return or pass by reference instead. (We don't want multiple instances reading and writing and freeing the same memory.)
+
+How will we know which element in the vector stores the component we are looking for? We will create a function that returns a deterministic index for each unique type it sees. It uses static variables to always returns the same index for the same type.
+
+```
+typedef int ComponentIndex;
+template<typename T> ComponentIndex GetComponentIndex() {
+    static ComponentIndex index = GetNextIndex(); // Only calls GetNextIndex() the first time this function is called.
+    return index;
+}
+ComponentIndex GetNextIndex() {
+    static ComponentIndex index = -1; // Returns the sequence 0, 1, 2, … every time this is called.
+    index += 1;
+    return index;
+}
+```
+
+(If you allow the user to create multiple instances of your ECS (multiple worlds), be aware that `GetComponentIndex()` values are global across all instances. So if ECS one has Position components and ECS two doesn't, there will be a gap in ECS two's `m_components` vector. This is fine, so long as your `GetAppropriateSparseSet()` can handle it. Alternatively, `m_components` could be an `std::unordered_map` that uses `std::type_index(typeid(T))` to get a unique integer for each type. You don't have to worry about any of this if your engine stores one global ECS instance.)
+
+We need a `SparseSetHolder` subclass for each type, and a superclass for operations we'll need without knowing about the type being held by the subclass.
+```
+class SparseSetHolder {
+public:
+    // A virtual destructor, since we store pointers to this superclass yet have subclasses with destructors that need to run.
+    virtual ~SparseSetHolder() = default;
+    virtual bool Has( EntityID ) const = 0;
+    virtual void Drop( EntityID ) = 0;
+};
+// Subclasses are templated on the component type they hold.
+template< typename T > class SparseSet : public SparseSetHolder {
+public:
+    std::unordered_map< EntityID, T > data;
+    bool Has( EntityID e ) const override { return data.count( e ) > 0; };
+    void Drop( EntityID e ) override { data.erase( e ); };
+};
+```
+
+Now we can write a templated function to return a reference to the underlying `unordered_map`:
+```
+template< typename T >
+std::unordered_map< EntityID, T >&
+GetAppropriateSparseSet() {
+    // Get the index for T's SparseSet
+    const ComponentIndex index = GetComponentIndex<T>();
+    // If we haven't seen it yet, it must be past the end.
+    // Since component indices are shared by all ECS instances,
+    // it could happen that index is more than one past the end.
+    if( index >= m_components.size() ) { m_components.resize( index+1 ); }
+    assert( index < m_components.size() );
+    // Create the actual sparse set if needed.
+    if( m_components[ index ] == nullptr ) m_components[index] = std::make_unique< SparseSet<T> >();
+    // It's safe to cast the SparseSetHolder to its subclass and return the std::unordered_map< EntityID, T > inside.
+    return static_cast< SparseSet<T>& >( *m_components[ index ] ).data;
+}
+```
+
+Now we can write the rest of our user-facing (public) functions:
+```
+// Destroy the entity by removing all components.
+void Destroy( EntityID e ) {
+    for( const auto& comps : m_components ) { comps->Drop( e ); }
+}
+```
+
+The `ForEach` function can be used like: `ForEach<Position,Velocity,Health>( callback )`. It takes multiple templated types. The idea behind this implementation is to find the container for the first component. That gives us candidate `EntityID`s. We will iterate over those `EntityID`s and call the callback for entities that have all the other components.
+```
+typedef std::function<void( EntityID )> ForEachCallback;
+template<typename EntitiesThatHaveThisComponent, typename... AndAlsoTheseComponents>
+void ForEach( const ForEachCallback& callback ) {
+    // Iterate over elements of the first container.
+    auto& container = GetAppropriateSparseSet<EntitiesThatHaveThisComponent>();
+    for( const auto& [entity, value] : container ) {
+        // We know it has the first component.
+        // Skip the entity if it doesn't have the remaining components.
+        // This `if constexpr` is evaluated at compile time. It is needed when AndAlsoTheseComponents is empty.
+        // https://stackoverflow.com/questions/48405482/variadic-template-no-matching-function-for-call/48405556#48405556
+        if constexpr (sizeof...(AndAlsoTheseComponents) > 0) {
+            if( !HasAll<AndAlsoTheseComponents...>( entity ) ) {
+                continue;
+            }
+        }
+        callback( entity );
+    }
+}
+```
+The `HasAll<Position,Velocity,Health>()` helper method is easier to write:
+```
+// Returns true if the entity has all types.
+template <typename T, typename... Rest>
+bool HasAll( EntityID entity ) {
+    bool result = true;
+    // https://stackoverflow.com/questions/48405482/variadic-template-no-matching-function-for-call/48405556#48405556
+    if constexpr (sizeof...(Rest) > 0) { result = HasAll<Rest...>(entity); }
+    return result && GetAppropriateSparseSet<T>().count( entity ) > 0;
+}
+```
+
+That's it!
+
+Note that this `ForEach()` function doesn't pass the components by reference to the callback. Use `Get<Component>(entity)` in the callback. For example, you could replace a for loop over an `std::vector<Sprite> sprites`:
+```
+for( Sprite& sprite : sprites ) {
+    // inside the loop
+}
+```
+with
+```
+ECS.ForEach<Sprite>( [&]( EntityID entity ) {
+    Sprite& sprite = ECS.Get<Sprite>(entity);
+    // inside the loop
+} );
+```
+
+If your ECS is global (or lives inside a global variable), you can make your `EntityID` type support component access directly, as in `entity.Get<Sprite>()`. See [here](demo/entity_get.cpp) for an example.
+
+### Extensions
+
+* `ForEach` whose inner for loop iterates over the smallest sparse set among all the given components.
+* A `ParallelForEach` that uses a thread pool.
+* A more efficient sparse set that stores its component data in a single, dense, contiguous chunk of memory with no gaps. `unordered_map` doesn't actually do that.
+* Support for [range-based for loops](https://stackoverflow.com/questions/8164567/how-to-make-my-custom-type-to-work-with-range-based-for-loops).
+
+**You have reached the fifth checkpoint.** Upload your code. Run `xmake clean --all` and then zip your entire directory. For this checkpoint:
+
+* Your engine should have an entity component system that lets users create entities, attach components to them, and run algorithms over the components.
+* Your graphics manager's draw method should iterate over your ECS entities rather than taking a parameter.
+* Your `demo/helloworld.cpp` should create entities with a `Sprite` component. You can re-use the `Sprite` class you made for the previous checkpoint as the component.
+
+## Scripting
+
+At this point, you have a working game engine. Someone can use your engine to make a game! They would startup your engine, setup their game (create entities and so on), and then tell the engine to run the main loop, passing a callback for updating the game every frame. Even more fun? Adding scripting support to your engine, so users can write much or all of the game logic in a scripting language without recompiling.
+
+[Lua](https://www.lua.org/) is a popular choice. To quote from the [about](https://www.lua.org/about.html) page:
+
+> Lua is a powerful, efficient, lightweight, embeddable scripting language. It supports procedural programming, object-oriented programming, functional programming, data-driven programming, and data description.
+
+> Lua combines simple procedural syntax with powerful data description constructs based on associative arrays and extensible semantics. Lua is dynamically typed, runs by interpreting bytecode with a register-based virtual machine, and has automatic memory management with incremental garbage collection, making it ideal for configuration, scripting, and rapid prototyping.
+
+Official documentation for the Lua programming language is its [reference manual](https://www.lua.org/manual/). There is also an official book, *Programming in Lua*. The [first edition](https://www.lua.org/pil/contents.html) is freely available online.
+
+To embed Lua in our engines, we will use the [`sol`](https://sol2.readthedocs.io/en/latest/) C++ binding library. (You will sometimes see it referred to as `sol2` and `sol3`.) `sol` makes it as easy as possible to interface C++ code with Lua code and vice versa. (It really is as easy as possible! The [developer](https://thephd.dev/) is involved in the C++ (and C) language standards.) You'll be able to declare Lua functions that are written in C++ and expose C++ types to Lua (for use in Lua scripts). You'll be able to call Lua code from C++ (for executing the scripts). The `sol` documentation has a lot of examples. Look over [the tutorial](https://sol2.readthedocs.io/en/latest/tutorial/tutorial-top.html) to get a feel for how to use it. (If you are using the `gcc` compiler, and it gets very slow during this checkpoint, try switching to release mode. `gcc` has a [known bug](https://stackoverflow.com/questions/33443626/gcc-compilation-very-slow-large-file/33456247#33456247).)
+
+You will have a lot of architectural freedom in this checkpoint. Should the scripting manager startup first, and then other managers (sound, input, ECS) make calls to the scripting manager to expose their functionality to Lua? Or should the scripting manager startup last and take on the task of exposing the other managers' functionality itself? You are free to make these architectural choices (and discuss them with each other). I will describe scripting functionality that our engines must support. I will also give examples of how to use the `sol` library.
+
+First things first. Let's add `lua` and `sol` to our `xmake.lua` with `add_requires("lua", "sol2")` near the top and, inside `target("illengine")`, `add_packages("lua")` and `add_packages("sol2", {public = true})`. We will want to add the `sol` package publicly so that users can make their game's data structures accessible from inside Lua. Next let's make a script manager. The script manager should include the `sol` header.
+
+```
+#define SOL_ALL_SAFETIES_ON 1
+#include <sol/sol.hpp>
+```
+
+The entirety of the Lua environment is contained in a single class called `sol::state`. Your script manager must store an instance of this class. For the purposes of this document, let's assume it's declared as `sol::state lua`. When your script manager starts up, I recommend telling `lua` to load some convenient built-in libraries:
+```
+lua.open_libraries(sol::lib::base, sol::lib::math, sol::lib::table);
+```
+This makes these standard libraries ([manual](https://www.lua.org/manual/5.4/manual.html#6), [book](https://www.lua.org/pil/contents.html#P3)) available to scripts. For debugging, I like to make the math random seed always the same. You can do that with `lua.script("math.randomseed(0)");`. You just executed your first Lua code! It's that easy to call Lua from C++.
+
+The script manager should provide a way to load scripts from files with something like:
+```
+bool LoadScript( const string& name, const string& path );
+```
+You can load a script with `lua.load_file( path );`, which returns an object of type `sol::load_result`. You can use an `unordered_map` from names to `sol::load_result`. The `sol::load_result` type can be called like a function. Any parameters will be passed to the Lua script. See [this tutorial example](https://sol2.readthedocs.io/en/latest/tutorial/all-the-things.html#passing-arguments-to-scripts) or the small example [here](demo/lua_parameters.cpp).
+
+You should provide a way for users to run a script they've loaded. You could simply give them access to the `sol::load_result` by returning a reference to it. If you expose enough of your engine's functionality to Lua, the C++ code your users will need to write could be limited to loading a setup script and running it.
+
+The script manager should also declare a `Script` struct with a `name` field as a component for your entity component system. The script manager should have an update method to be called every frame that uses your entity component system to iterate over each entity with a `Script` component and run the script with the entity as the parameter. That way, any script beginning `local entity = ...` will run on that entity. (You really type the `...`. See the examples above.) You will want to decide if these scripts run before or after the user's C++ callback, whether you want an additional C++ callback so that one runs before and one after, or whether the user's C++ callback is responsible for calling an update method of the script manager.
+
+You should expose your **input manager** functionality to Lua. For example, your key down function could be exposed as simply as `lua.set_function( "KeyIsDown", [&]( const int keycode ) { return input.KeyIsDown( keycode ); } );`. You can expose your keycodes via [`lua.new_enum`](https://sol2.readthedocs.io/en/latest/api/table.html?highlight=new_enum#new-enum):
+```
+lua.new_enum( "KEYBOARD",
+    "SPACE", KEY_SPACE,
+    ...
+    );
+```
+Then a Lua script can call `KeyIsDown( KEYBOARD.SPACE )` as needed. You should also expose a function to quit your game.
+
+You should expose your **sound manager**'s ability to play a sound.
+
+You should expose your **entity component systems**'s functionality for creating an entity, destroying an entity, and getting built-in components. Exposing the functions to create and destroy entities is straightforward. However, you can't directly expose your ECS's templated get-a-component function. You will have to expose a different getter for each component. For example, expose a `"GetSprite"` Lua function that returns your ECS's `Get<Sprite>(e)` by reference (or by pointer). `sol` will make the struct available to Lua by reference. (If you are using a C++ lambda to wrap your `Get<Sprite>(e)`, you'll need to explicitly specify its return value to be a reference, as in `[&]( EntityID e ) -> Sprite& { return ecs.Get<Sprite>(e); }` or else return a pointer.) This means that Lua scripts will be able to directly modify the struct members, as in `GetPosition(e).x = 10`. (The only things `sol` doesn't pass by reference are primitive Lua type like an integer, float, or string.) You will need to register `struct`s like `Sprite` and our hypothetical `Position` with `sol`. To do that, use the [`new_usertype` function](https://sol2.readthedocs.io/en/latest/tutorial/cxx-in-lua.html). For example, you can expose a `struct Person { string name; int age; };` via:
+```
+lua.new_usertype<Person>("Person",
+    sol::constructors<Person()>(), 
+    "name", &Person::name,
+    "age", &Person::age
+    );
+```
+You can access the `.name` and `.age` members of a `Person` in Lua. You can create a new `Person` inside a Lua script via `Person.new()`.
+
+You may wish to expose your `vec2` and `vec3` types. Here is a fancy/gnarly version that exposes their different constructors and also the `+`, `-`, and `*` functionality that lets us multiply a `vec3` by a scalar or add or subtract two `vec3`s:
+```
+lua.new_usertype<glm::vec3>("vec3",
+    sol::constructors<glm::vec3(), glm::vec3(float), glm::vec3(float, float, float)>(),
+    "x", &glm::vec3::x,
+    "y", &glm::vec3::y,
+    "z", &glm::vec3::z,
+    // optional and fancy: operator overloading. see: https://github.com/ThePhD/sol2/issues/547
+    sol::meta_function::addition, sol::overload( [](const glm::vec3& v1, const glm::vec3& v2) -> glm::vec3 { return v1+v2; } ),
+    sol::meta_function::subtraction, sol::overload( [](const glm::vec3& v1, const glm::vec3& v2) -> glm::vec3 { return v1-v2; } ),
+    sol::meta_function::multiplication, sol::overload(
+        [](const glm::vec3& v1, const glm::vec3& v2) -> glm::vec3 { return v1*v2; },
+        [](const glm::vec3& v1, float f) -> glm::vec3 { return v1*f; },
+        [](float f, const glm::vec3& v1) -> glm::vec3 { return f*v1; }
+    )
+);
+```
+
+Users should have a way to access the `sol::state lua` so they can call `lua.new_usertype()` for their own structs and `lua.set_function()` to expose their own functions. That way users can expose their component structs, `Get<Component>()` functions, and even `ForEach<Components...>()` for specific sets of components. (`sol` seamlessly supports Lua functions as callbacks in C++.) Alternatively, if users don't expose their own components, Lua scripts would only be able to call the functions involving the engine's built-in components (to create, destroy, and access components the engine will look for). In that case, a script could manage additional entity properties on its own via Lua's convenient [table data structure](https://www.lua.org/pil/2.5.html).
+
+If you wish, you can organize the functionality you expose to Lua with [something like namespaces](https://sol2.readthedocs.io/en/latest/tutorial/all-the-things.html?highlight=get_or_create#namespacing).
+
+### Extensions
+
+* Expose more of your engine's functionality. For example, if you want your users to be able to write all of their setup code in Lua, you should expose asset loading functionality.
+
+**You have reached the sixth checkpoint.** Upload your code. Run `xmake clean --all` and then zip your entire directory. For this checkpoint:
+
+* Your engine should have a script manager that lets users run Lua scripts on demand or attach a `Script` component to entities that will be run automatically in the game loop.
+* Your engine should expose to Lua scripts the ability to query input state, quit the game, play sounds, and manipulate sprites.
+
+## What's Next?
+
+You don't need anything else. You might want:
+
+* Text rendering. Some options:
+  * [`text2image`](https://github.com/justinmeiners/text2image) draws image data into a buffer and then saves it to a file. You could use that directly with no code changes in your graphics manager. With small modifications, you could avoid the round trip to and from the filesystem. Modify `text2image` to return the image data, and modify your graphics manager to load an image from memory. The overhead of rendering text to an image (on the CPU and then uploading it to the GPU) is irrelevant if your text doesn't change often.
+* A GUI for inspecting and editing your game state. [Dear ImGui](https://github.com/ocornut/imgui) and [Nuklear](https://github.com/Immediate-Mode-UI/Nuklear) are good for that.
+  * To avoid the hooks making your graphics manager code look ugly, I recommend making a GUI manager with its own draw method. (It could be entirely owned and managed by the graphics manager.) Your graphics manager can call it at the appropriate times.
+  * For Dear ImGui, you can `add_requires("imgui", {configs = {glfw = true, wgpu = true}})` and `add_packages("imgui")`. You can then include `<imgui.h>`, `<backends/imgui_impl_wgpu.h>`, and `<backends/imgui_impl_glfw.h>`. For an example, see [Learn WebGPU's Simple GUI example](https://eliemichel.github.io/LearnWebGPU/basic-3d-rendering/some-interaction/simple-gui.html). It boils down to: (1) Call `ImGui::CreateContext();` followed by `ImGui_ImplGlfw_InitForOther()` and `ImGui_ImplWGPU_Init()` on startup. (2) Call `ImGui_ImplGlfw_Shutdown()` followed by `ImGui::DestroyContext()` at shutdown. (3) Call `ImGui_ImplWGPU_NewFrame()`, `ImGui_ImplGlfw_NewFrame()`, and `ImGui::NewFrame()` at the beginning of the GUI manager's draw function and `ImGui::EndFrame()`, `ImGui::Render()`, and `ImGui_ImplWGPU_RenderDrawData()` at the end. Put your GUI drawing commands in between.
+* Networking. This is a big topic. Some options (in `xrepo`):
+  * [ENet](http://enet.bespin.org/): The tutorial is quite easy to follow and mentions how you would incorporate this into a game loop.
+  * [Asio](http://think-async.com/Asio/): This is a very general library. There isn't a tutorial as well-documented as ENet.
+  * [brynet](https://github.com/IronsDu/brynet): The examples aren't well documented.
 
 ---
 
@@ -404,3 +755,4 @@ To be continued...
 * 2023-08-31: mentioned `xmake repo -u` to update the known packages
 * 2023-09-04: resource manager and optional sound manager added back and revised to use xrepo.
 * 2023-09-04: added `chrono` example.
+* 2023-09-04: added back in Graphics (under construction), Game Objects, Scripting, and What Next sections.
