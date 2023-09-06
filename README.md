@@ -66,19 +66,20 @@ Then type `xmake` on the command line. Unless something has gone wrong, you shou
 Hello, World!
 ```
 
-Some useful `xmake` commands:
+## Some useful `xmake` commands:
 
 * `xmake` compiles all targets.
 * `xmake run <target>` runs the given target.
+* `xmake clean --all` clears xmake's build cache.
 * `xmake run -d helloworld` launches the program in a debugger. If you are using a debugger, you will want to compile in debug mode.
 * `xmake config --menu` opens a command-line menu system you can use to switch between debug and release modes.
 * `xmake config -m debug` and `xmake f -m release` directly switch between debug and release mode.
 * `xmake project -k xcode -m debug` or `xmake project -k vsxmake -m debug` to generate an Xcode project on macOS or a Visual Studio solution on Windows. You make prefer debugging directly in the IDE. [[docs](https://xmake.io/#/plugin/builtin_plugins)]
 * `xmake watch` will re-run `xmake` automatically when any code changes. `xmake watch -r -t helloworld` will do the same and then run the `helloworld` target.
 * If you are having trouble with `xmake`, run with the flags `-vwD` to print a lot of diagnostic output.
-* If you install or remove a compiler, run `xmake g -c` to clear the global compiler detection cache.
+* If you install or remove a compiler, run `xmake global --clean` to clear the global compiler detection cache. `xmake config --clean` clears the cached user configuration and compiler detection cache.
 * `xmake run -w <path> <target>` runs the target with path as the working directory.
-* There are some other helpful questions and answers in the [`xmake` FAQ](https://xmake.io/#/guide/faq?id=what-should-i-do-if-the-download-package-failed-to-get-the-local-issuer-certificate).
+* There are some other helpful questions and answers in the [`xmake` FAQ](https://xmake.io/#/guide/faq).
 * The following error when `xmake` tries to download a package, `error: curl: (60) SSL certificate problem: unable to get local issuer certificate`, can be solved with [this workaround](https://xmake.io/#/guide/faq?id=what-should-i-do-if-the-download-package-failed-to-get-the-local-issuer-certificate): `xmake g --insecure-ssl=y`
 * To update the packages `xmake` knows about from its repository, run `xmake repo -u`.
 
@@ -757,3 +758,4 @@ You don't need anything else. You might want:
 * 2023-09-04: added `chrono` example.
 * 2023-09-04: added back in Graphics (under construction), Game Objects, Scripting, and What Next sections.
 * 2023-09-05: added `friend` example
+* 2023-09-05: added `xmake clean --all` and `xmake config --clean` and some other minor cleanups to "Some useful `xmake` commands" section.
