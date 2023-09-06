@@ -342,7 +342,7 @@ Go ahead and load a sound and play it in response to a key changing from not pre
 
 It's time to draw images. Images are the workhorse of 2D engines. Sprites are images, the background is an image, and so on. We want to do our sprite drawing with a GPU so that it's fast. (In fact, almost everything we will do could be used just as easily to draw 3D shapes.) How do we use the hardware-accelerated GPU pipeline to draw an image? We draw a rectangle (two triangles) covered by the image (as a texture map).
 
-The modern way to program GPUs is to describe all the state involved in the GPU's graphics pipeline (shaders, the layout of vertex data, various flags for fixed functionality to turn on and off), upload data to the GPU memory, and then run the pipeline on that data. The graphics API we're using for our engine is called WebGPU. It is a standard designed to unify access to all the major API's (Vulkan, Metal, DirectX) while being high-performance and not overly verbose. The standard was created simultaneously for the web (in JavaScript) and native access (`webgpu.h`). WebGPU is extremely new, but there are good resources out there already. Here is a list of resources you may wish to consult while working on your graphics manager (I did):
+The modern way to program GPUs is to describe all the state involved in the GPU's graphics pipeline (shaders, the layout of vertex data, various flags for fixed functionality to turn on and off), upload data to the GPU memory, and then run the pipeline on that data. The graphics API we're using for our engine is called WebGPU. It is a standard designed to unify access to all the major API's (Vulkan, Metal, DirectX) while being high-performance and not overly verbose. The standard was created simultaneously for the web (in JavaScript) and native access (`webgpu.h`). WebGPU is extremely new, but there are good resources out there already. Here is a list of resources you may wish to consult while working on your graphics manager (as I did):
 
 * [Learn WebGPU (in C++)](https://eliemichel.github.io/LearnWebGPU/): A C++ tutorial. This was my primary source for learning WebGPU. It covers more topics than we need. If you are looking for more information about something, this is a good place to start.
 * [WebGPU Fundamentals](https://webgpufundamentals.org/): A JavaScript tutorial. This tutorial has nice diagrams.
@@ -756,3 +756,4 @@ You don't need anything else. You might want:
 * 2023-09-04: resource manager and optional sound manager added back and revised to use xrepo.
 * 2023-09-04: added `chrono` example.
 * 2023-09-04: added back in Graphics (under construction), Game Objects, Scripting, and What Next sections.
+* 2023-09-05: added `friend` example

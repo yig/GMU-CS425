@@ -45,6 +45,12 @@ target("chrono")
     
     add_files("demo/chrono_sleep_for.cpp")
 
+target("friend")
+    set_kind("binary")
+    set_languages("cxx17")
+    
+    add_files("demo/friend.cpp")
+
 target("constructor_reference")
     set_kind("binary")
     set_languages("cxx17")
