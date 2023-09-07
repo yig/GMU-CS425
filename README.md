@@ -1001,7 +1001,7 @@ The basic functionality you must implement is a class for your entity component 
 
 ### Implementation Possibility
 
-You are free to implement your ECS any way you like so long as it implements the above methods. It makes for a fun and challenging puzzle. Here is a sketch for a sparse set implementation of an ECS. You are free to use it. I am leaving the implementation of `Create()` or `UnusedEntity()` as an exercise for you to solve on your own. This implementation makes heavy use of templated functions. There will only be a `.h` file for this implementation. Templated functions have to be defined—not just declared—in header (`.h`) files. This is because the compiler uses the template to generate code customized for the types used when it is called.
+You are free to implement your ECS any way you like so long as it implements the above methods. It makes for a fun and challenging puzzle. (You could think about it in a C way with pools of memory that you cast to the appropriate type.) Here is a sketch for a sparse set implementation of an ECS. You are free to use it. I am leaving the implementation of `Create()` or `UnusedEntity()` as an exercise for you to solve on your own. This implementation makes heavy use of templated functions. There will only be a `.h` file for this implementation. Templated functions have to be defined—not just declared—in header (`.h`) files. This is because the compiler uses the template to generate code customized for the types used when it is called.
 
 First, we need to define the `EntityID` type:
 
@@ -1335,3 +1335,4 @@ You don't need anything else. You might want:
 * 2023-09-06: clarified `friend class`
 * 2023-09-07: WebGPU graphics manager
 * 2023-09-07: Mention Dear ImGui as a text drawing possibility
+* 2023-09-07: Hint at a C approach to implementing ECS
