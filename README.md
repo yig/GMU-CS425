@@ -926,7 +926,8 @@ At the end of draw, after `wgpuQueueSubmit()`, it's safe to release any resource
 * Sprites could have a rotation parameter.
 * If you want to draw a lot of sprites as efficiently as possible, you must draw all instances of the sprite at once, with a single draw call. You won't have a chance to change any bindings between instances. When sprites use different images, we have to change our pipeline's image binding. This works against instanced rendering. (You could draw more than one instance if a run of sprites share the same image. You could sort sprites by the image they use to maximize this, if you are willing to give up correct alpha blending.)
 * Another solution is to use a sprite sheet (also called a texture atlas) that packs multiple images into one image. You will need to store the names and locations of all sub-images in the sprite sheet so that you can pass appropriate texture coordinates (or an index into an array of atlas data stored in GPU memory) as vertex attributes. You could alternatively bind a single texture array if your images are all the same size.
-* You could turn on the depth-buffer (aka z-buffer). You could then skip sorting the images back-to-front at the cost of incorrect alpha blending (but perhaps imperceptibly?).
+* As an even smaller step towards efficiency, you may notice that our bind group has three things (uniforms, sample, texture), two of which never change. You could move the texture into a second bind group (`group(1) binding(0)`), so that the two which are always the same can stay attached for all sprites and only the texture binding changes.
+* You could turn on the depth buffer (aka z-buffer). You could then skip sorting the images back-to-front at the cost of incorrect alpha blending (but perhaps imperceptibly?).
 
 **You have reached the fourth checkpoint.** Upload your code. Run `xmake clean --all` and then zip your entire directory. For this checkpoint:
 
@@ -1336,3 +1337,4 @@ You don't need anything else. You might want:
 * 2023-09-07: WebGPU graphics manager
 * 2023-09-07: Mention Dear ImGui as a text drawing possibility
 * 2023-09-07: Hint at a C approach to implementing ECS
+* 2023-09-07: Mention splitting into two bind groups.
