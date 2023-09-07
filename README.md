@@ -343,19 +343,590 @@ Go ahead and load a sound and play it in response to a key changing from not pre
 
 It's time to draw images. Images are the workhorse of 2D engines. Sprites are images, the background is an image, and so on. We want to do our sprite drawing with a GPU so that it's fast. (In fact, almost everything we will do could be used just as easily to draw 3D shapes.) How do we use the hardware-accelerated GPU pipeline to draw an image? We draw a rectangle (two triangles) covered by the image (as a texture map).
 
-The modern way to program GPUs is to describe all the state involved in the GPU's graphics pipeline (shaders, the layout of vertex data, various flags for fixed functionality to turn on and off), upload data to the GPU memory, and then run the pipeline on that data. The graphics API we're using for our engine is called WebGPU. It is a standard designed to unify access to all the major API's (Vulkan, Metal, DirectX) while being high-performance and not overly verbose. The standard was created simultaneously for the web (in JavaScript) and native access (`webgpu.h`). WebGPU is extremely new, but there are good resources out there already. Here is a list of resources you may wish to consult while working on your graphics manager (as I did):
+The modern way to program GPUs is to describe all the state involved in the GPU's graphics pipeline (shader programs, the layout of data they will read and write, various flags for fixed functionality), upload data to the GPU's memory, and then run the pipeline on that data. The graphics API we're using for our engine is called WebGPU. It is a standard designed to unify access to all the major API's (Vulkan, Metal, DirectX) while being high-performance and not overly verbose. The standard was created simultaneously for the web (in JavaScript) and native access (`webgpu.h`). WebGPU is extremely new, but there are good resources out there already. Here is a list of resources you may wish to consult while working on your graphics manager (as I did):
 
 * [Learn WebGPU (in C++)](https://eliemichel.github.io/LearnWebGPU/): A C++ tutorial. This was my primary source for learning WebGPU. It covers more topics than we need. If you are looking for more information about something, this is a good place to start.
 * [WebGPU Fundamentals](https://webgpufundamentals.org/): A JavaScript tutorial. This tutorial has nice diagrams.
 * [WebGPU Specification](https://www.w3.org/TR/webgpu/): The API spec. If you are wondering what a parameter is in excruciating detail, this is the place to look. I use it by searching for symbols.
-* [webgpu.h](https://github.com/webgpu-native/webgpu-headers/blob/main/webgpu.h): The official C header developed along with the spec. It's more succinct than the specification, and shows the data structures precisely. I use it by searching for symbols.
+* [`webgpu.h`](https://github.com/webgpu-native/webgpu-headers/blob/main/webgpu.h): The official C header developed along with the spec. It's more succinct than the specification, and shows the data structures precisely. I use it by searching for symbols.
 * [WGSL WebGPU Shading Language Specification](https://www.w3.org/TR/WGSL/): This is the specification for the shading language.
 * [I want to talk about WebGPU](https://cohost.org/mcc/post/1406157-i-want-to-talk-about-webgpu): The history of graphics API's and why WebGPU is exciting. At the end, there are excellent overview diagrams that explain using WebGPU.
 * [WebGPU Bind Group best practices](https://toji.dev/webgpu-best-practices/bind-groups.html): An explanation of why there are bind groups.
 * [How to write a renderer for modern graphics APIs](https://blog.mecheye.net/2023/09/how-to-write-a-renderer-for-modern-apis/): An explanation of why modern API's are designed the way they are, and how to manage the fast path.
 * There are two active Discord servers ("Graphics Programming"'s `#webgpu` channel, "WebGPU C++") and a "WebGPU" matrix.org room.
 
-**To be continued...** The rest of this checkpoint is being written. If you are trying to work ahead, skip to the next checkpoint. [Here](https://github.com/yig/GMU-CS425-2022#graphics) is last year's version of this checkpoint, which used the excellent but non-standard [`sokol_gfx` graphics API](https://github.com/floooh/sokol).
+When our graphics manager starts up, it will initialize the WebGPU API, compile the shader programs, upload vertex data, and create a pipeline ready to use in our draw function. Later, when it's time to draw sprites, we will tell our GPU to activate the pipeline and apply it to our per-sprite data (which image and where the sprite should appear). We will also need to add code to load images from disk and upload them to the GPU as textures.
+
+First things first. Let's add WebGPU to our `xmake.lua` with `add_requires("wgpu-native", "glfw3webgpu")` near the top and `add_packages("wgpu-native", "glfw3webgpu")` inside `target("illengine")`. Include the `<webgpu/webgpu.h>` header file in your graphics manager `.cpp` file and the `<glfw3webgpu.h>` header which allows us to use it with `GLFW`. One more thing; the [widely-supported](https://en.cppreference.com/w/cpp/compiler_support) [designated initializers](https://www.cppstories.com/2021/designated-init-cpp20) part of the C++20 standard lets us write much nicer looking WebGPU code. Change `set_languages("cxx17")` to `set_languages("cxx20")` to turn it on. We're going to be passing pointers to temporary `struct`s to WebGPU a lot. C allows this, but C++ needs a workaround; put the following one-line function somewhere near the top of your graphics manager `.cpp` to get a pointer to a temporary: `template< typename T > const T* to_ptr( const T& val ) { return &val; }`.
+
+### Startup
+
+Our goal when starting up our graphics manager is to initialize `WebGPU` (by creating a `WGPUInstance`, `WGPUSurface`, `WGPUAdapter`, `WGPUDevice`, and `WGPUQueue`, [oh my](https://staging.cohostcdn.org/attachment/45fea200-d670-4fab-9788-6462930f8eba/wgpu1-2.0.png)) and prepare structures we will use when drawing: vertex and uniform (global) data (`WGPUBuffer`s), a swap chain (`WGPUSwapChain`) to avoid screen refresh artifacts, and the pipeline (`WGPURenderPipeline`). We'll store all these as instance variables. `WGPUInstance` is the WebGPU API itself, `WGPUSurface` is WebGPU's information about the window we want to draw into, `WGPUAdapter` is a GPU, `WGPUDevice` is a configured GPU ready to use, and `WGPUQueue` is queues commands to execute on the GPU.
+
+To initialize WebGPU, we start by calling `WGPUInstance instance = wgpuCreateInstance( to_ptr( WGPUInstanceDescriptor{} ) )`. We must do this after setting up `GLFW` (in our graphics manager's startup function). The curly-braces are C++ for initialize all members to zero if they don't have constructors. (It's called [aggregate initialization](https://en.cppreference.com/w/cpp/language/aggregate_initialization); [designated initializers](https://www.cppstories.com/2021/designated-init-cpp20) are a special kind.) `WebGPU` uses zeros to mean default values, which are often what we want. `WebGPU` is a C API, so initializing structs to zero is our responsibility. We can also pass `nullptr` when a function parameter is marked "optional" (in the [spec](https://www.w3.org/TR/webgpu/)) or `WGPU_NULLABLE` (in [`webgpu.h`](https://github.com/webgpu-native/webgpu-headers/blob/main/webgpu.h)).  `wgpuCreateInstance()` will return null upon failure. You can check for that and print a message and call `glfwTerminate()`. Let's be responsible and make `instance` an instance variable and add `wgpuInstanceRelease( instance );` to our graphics manager's shutdown function.
+
+Next we need to initialize the rest of the sequence (`WGPUSurface`, `WGPUAdapter`, `WGPUDevice`, `WGPUQueue`). The code is fairly boilerplate. Requesting an adapter and a device requires a callback function, perhaps because JavaScript is asynchronous. We don't have `await` in C++, so the code looks a bit uglier:
+
+```c++
+WGPUSurface surface = glfwGetWGPUSurface( instance, window );
+
+WGPUAdapter adapter = nullptr;
+wgpuInstanceRequestAdapter(
+    instance,
+    to_ptr( WGPURequestAdapterOptions{ .compatibleSurface = surface } ),
+    []( WGPURequestAdapterStatus status, WGPUAdapter adapter, char const* message, void* adapter_ptr ) {
+        if( status != WGPURequestAdapterStatus_Success ) {
+            std::cerr << "Failed to get a WebGPU adapter: " << message << std::endl;
+            glfwTerminate();
+        }
+        
+        *static_cast<WGPUAdapter*>(adapter_ptr) = adapter;
+    },
+    &(adapter)
+    );
+
+WGPUDevice device = nullptr;
+wgpuAdapterRequestDevice(
+    adapter,
+    nullptr,
+    []( WGPURequestDeviceStatus status, WGPUDevice device, char const* message, void* device_ptr ) {
+        if( status != WGPURequestDeviceStatus_Success ) {
+            std::cerr << "Failed to get a WebGPU device: " << message << std::endl;
+            glfwTerminate();
+        }
+        
+        *static_cast<WGPUDevice*>(device_ptr) = device;
+    },
+    &(device)
+);
+
+// An error callback to help with debugging
+wgpuDeviceSetUncapturedErrorCallback(
+    device,
+    []( WGPUErrorType type, char const* message, void* ) {
+        std::cerr << "WebGPU uncaptured error type " << type << " with message: " << message << std::endl;
+    },
+    nullptr
+    );
+
+WGPUQueue queue = wgpuDeviceGetQueue( device );
+```
+
+You should make those instance variables so your graphics manager's shutdown can call `wgpuAdapterRelease()` and `wgpuDeviceRelease()` in reverse initialization order, too.
+
+For the remainder of this checkpoint, I will describe all the pieces of a simple way to draw sprites with a modern graphics pipeline. It's not the only way to do it, but it suffices for our purposes. Once you get the hang of WebGPU, you are welcome to try a different approach or enhance my approach.
+
+Before we describe our pipeline, let's describe the data we will use. We will draw every rectangle as a scaled and translated unit square. The vertex data we need for a unit square is:
+
+```c++
+// A vertex buffer containing a textured square.
+const struct {
+    // position
+    float x, y;
+    // texcoords
+    float u, v;
+} vertices[] = {
+      // position       // texcoords
+    { -1.0f,  -1.0f,    0.0f,  1.0f },
+    {  1.0f,  -1.0f,    1.0f,  1.0f },
+    { -1.0f,   1.0f,    0.0f,  0.0f },
+    {  1.0f,   1.0f,    1.0f,  0.0f },
+};
+```
+
+This is declaring an array of (anonymous) structs with the attributes we want for each vertex: two floats for the position (x and y) and two floats for the texture coordinates (u and v). We are making a rectangle out of two triangles. The four vertices in our buffer do this when interpreted as a [triangle strip](https://en.wikipedia.org/wiki/Triangle_strip). We could have declared the position and texcoords as `glm::vec2` (from the [glm](https://github.com/g-truc/glm) library—see below for including it), which is also two floats in memory. Later we will tell the GPU pipeline how to interpret this memory. If you want to add more attributes, add more members to the struct. For now, let's copy this data to GPU memory. We will do that with `wgpuDeviceCreateBuffer()` and `wgpuQueueWriteBuffer()`. Let's tell the `device` to create a buffer for us. Our `vertices` data was declared on the stack, so `sizeof(vertices)` is our desired buffer size in bytes.
+
+```c++
+WGPUBuffer vertex_buffer = wgpuDeviceCreateBuffer( device, to_ptr( WGPUBufferDescriptor{
+    .size = sizeof(vertices),
+    .usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex
+    }) );
+```
+
+Tell the `queue` to copy the data by writing into the GPU buffer `vertex_buffer` starting at byte offset `0`, copying data from the pointer `vertices` for `sizeof(vertices)` bytes:
+
+```c++
+wgpuQueueWriteBuffer( queue, vertex_buffer, 0, vertices, sizeof(vertices) );
+```
+
+The GPU now has a copy of `vertices`, so we are fine letting its memory become automatically de-allocated when the enclosing scope of our graphics manager's startup function terminates. You can make `vertex_buffer` an instance variable and `wgpuBufferDestroy()` and `wgpuBufferRelease()` it during shutdown.
+
+The approach I will describe is called instanced rendering. Each instance of drawing the rectangle will get a different translation and scale (and possibly rotation!). You can use the following struct for that data.
+
+```c++
+struct InstanceData {
+    vec3 translation;
+    vec2 scale;
+    // rotation?
+};
+```
+
+That `vec3` and `vec2` vector types comes from the [glm](https://github.com/g-truc/glm) library, which was originally created to be a C++ implementation of the vector math in OpenGL's shading language GLSL. To use it, insert `add_requires("glm")` near the top of the `xmake.lua` and `add_packages("glm")` inside `target("illengine")`. Then we can `#include "glm/glm.hpp"` and use its namespace in our `.cpp` file (`using namespace glm`). You might want to make this a public package and `typedef glm::vec2 vec2;` in your `Types.h` (and possibly also `glm::vec3` and `glm::vec4`). Then your engine's users will have access to a full-featured 2D vector type for specifying positions and velocities (and possibly a 3D or 4D vector type for specifying colors).
+
+Since this `InstanceData` struct won't be seen outside the graphics manager, we can declare it in an unnamed namespace (outside the startup function, somewhere near the top of your graphics `.cpp` file):
+
+```c++
+namespace {
+// Declaration here
+}
+```
+
+We're almost ready to create our pipeline. The pipeline is there to support our shader programs we actually want to run on the GPU. The vertex shader program will run per vertex. The fragment shader program will run per pixel. The GPU will make data available to uniformly (globally) to all vertices/fragments, like textures and a projection matrix. The resulting pixels will get drawn to ... what exactly? They won't get drawn to the screen directly, since we don't want to present something half-drawn to the user. (Imagine a memory game which flashed the image under the cards every so often.) The solution is to draw to offscreen images, which are presented when they are ready. This is called the swap chain. The format of these offscreen images (bits per channel, RGB vs BGR, etc.) should match whatever our surface wants. Let's get this format:
+
+```c++
+WGPUTextureFormat swap_chain_format = wgpuSurfaceGetPreferredFormat( surface, adapter );
+```
+
+and create a matching swap chain:
+
+```c++
+int width, height;
+glfwGetFramebufferSize( window, &width, &height );
+WGPUSwapChain swapchain = wgpuDeviceCreateSwapChain( device, surface, to_ptr( WGPUSwapChainDescriptor{
+    .width = (uint32_t)width,
+    .height = (uint32_t)height,
+    .usage = WGPUTextureUsage_RenderAttachment,
+    .format = swap_chain_format
+    }) );
+```
+
+You'll also want to keep `swapchain` around as an instance variable so you can call `wgpuSwapChainRelease( swapchain )` in shutdown. **N.B.** The swap chain is created based on the window size. If the user resizes your window, rendering will break. Turn off resizing with `glfwWindowHint( GLFW_RESIZABLE, GLFW_FALSE );` before you create the window (`glfwCreateWindow()`), or else release and re-create the swap chain with the above code in a callback you pass to `glfwSetFramebufferSizeCallback()`.
+
+The final stop before actually creating the pipeline is creating the pipeline's shader module. WebGPU shaders are written in [WebGPU Shading Language (WGSL)](https://www.w3.org/TR/WGSL/). You can put vertex and fragment shaders together in the same file. Remember that these programs access per-vertex/fragment data as well as global data. One weird thing to understand about a lot of GPU programming APIs, including WebGPU, is that we label variables in our shader programs with numerical indices, and then refer to those indices when telling the pipeline which data to run on. Per-vertex variable indices are labelled with "locations" and global constants (uniforms) are labelled with "bindings". Let's see our shaders:
+
+```ts
+struct Uniforms {
+    projection: mat4x4f,
+};
+
+@group(0) @binding(0) var<uniform> uniforms: Uniforms;
+@group(0) @binding(1) var texSampler: sampler;
+@group(0) @binding(2) var texData: texture_2d<f32>;
+
+struct VertexInput {
+    @location(0) position: vec2f,
+    @location(1) texcoords: vec2f,
+    @location(2) translation: vec3f,
+    @location(3) scale: f32,
+};
+
+struct VertexOutput {
+    @builtin(position) position: vec4f,
+    @location(0) texcoords: vec2f,
+};
+
+@vertex
+fn vertex_shader_main( in: VertexInput ) -> VertexOutput {
+    var out: VertexOutput;
+    out.position = uniforms.projection * vec4f( vec3f( in.scale * in.position, 0.0 ) + in.translation, 1.0 );
+    out.texcoords = in.texcoords;
+    return out;
+}
+
+@fragment
+fn fragment_shader_main( in: VertexOutput ) -> @location(0) vec4f {
+    let color = textureSample( texData, texSampler, in.texcoords ).rgba;
+    return color;
+}
+```
+
+This might look intimidating, but let's start at the bottom. The fragment shader function (`fragment_shader_main()` under `@fragment`) has one interesting line. It samples texture data at the texture coordinates passed as input. The vertex shader function (`vertex_shader_main` under `@vertex`) also has one interesting line. It multiplies the input position by a scale factor, then translates, and finally multiplies by a projection matrix (described momentarily). That's it! Two lines of interesting code is all we need. The vertex shader will run on each vertex of the triangle (its 2D position and texture coordinates). The output will be interpolated and passed to the fragment shader, which runs for each pixel of the triangles.
+
+The rest of this shader code is just declaring the data it uses. Let's go over those declarations from top to bottom. At the top, this shader module declares a variable `uniforms` whose type declaration `struct Uniforms` can be seen at the top. It contains a global `projection` matrix that transforms from world coordinates to WebGPU's normalized device coordinates that cover the window. WebGPU's normalized device coordinates run from [-1,1] in x and y and [0,1] in z. That's inconvenient and a non-uniform scale if the window itself isn't square. You can choose anything you like for your world coordinates, so long as you handle the aspect ratio properly. One possibility is what [microStudio](https://microstudio.dev/) does. A square with dimensions [-100,100] is centered inside the window. The short edge of the window will run from -100 to 100. The long edge will run from -N to N, where N ≥ 100. I'll show that in this guide, but you are free to make your own choices.
+
+We will need to declare a matching `Uniforms` struct on the C++ side, instantiate one, and copy it to the GPU. Since this `Uniforms` struct also won't be seen outside the graphics manager, we can declare it in the same unnamed namespace as `InstanceData`.
+
+```c++
+struct Uniforms {
+    mat4 projection;
+};
+```
+
+This `mat4` 4x4 matrix type is also from the [glm](https://github.com/g-truc/glm) library.
+
+At some point during startup (before or after creating the pipeline), we need to allocate memory on the GPU for this `Uniforms` struct. (We set the `.usage` flag for copying uniform data to the GPU.)
+
+```c++
+WGPUBuffer uniform_buffer = wgpuDeviceCreateBuffer( device, to_ptr( WGPUBufferDescriptor{
+    .size = sizeof(Uniforms),
+    .usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform
+    }) );
+```
+
+You can make `uniform_buffer` an instance variable and `wgpuBufferDestroy()` and `wgpuBufferRelease()` it during shutdown.
+
+Next the shader declares a `sampler` called `texSampler`. The sampler is what we use to reduce aliasing artifacts when reading data from our textures. Without it, all we can do is "nearest neighbor" interpolation. (If you prefer nearest neighbor interpolation, you can delete the sampler and replace the fragment shader line with `let color = textureLoad( texData, vec2i( in.texcoords * vec2f(textureDimensions(texData)) ), 0 ).rgba;`.)
+
+You'll also want to create a sampler at some point during startup (and release it with `wgpuSamplerRelease()` during shutdown):
+
+```c++
+WGPUSampler = wgpuDeviceCreateSampler( device, to_ptr( WGPUSamplerDescriptor{
+    .addressModeU = WGPUAddressMode_ClampToEdge,
+    .addressModeV = WGPUAddressMode_ClampToEdge,
+    .magFilter = WGPUFilterMode_Linear,
+    .minFilter = WGPUFilterMode_Linear,
+    .maxAnisotropy = 1
+    } ) );
+```
+
+The next line of the shader declares a 2D texture called `texData`. You will allocate textures when we discuss loading images below.
+
+There are two more declarations left. The first is `struct VertexInput`. We use this as the type of the vertex shader's parameter. The pipeline will tell the GPU which memory to use for the fields based on the `location` indices. The `struct VertexOutput` is used to pass a bundle of information from the vertex to the fragment shader. `position` is a built-in and required parameter. It's how the GPU knows which pixels the triangle covers.
+
+You can read the shader code from a file (resolve the path with your resource manager) or directly in your C++ with a raw string literal:
+
+```c++
+const char* source = R"(
+... the contents of the shader above
+)";
+```
+
+Creating the shader module is the last thing we have to do before creating the pipeline. It's almost as simple as just passing the string as a `char*`, but there's an extra struct involved which implements a kind of polymorphism allowing some WebGPU implementations to accept other kinds of shaders:
+
+```c++
+WGPUShaderModuleWGSLDescriptor code_desc = {};
+code_desc.chain.sType = WGPUSType_ShaderModuleWGSLDescriptor;
+code_desc.code = source; // The shader source as a `char*`
+WGPUShaderModuleDescriptor shader_desc = {};
+shader_desc.nextInChain = &code_desc.chain;
+WGPUShaderModule shader_module = wgpuDeviceCreateShaderModule( device, &shader_desc );
+```
+
+That's it! We're ready to declare our entire pipeline to the GPU:
+
+```c++
+WGPURenderPipeline pipeline = wgpuDeviceCreateRenderPipeline( device, to_ptr( WGPURenderPipelineDescriptor{
+    
+    // Describe the data types of our uniforms.
+    // This is called the bind group layout. We are using one group (0) and three bindings (0), (1), (2).
+    // This exactly matches what's in the shader.
+    // We're not actually passing data, we're just declaring matching types.
+    .layout = wgpuDeviceCreatePipelineLayout( device, to_ptr( WGPUPipelineLayoutDescriptor{
+        .bindGroupLayoutCount = 1, .bindGroupLayouts = (WGPUBindGroupLayout[]){
+            wgpuDeviceCreateBindGroupLayout(
+                device, to_ptr( WGPUBindGroupLayoutDescriptor{ .entryCount = 3, .entries = (WGPUBindGroupLayoutEntry[]){
+                    {
+                        .binding = 0,
+                        .visibility = WGPUShaderStage_Vertex,
+                        .buffer.type = WGPUBufferBindingType_Uniform
+                    },
+                    {
+                        .binding = 1,
+                        .visibility = WGPUShaderStage_Fragment,
+                        .sampler.type = WGPUSamplerBindingType_Filtering
+                    },
+                    {
+                        .binding = 2,
+                        .visibility = WGPUShaderStage_Fragment,
+                        .texture.sampleType = WGPUTextureSampleType_Float,
+                        .texture.viewDimension = WGPUTextureViewDimension_2D
+                    }
+                } } ) )
+            } } ) ),
+    
+    
+    // Describe the vertex shader inputs
+    .vertex = {
+        .module = shader_module,
+        .entryPoint = "vertex_shader_main",
+        // Vertex attributes.
+        .bufferCount = 2,
+        .buffers = (WGPUVertexBufferLayout[]){
+            // We have one buffer with our per-vertex position and UV data. This data never changes.
+            // Note how the type, byte offset, and stride (bytes between elements) exactly matches our `vertex_buffer`.
+            {
+                .arrayStride = 4*sizeof(float),
+                .attributeCount = 2,
+                .attributes = (WGPUVertexAttribute[]){
+                    // Position x,y are first.
+                    {
+                        .format = WGPUVertexFormat_Float32x2,
+                        .offset = 0,
+                        .shaderLocation = 0
+                    },
+                    // Texture coordinates u,v are second.
+                    {
+                        .format = WGPUVertexFormat_Float32x2,
+                        .offset = 2*sizeof(float),
+                        .shaderLocation = 1
+                    }
+                    }
+            },
+            // We will use a second buffer with our per-sprite translation and scale. This data will be set in our draw function.
+            // 
+            {
+                .arrayStride = sizeof(InstanceData),
+                // This data is per-instance. All four vertices will get the same value. Each instance of drawing the vertices will get a different value.
+                // The type, byte offset, and stride (bytes between elements) exactly match the array of `InstanceData` structs we will upload in our draw function.
+                .stepMode = WGPUVertexStepMode_Instance,
+                .attributeCount = 2,
+                .attributes = (WGPUVertexAttribute[]){
+                    // Translation as a 3D vector.
+                    {
+                        .format = WGPUVertexFormat_Float32x3,
+                        .offset = offsetof(InstanceData, translation),
+                        .shaderLocation = 2
+                    },
+                    // Scale as a 2D vector for non-uniform scaling.
+                    {
+                        .format = WGPUVertexFormat_Float32x2,
+                        .offset = offsetof(InstanceData, scale),
+                        .shaderLocation = 3
+                    }
+                    }
+            }
+            }
+        },
+    
+    // Interpret our 4 vertices as a triangle strip
+    .primitive = WGPUPrimitiveState{
+        .topology = WGPUPrimitiveTopology_TriangleStrip,
+        },
+    
+    // No multi-sampling (1 sample per pixel, all bits on).
+    .multisample = WGPUMultisampleState{
+        .count = 1,
+        .mask = ~0u
+        },
+    
+    // Describe the fragment shader and its output
+    .fragment = to_ptr( WGPUFragmentState{
+        .module = shader_module,
+        .entryPoint = "fragment_shader_main",
+        
+        // Our fragment shader outputs a single color value per pixel.
+        .targetCount = 1,
+        .targets = (WGPUColorTargetState[]){
+            {
+                .format = swap_chain_format,
+                // The images we want to draw may have transparency, so let's turn on alpha blending with over compositing (ɑ⋅foreground + (1-ɑ)⋅background).
+                // This will blend with whatever has already been drawn.
+                .blend = to_ptr( WGPUBlendState{
+                    // Over blending for color
+                    .color = {
+                        .operation = WGPUBlendOperation_Add,
+                        .srcFactor = WGPUBlendFactor_SrcAlpha,
+                        .dstFactor = WGPUBlendFactor_OneMinusSrcAlpha
+                        },
+                    // Leave destination alpha alone
+                    .alpha = {
+                        .operation = WGPUBlendOperation_Add,
+                        .srcFactor = WGPUBlendFactor_Zero,
+                        .dstFactor = WGPUBlendFactor_One
+                        }
+                    } ),
+                .writeMask = WGPUColorWriteMask_All
+            }}
+        } )
+    } ) );
+```
+
+We now have a graphics pipeline capable of drawing sprites.
+
+## Loading data
+
+Let's make a function to load images. The load function should have a signature like:
+
+```c++
+bool LoadImage( const string& name, const string& path );
+```
+
+This lets our engine's users load an image from a `path` and then refer it by a convenient `name`. Don't forget to resolve `path` with your resource manager. Let's use an [`std::unordered_map< string, SOMETHING >`](https://en.cppreference.com/w/cpp/container/unordered_map) as our name-to-image map. You will want it to be an instance variable. `SOMETHING` should be a little struct you declare to hold the data we want to store about the image. You will want it to have fields for the image's native width and height, so you can compute its natural aspect ratio. You will also want a `WGPUTexture` field to keep the texture you create when loading. You can even make `SOMETHING`'s destructor call `wgpuTextureDestroy()` and `wgpuTextureRelease()` if the `WGPUTexture` field is not `nullptr`. Then calling `.clear()` or `.erase()` on the map will properly free GPU resources.
+
+For actually reading images from disk and decoding them into CPU memory, we'll use the wonderful `std_image` image loader. The documentation is [the header](https://github.com/nothings/stb/blob/master/stb_image.h). Add it to your `xmake.lua` with `add_requires("stb")` near the top and `add_packages("stb")` inside `target("illengine")`. `stb_image` is header only, but requires us to `#define STB_IMAGE_IMPLEMENTATION` in one compilation unit before `#include "stb_image.h"`. We'll only use it here, so:
+
+```c++
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+```
+
+Loading an image is easy with `stb_image`:
+
+```c++
+int width, height, channels;
+unsigned char* data = stbi_load( path.c_str(), &width, &height, &channels, 4 );
+```
+
+The output parameters `width` and `height` store the image's dimensions. We'll need to keep them around for our aspect ratio calculations. We don't need `channels`, which stores the number of color channels (RGB or greyscale) stored in the file, since we asked `stb_image` to guarantee `4`-channel RGBA output. We'll create a `WGPUTexture` texture on the GPU to hold this data:
+
+```c++
+WGPUTexture tex = wgpuDeviceCreateTexture( device, to_ptr( WGPUTextureDescriptor{
+    .dimension = WGPUTextureDimension_2D,
+    .size = { (uint32_t)width, (uint32_t)height, 1 },
+    .mipLevelCount = 1,
+    .sampleCount = 1,
+    .format = WGPUTextureFormat_RGBA8Unorm,
+    .usage = WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopyDst
+    } ) );
+```
+
+We'll copy the image data to the GPU with:
+
+```c++
+wgpuQueueWriteTexture(
+    queue,
+    to_ptr<WGPUImageCopyTexture>({ .texture = tex }),
+    data,
+    width * height * 4,
+    to_ptr<WGPUTextureDataLayout>({ .bytesPerRow = (uint32_t)(width*4), .rowsPerImage = (uint32_t)height }),
+    to_ptr( WGPUExtent3D{ (uint32_t)width, (uint32_t)height, 1 } )
+    );
+```
+
+Once it's uploaded, we're done with the data returned by `stbi_load()`. Free that memory with:
+
+```c++
+stbi_image_free( data );
+```
+
+## Drawing
+
+Add a `Draw()` method to your to your graphics manager that takes a parameter something like `const std::vector< Sprite >& sprites` and draws them. What should a `Sprite` be? It could be a small struct containing an image name, position, scale, and z value. Since we don't yet have an entity manager, the engine itself can't call `Draw()`, since no one is tracking drawable entities. For now, you can call `Draw()` in your main loop's callback function. We'll revisit this later, once we have an entity manager.
+
+When it's time to draw a set of sprites:
+
+1. Create the command encoder we'll use to package our drawing commands for submitting to the GPU.
+    ```c++
+    WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder( device, nullptr );
+    ```
+2. Get the window's swap chain's "texture view" we will draw into.
+    ```c++
+    WGPUTextureView current_texture_view = wgpuSwapChainGetCurrentTextureView( swapchain );
+    ```
+3. Begin our render pass by clearing the screen.
+    ```c++
+    WGPURenderPassEncoder render_pass = wgpuCommandEncoderBeginRenderPass( encoder, to_ptr<WGPURenderPassDescriptor>({
+        .colorAttachmentCount = 1,
+        .colorAttachments = (WGPURenderPassColorAttachment[]){{
+            .view = current_texture_view,
+            .loadOp = WGPULoadOp_Clear,
+            .storeOp = WGPUStoreOp_Store,
+            // Choose the background color.
+            .clearValue = WGPUColor{ red, green, blue, 1.0 }
+            }}
+        }) );
+    ```
+4. Set the pipeline with `wgpuRenderPassEncoderSetPipeline( render_pass, pipeline );`.
+5. Attach the vertex data (positions and texture coordinates) for our quad.
+    ```c++
+    wgpuRenderPassEncoderSetVertexBuffer( render_pass, 0, vertex_buffer, 0, 4*4*sizeof(float) );
+    ```
+6. Make a `Uniforms` struct. Compute `uniforms.projection` from the window's `width` and `height` (see below). Copy it to the GPU.
+7. Sort the sprites so we can draw them back-to-front.
+8. Draw each sprite.
+    1. Compute the `i`-th sprite's `InstanceData` (scale and translation) and copy it to the GPU.
+    2. Apply the sprite's bindings. You can skip this step if the correct image is already bound (because the previous sprite also used it).
+    3. Draw one (`1`) instance of our quad. That is, draw four (`4`) vertices starting at vertex `0` in our vertex buffer, but index `i` in our `InstanceData` buffer. We do this with `wgpuRenderPassEncoderDraw( render_pass, 4, 1, 0, i );`
+9. Finish drawing.
+    1. End the render pass with `wgpuRenderPassEncoderEnd( render_pass );`.
+    2. Finish encoding our commands and submit them to the GPU's work queue.
+        ```c++
+        WGPUCommandBuffer command = wgpuCommandEncoderFinish( encoder, nullptr );
+        wgpuQueueSubmit( queue, 1, &command );
+        ```
+    3. Present the new frame with: `wgpuSwapChainPresent( swapchain );`
+    4. Cleanup anything you created in the loop. (such as the instance data buffer, the swap chain's texture view, the command encoder, per-sprite bind groups, etc).
+
+Steps 6, 7, 8, and 10 need a bit more elaboration.
+
+### Making the `Uniforms` struct
+
+The only member in our `Uniforms` struct is the projection matrix. This is where you define your game engine's world bounds. One option is to choose `projection` so that a centered square in the window has dimensions [-100,100]^2. It's a pure scaling matrix. We want to scale the short edge of this square down by 1/100 so that it fits inside WebGPU's [-1,1] normalized device coordinates. The long edge is longer. How much longer? long/short longer. So we want to scale it by (1/(100*long.short)). We can write that in code as:
+
+```c++
+// Start with an identity matrix.
+uniforms.projection = mat4{1};
+// Scale x and y by 1/100.
+uniforms.projection[0][0] = uniforms.projection[1][1] = 1./100.;
+// Scale the long edge by an additional 1/(long/short) = short/long.
+if( width < height ) {
+    uniforms.projection[1][1] *= width;
+    uniforms.projection[1][1] /= height;
+} else {
+    uniforms.projection[0][0] *= height;
+    uniforms.projection[0][0] /= width;
+}
+```
+
+Copy `uniforms` to the GPU with `wgpuQueueWriteBuffer( queue, uniform_buffer, 0, &uniforms, sizeof(Uniforms) );`. The projection matrix won't change unless the window's aspect ratio changes. Unless you add additional fields to `Uniforms`, you could do all this in the startup function.
+
+### Sorting the sprites
+
+We didn't turn on a depth buffer. If you have images with non-trivial transparency—pixels whose alpha is not 0 or 1—you'll get wrong colors unless you draw back to front, which defeats the purpose of a depth buffer. You will notice this if, for example, your images have feathered or anti-aliased borders. To sort the sprites, you can use the `std::sort()` function available when you `#include <algorithm>`. You can sort on an arbitrary field using a lambda. For example, an `std::vector< Sprite > sprites;` could be sorted on the `.z` property via `std::sort( sprites.begin(), sprites.end(), []( const Sprite& lhs, const Sprite& rhs ) { return lhs.z > rhs.z; } );`. This performs a reverse sort that puts larger z values corresponding to farther `Sprite`s first.)
+
+### Drawing a sprite
+
+To draw a sprite, we need to compute its `InstanceData`. In my simple version, this includes a translation and non-uniform scale. More generally, you could pack a transformation matrix into here, or simply also rotation. It depends what you want to support with your engine. You could allow people to scale, translate, and rotate sprites. You could allow them to specify arbitrary anchor points inside your sprite. You could allow them to only scale and translate sprites and assume that sprites are anchored from their center. We'll start with that, since it's simple. We'll also assume sprites have a z value between 0 and 1 that determines their drawing order. Whenever we transform (in the fragment shader), we always scale first, then rotate, and then translate.
+
+We have one other order of business. The image itself may not be square. Let's make sure to scale the quad so that the image draws with the appropriate aspect ratio while still fitting inside the square:
+
+```c++
+if( image_width < image_height ) {
+    scale = vec2( real(image_width)/image_height, 1.0 );
+} else {
+    scale = vec2( 1.0, real(image_height)/image_width );
+}
+```
+
+Once you have finished creating the `InstanceData` for the sprite, you can copy it to the GPU. At some point at the beginning of the entire draw function, you should allocate a buffer big enough to store an `InstanceData` for each sprite:
+```c++
+WGPUBuffer instance_buffer = wgpuDeviceCreateBuffer( device, to_ptr<WGPUBufferDescriptor>({
+    .size = sizeof(InstanceData) * sprites.size(),
+    .usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex
+    }) );
+```
+
+You would copy `InstanceData d` for sprite `i` via:
+```c++
+wgpuQueueWriteBuffer( queue, instance_buffer, i * sizeof(InstanceData), &d, sizeof(InstanceData) );
+```
+
+At the end of the draw function, free `instance_buffer` with `wgpuBufferRelease();`. (Or don't! Re-use `instance_buffer` from frame to frame. Release and create a new one if the number of sprites changes.)
+
+The last thing to do before actually drawing the sprite with `wgpuRenderPassEncoderDraw()` is to attach the bindings for the uniform data (`uniforms`, `texSampler`, and `texData`). Different sprites have different images, so we have to do this if the image changes from one sprite to the next. First create the group of bindings:
+
+```c++
+WGPUBindGroup bind_group = wgpuDeviceCreateBindGroup( device, to_ptr( WGPUBindGroupDescriptor{
+    .layout = wgpuRenderPipelineGetBindGroupLayout( pipeline, 0 ),
+    .entryCount = 3,
+    // The entries `.binding` matches what we wrote in the shader.
+    .entries = (WGPUBindGroupEntry[]){
+        {
+            .binding = 0,
+            .buffer = uniform_buffer,
+            .size = sizeof( Uniforms )
+        },
+        {
+            .binding = 1,
+            .sampler = sampler,
+        },
+        {
+            .binding = 2,
+            .textureView = wgpuTextureCreateView( tex, nullptr )
+        }
+        }
+    } ) );
+```
+
+Next, attach it:
+
+```c++
+wgpuRenderPassEncoderSetBindGroup( render_pass, 1, bind_group, 0, nullptr );
+```
+
+Now you are ready for the call to `wgpuRenderPassEncoderDraw()`.
+
+### Cleaning up
+
+At the end of draw, after `wgpuQueueSubmit()`, it's safe to release any resources we created in the function. This definitely includes the swap chain's texture view (`wgpuTextureViewRelease()`) and the command encoder (`wgpuCommandEncoderRelease()`). This can also include instance data buffer (see above), per-sprite bind groups (`wgpuBindGroupRelease()`), and texture views (`wgpuTextureViewRelease()`), unless you find a way to keep them around from frame to frame. The bind groups and texture views are unique per image, so you could create them once when loading an image.
+
+### Extensions
+
+* Sprites could have a color parameter that tints the image by multiplying `color * textureSample( texData, texSampler, in.texcoords ).rgba;`.
+* Sprites could have a rotation parameter.
+* If you want to draw a lot of sprites as efficiently as possible, you must draw all instances of the sprite at once, with a single draw call. You won't have a chance to change any bindings between instances. When sprites use different images, we have to change our pipeline's image binding. This works against instanced rendering. (You could draw more than one instance if a run of sprites share the same image. You could sort sprites by the image they use to maximize this, if you are willing to give up correct alpha blending.)
+* Another solution is to use a sprite sheet (also called a texture atlas) that packs multiple images into one image. You will need to store the names and locations of all sub-images in the sprite sheet so that you can pass appropriate texture coordinates (or an index into an array of atlas data stored in GPU memory) as vertex attributes. You could alternatively bind a single texture array if your images are all the same size.
+* You could turn on the depth-buffer (aka z-buffer). You could then skip sorting the images back-to-front at the cost of incorrect alpha blending (but perhaps imperceptibly?).
 
 **You have reached the fourth checkpoint.** Upload your code. Run `xmake clean --all` and then zip your entire directory. For this checkpoint:
 
@@ -761,3 +1332,4 @@ You don't need anything else. You might want:
 * 2023-09-05: added `xmake clean --all` and `xmake config --clean` and some other minor cleanups to "Some useful `xmake` commands" section.
 * 2023-09-06: added language hints to fenced code blocks
 * 2023-09-06: clarified `friend class`
+* 2023-09-07: WebGPU graphics manager
