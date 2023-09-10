@@ -571,7 +571,7 @@ WGPUSampler = wgpuDeviceCreateSampler( device, to_ptr( WGPUSamplerDescriptor{
 
 The next line of the shader declares a 2D texture called `texData`. You will allocate textures when we discuss loading images below.
 
-There are two more declarations left. The first is `struct VertexInput`. We use this as the type of the vertex shader's parameter. The pipeline will tell the GPU which memory to use for the fields based on the `location` indices. The `struct VertexOutput` is used to pass a bundle of information from the vertex to the fragment shader. `position` is a built-in and required parameter. It's how the GPU knows which pixels the triangle covers.
+There are two more declarations left. The first is `struct VertexInput`. We use this as the type of the vertex shader's parameter. We will tell the GPU which memory to use for the fields based on the `location` indices. The `struct VertexOutput` is used to pass a bundle of information from the vertex to the fragment shader. `position` is a built-in and required parameter. It's how the GPU knows which pixels the triangle covers.
 
 You can read the shader code from a file (resolve the path with your resource manager) or directly in your C++ with a raw string literal:
 
@@ -624,7 +624,6 @@ WGPURenderPipeline pipeline = wgpuDeviceCreateRenderPipeline( device, to_ptr( WG
                 } } ) )
             } } ) ),
     
-    
     // Describe the vertex shader inputs
     .vertex = {
         .module = shader_module,
@@ -653,7 +652,6 @@ WGPURenderPipeline pipeline = wgpuDeviceCreateRenderPipeline( device, to_ptr( WG
                     }
             },
             // We will use a second buffer with our per-sprite translation and scale. This data will be set in our draw function.
-            // 
             {
                 .arrayStride = sizeof(InstanceData),
                 // This data is per-instance. All four vertices will get the same value. Each instance of drawing the vertices will get a different value.
@@ -1339,3 +1337,4 @@ You don't need anything else. You might want:
 * 2023-09-07: Hint at a C approach to implementing ECS
 * 2023-09-07: Mention splitting into two bind groups.
 * 2023-09-09: Fixed WGPUBufferDescriptor fields out of declaration order.
+* 2023-09-09: Switched to automatic pipeline layout to simplify the code. Switched back to manual pipeline layout. If you don't use a uniform in the shader (e.g. when debugging), automatic will error.
