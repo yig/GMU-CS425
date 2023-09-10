@@ -917,7 +917,7 @@ Now you are ready for the call to `wgpuRenderPassEncoderDraw()`.
 
 ### Cleaning up
 
-At the end of draw, after `wgpuQueueSubmit()`, it's safe to release any resources we created in the function. This definitely includes the swap chain's texture view (`wgpuTextureViewRelease()`) and the command encoder (`wgpuCommandEncoderRelease()`). This can also include instance data buffer (see above), per-sprite bind groups (`wgpuBindGroupRelease()`), and texture views (`wgpuTextureViewRelease()`), unless you find a way to keep them around from frame to frame. The bind groups and texture views are unique per image, so you could create them once when loading an image.
+At the end of draw, after `wgpuQueueSubmit()`, it's safe to release any resources we created in the function. This definitely includes the swap chain's texture view (`wgpuTextureViewRelease()`), the command encoder (`wgpuCommandEncoderRelease()`), and the render pass encoder (`wgpuRenderPassEncoderRelease()`). This can also include instance data buffer (see above), per-sprite bind groups (`wgpuBindGroupRelease()`), and texture views (`wgpuTextureViewRelease()`), unless you find a way to keep them around from frame to frame. The bind groups and texture views are unique per image, so you could create them once when loading an image.
 
 ### Extensions
 
@@ -1340,3 +1340,4 @@ You don't need anything else. You might want:
 * 2023-09-09: Fixed WGPUBufferDescriptor fields out of declaration order.
 * 2023-09-09: Switched to automatic pipeline layout to simplify the code. Switched back to manual pipeline layout. If you don't use a uniform in the shader (e.g. when debugging), automatic will error.
 * 2023-09-09: Added link to WebGPU Samples.
+* 2023-09-10: Mention releasing the render pass encoder.
