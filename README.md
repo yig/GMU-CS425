@@ -350,6 +350,7 @@ The modern way to program GPUs is to describe all the state involved in the GPU'
 * [WebGPU Specification](https://www.w3.org/TR/webgpu/): The API spec. If you are wondering what a parameter is in excruciating detail, this is the place to look. I use it by searching for symbols.
 * [`webgpu.h`](https://github.com/webgpu-native/webgpu-headers/blob/main/webgpu.h): The official C header developed along with the spec. It's more succinct than the specification, and shows the data structures precisely. I use it by searching for symbols.
 * [WGSL WebGPU Shading Language Specification](https://www.w3.org/TR/WGSL/): This is the specification for the shading language.
+* [WebGPU Samples](https://webgpu.github.io/webgpu-samples/): These samples are written in JavaScript, but our C++ programming style is quite similar.
 * [I want to talk about WebGPU](https://cohost.org/mcc/post/1406157-i-want-to-talk-about-webgpu): The history of graphics API's and why WebGPU is exciting. At the end, there are excellent overview diagrams that explain using WebGPU.
 * [WebGPU Bind Group best practices](https://toji.dev/webgpu-best-practices/bind-groups.html): An explanation of why there are bind groups.
 * [How to write a renderer for modern graphics APIs](https://blog.mecheye.net/2023/09/how-to-write-a-renderer-for-modern-apis/): An explanation of why modern API's are designed the way they are, and how to manage the fast path.
@@ -1338,3 +1339,4 @@ You don't need anything else. You might want:
 * 2023-09-07: Mention splitting into two bind groups.
 * 2023-09-09: Fixed WGPUBufferDescriptor fields out of declaration order.
 * 2023-09-09: Switched to automatic pipeline layout to simplify the code. Switched back to manual pipeline layout. If you don't use a uniform in the shader (e.g. when debugging), automatic will error.
+* 2023-09-09: Added link to WebGPU Samples.
