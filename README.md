@@ -438,8 +438,8 @@ This is declaring an array of (anonymous) structs with the attributes we want fo
 
 ```c++
 WGPUBuffer vertex_buffer = wgpuDeviceCreateBuffer( device, to_ptr( WGPUBufferDescriptor{
-    .size = sizeof(vertices),
-    .usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex
+    .usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex,
+    .size = sizeof(vertices)
     }) );
 ```
 
@@ -548,8 +548,8 @@ At some point during startup (before or after creating the pipeline), we need to
 
 ```c++
 WGPUBuffer uniform_buffer = wgpuDeviceCreateBuffer( device, to_ptr( WGPUBufferDescriptor{
-    .size = sizeof(Uniforms),
-    .usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform
+    .usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform,
+    .size = sizeof(Uniforms)
     }) );
 ```
 
@@ -871,8 +871,8 @@ if( image_width < image_height ) {
 Once you have finished creating the `InstanceData` for the sprite, you can copy it to the GPU. At some point at the beginning of the entire draw function, you should allocate a buffer big enough to store an `InstanceData` for each sprite:
 ```c++
 WGPUBuffer instance_buffer = wgpuDeviceCreateBuffer( device, to_ptr<WGPUBufferDescriptor>({
-    .size = sizeof(InstanceData) * sprites.size(),
-    .usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex
+    .usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex,
+    .size = sizeof(InstanceData) * sprites.size()
     }) );
 ```
 
@@ -1338,3 +1338,4 @@ You don't need anything else. You might want:
 * 2023-09-07: Mention Dear ImGui as a text drawing possibility
 * 2023-09-07: Hint at a C approach to implementing ECS
 * 2023-09-07: Mention splitting into two bind groups.
+* 2023-09-09: Fixed WGPUBufferDescriptor fields out of declaration order.
