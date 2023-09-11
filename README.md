@@ -100,6 +100,8 @@ Thumbs.db
 
 Now you should initialize your git repository and make a first commit.
 
+### Checkpoint 1 Upload
+
 **You have reached the first checkpoint.** Upload your code. Run `xmake clean --all` and then zip your entire directory. Your directly tree should look like:
 
 ```
@@ -257,6 +259,8 @@ Finally, this is a good time to mention that I recommend a proper logging librar
 
 Modify `demo/helloworld.cpp` to start up your engine, run its main loop, and shut it down when the main loop terminates.
 
+### Checkpoint 2 Upload
+
 **You have reached the second checkpoint.** Commit your code to your git repository. Upload it for grading. Run `xmake clean --all` and then zip your entire directory. This checkpoint should contain:
 
 * A graphics manager class that creates a window.
@@ -287,6 +291,8 @@ engine.RunGameLoop( [&]( Engine& ) {
 Modify your `helloworld` function to pass a callback when running your engine's main loop. The callback should print or log a message when at least one key of your choosing is pressed.
 
 You may have noticed that there's no way to quit your program (without asking your operating system to terminate it, e.g., `^C`). Quitting is easy; you just break out of the main loop. The `RunGameLoop()` function will then return. You can do that in response to a key press like escape or Q. If you want to check if someone clicked the window's close box, call the GLFW function `glfwWindowShouldClose(window)`. You can set this programmatically with `glfwSetWindowShouldClose( window, true );`. You can design your own way to encapsulate those. It could be something like `GraphicsManager::ShouldQuit()` and `GraphicsManager::SetShouldQuit(true)` methods.
+
+### Checkpoint 3 Upload
 
 **You have reached the third checkpoint.** Upload your code. Run `xmake clean --all` and then zip your entire directory. For this checkpoint:
 
@@ -598,33 +604,6 @@ That's it! We're ready to declare our entire pipeline to the GPU:
 ```c++
 WGPURenderPipeline pipeline = wgpuDeviceCreateRenderPipeline( device, to_ptr( WGPURenderPipelineDescriptor{
     
-    // Describe the data types of our uniforms.
-    // This is called the bind group layout. We are using one group (0) and three bindings (0), (1), (2).
-    // This exactly matches what's in the shader.
-    // We're not actually passing data, we're just declaring matching types.
-    .layout = wgpuDeviceCreatePipelineLayout( device, to_ptr( WGPUPipelineLayoutDescriptor{
-        .bindGroupLayoutCount = 1, .bindGroupLayouts = (WGPUBindGroupLayout[]){
-            wgpuDeviceCreateBindGroupLayout(
-                device, to_ptr( WGPUBindGroupLayoutDescriptor{ .entryCount = 3, .entries = (WGPUBindGroupLayoutEntry[]){
-                    {
-                        .binding = 0,
-                        .visibility = WGPUShaderStage_Vertex,
-                        .buffer.type = WGPUBufferBindingType_Uniform
-                    },
-                    {
-                        .binding = 1,
-                        .visibility = WGPUShaderStage_Fragment,
-                        .sampler.type = WGPUSamplerBindingType_Filtering
-                    },
-                    {
-                        .binding = 2,
-                        .visibility = WGPUShaderStage_Fragment,
-                        .texture.sampleType = WGPUTextureSampleType_Float,
-                        .texture.viewDimension = WGPUTextureViewDimension_2D
-                    }
-                } } ) )
-            } } ) ),
-    
     // Describe the vertex shader inputs
     .vertex = {
         .module = shader_module,
@@ -720,11 +699,9 @@ WGPURenderPipeline pipeline = wgpuDeviceCreateRenderPipeline( device, to_ptr( WG
     } ) );
 ```
 
-We now have a graphics pipeline capable of drawing sprites.
+We now have a graphics pipeline capable of drawing sprites. You can release the `shader_module` with `wgpuShaderModuleRelease()`. (Nice [RAII](https://en.cppreference.com/w/cpp/language/raii) [C++ wrappers for WebGPU](https://source.chromium.org/chromium/chromium/src/+/main:out/Debug/gen/third_party/dawn/include/dawn/webgpu_cpp.h) are in development. With RAII, the release functions will be called automatically when the variables go out of scope.)
 
-**N.B.** The calls to `wgpuDeviceCreatePipelineLayout()` and `wgpuDeviceCreateBindGroupLayout()` technically leak, since we don't call `wgpuPipelineLayoutRelease()` and `wgpuBindGroupLayoutRelease()` on their return values. This doesn't bother me too much. We are only ever creating the pipeline once, and the memory should be freed when we release `device` at the end of our program. If this bothers you, you can release them after creating the pipeline (or hold onto the `WGPUBindGroupLayout`, since you'll refer to it later when drawing sprites). Nice [RAII](https://en.cppreference.com/w/cpp/language/raii) [C++ wrappers for WebGPU](https://source.chromium.org/chromium/chromium/src/+/main:out/Debug/gen/third_party/dawn/include/dawn/webgpu_cpp.h) are in development and make these kinds of issues go away.
-
-## Loading data
+### Loading data
 
 Let's make a function to load images. The load function should have a signature like:
 
@@ -780,7 +757,7 @@ Once it's uploaded, we're done with the data returned by `stbi_load()`. Free tha
 stbi_image_free( data );
 ```
 
-## Drawing
+### Drawing
 
 Add a `Draw()` method to your to your graphics manager that takes a parameter something like `const std::vector< Sprite >& sprites` and draws them. What should a `Sprite` be? It could be a small struct containing an image name, position, scale, and z value. Since we don't yet have an entity manager, the engine itself can't call `Draw()`, since no one is tracking drawable entities. For now, you can call `Draw()` in your main loop's callback function. We'll revisit this later, once we have an entity manager.
 
@@ -921,7 +898,7 @@ Now you are ready for the call to `wgpuRenderPassEncoderDraw()`.
 
 ### Cleaning up
 
-At the end of draw, after `wgpuQueueSubmit()`, it's safe to release any resources we created in the function. This definitely includes the swap chain's texture view (`wgpuTextureViewRelease()`), the command encoder (`wgpuCommandEncoderRelease()`), and the render pass encoder (`wgpuRenderPassEncoderRelease()`). This can also include instance data buffer (see above), per-sprite bind groups (`wgpuBindGroupRelease()`), texture views (`wgpuTextureViewRelease()`), and the result of the call to `wgpuRenderPipelineGetBindGroupLayout()` (via ``), unless you find a way to keep them around from frame to frame. The bind groups and texture views are unique per image, so you could create them once when loading an image.
+At the end of draw, after `wgpuQueueSubmit()`, it's safe to release any resources we created in the function. (This is another place where a C++ [RAII](https://en.cppreference.com/w/cpp/language/raii) wrapper will improve our lives.) This definitely includes the swap chain's texture view (`wgpuTextureViewRelease()`), the command encoder (`wgpuCommandEncoderRelease()`), and the render pass encoder (`wgpuRenderPassEncoderRelease()`). This can also include instance data buffer (see above), per-sprite bind groups (`wgpuBindGroupRelease()`), texture views (`wgpuTextureViewRelease()`), and the result of the call to `wgpuRenderPipelineGetBindGroupLayout()` (via `wgpuBindGroupLayoutRelease()`), unless you find a way to keep them around from frame to frame. The bind groups and texture views are unique per image, so you could create them once when loading an image.
 
 ### Extensions
 
@@ -931,6 +908,45 @@ At the end of draw, after `wgpuQueueSubmit()`, it's safe to release any resource
 * Another solution is to use a sprite sheet (also called a texture atlas) that packs multiple images into one image. You will need to store the names and locations of all sub-images in the sprite sheet so that you can pass appropriate texture coordinates (or an index into an array of atlas data stored in GPU memory) as vertex attributes. You could alternatively bind a single texture array if your images are all the same size.
 * As an even smaller step towards efficiency, you may notice that our bind group has three things (uniforms, sample, texture), two of which never change. You could move the texture into a second bind group (`group(1) binding(0)`), so that the two which are always the same can stay attached for all sprites and only the texture binding changes.
 * You could turn on the depth buffer (aka z-buffer). You could then skip sorting the images back-to-front at the cost of incorrect alpha blending (but perhaps imperceptibly?).
+
+### Gotchas
+
+One gotcha is forgetting to zero initialize the WebGPU structs. All my examples use aggregate or designated initializers with `{ ... }`, which takes care of that. If you ever declare a variable in C++ and aren't sure if it has a default constructor (a constructor with no parameters that initializes undefined values), you can always use `{}`. That works for everything. For example, you can write `WGPUBlendState blend_state{};` or `WGPUBlendState blend_state = {};`. As a reminder, plain old data types like `int`, `float`, `double`, `bool` don't have default constructors, even inside structs or classes.
+
+Another gotcha may arise if you edit the shaders I provide. There is an optional `.layout` parameter of `WGPURenderPipelineDescriptor`, which tells WebGPU about the data types of our bindings (uniforms, texture, and sampler). It's optional, because WebGPU can extract this information from the shaders themselves. But when WebGPU does that, it looks at which bindings are actually used in the code. So if you, for example, comment out the code which actually uses the texture, you will get an error when you call `wgpuRenderPassEncoderSetBindGroup()`. One solution is to make sure you use all your bindings in the shader (e.g., read from the texture), even if you don't use those values in the end. The other solution is to explicitly set the `.layout` parameter with all the binding data types:
+
+```c++
+    // Describe the data types of our uniforms.
+    // This is called the bind group layout. We are using one group (0) and three bindings (0), (1), (2).
+    // This exactly matches what's in the shader.
+    // We're not actually passing data, we're just declaring matching types.
+    .layout = wgpuDeviceCreatePipelineLayout( device, to_ptr( WGPUPipelineLayoutDescriptor{
+        .bindGroupLayoutCount = 1, .bindGroupLayouts = (WGPUBindGroupLayout[]){
+            wgpuDeviceCreateBindGroupLayout(
+                device, to_ptr( WGPUBindGroupLayoutDescriptor{ .entryCount = 3, .entries = (WGPUBindGroupLayoutEntry[]){
+                    {
+                        .binding = 0,
+                        .visibility = WGPUShaderStage_Vertex,
+                        .buffer.type = WGPUBufferBindingType_Uniform
+                    },
+                    {
+                        .binding = 1,
+                        .visibility = WGPUShaderStage_Fragment,
+                        .sampler.type = WGPUSamplerBindingType_Filtering
+                    },
+                    {
+                        .binding = 2,
+                        .visibility = WGPUShaderStage_Fragment,
+                        .texture.sampleType = WGPUTextureSampleType_Float,
+                        .texture.viewDimension = WGPUTextureViewDimension_2D
+                    }
+                } } ) )
+            } } ) ),
+```
+
+Those calls to `wgpuDeviceCreatePipelineLayout()` and `wgpuDeviceCreateBindGroupLayout()` technically leak, since we don't call `wgpuPipelineLayoutRelease()` and `wgpuBindGroupLayoutRelease()` on their return values. Since this is for debug code, you can ignore that. Or you could ignore the leaks since we are only ever creating the pipeline once, and the memory should be freed when we release `device` at the end of our program. This is another place where nice [RAII](https://en.cppreference.com/w/cpp/language/raii) [C++ wrappers for WebGPU](https://source.chromium.org/chromium/chromium/src/+/main:out/Debug/gen/third_party/dawn/include/dawn/webgpu_cpp.h) can simplify your code.
+
+### Checkpoint 4 Upload
 
 **You have reached the fourth checkpoint.** Upload your code. Run `xmake clean --all` and then zip your entire directory. For this checkpoint:
 
@@ -1158,6 +1174,8 @@ If your ECS is global (or lives inside a global variable), you can make your `En
 * A more efficient sparse set that stores its component data in a single, dense, contiguous chunk of memory with no gaps. `unordered_map` doesn't actually do that.
 * Support for [range-based for loops](https://stackoverflow.com/questions/8164567/how-to-make-my-custom-type-to-work-with-range-based-for-loops).
 
+### Checkpoint 5 Upload
+
 **You have reached the fifth checkpoint.** Upload your code. Run `xmake clean --all` and then zip your entire directory. For this checkpoint:
 
 * Your engine should have an entity component system that lets users create entities, attach components to them, and run algorithms over the components.
@@ -1249,6 +1267,8 @@ If you wish, you can organize the functionality you expose to Lua with [somethin
 ### Extensions
 
 * Expose more of your engine's functionality. For example, if you want your users to be able to write all of their setup code in Lua, you should expose asset loading functionality.
+
+### Checkpoint 6 Upload
 
 **You have reached the sixth checkpoint.** Upload your code. Run `xmake clean --all` and then zip your entire directory. For this checkpoint:
 
@@ -1348,3 +1368,4 @@ You don't need anything else. You might want:
 * 2023-09-10: Mention releasing the render pass encoder.
 * 2023-09-10: Mentioned `stb_truetype.h` for text rendering.
 * 2023-09-11: Calling `wgpuBindGroupLayoutRelease()` when binding data to sprite drawing. Mention releasing layout objects when creating the pipeline.
+* 2023-09-11: Switched back to automatic pipeline layout to avoid discussing RAII. Mention RAII in a few places. Release shader module. Added a gotchas section with zero initialization and the explicit pipeline layout. Added sub-sub-sub-headings for checking upload.
