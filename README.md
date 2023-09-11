@@ -364,7 +364,7 @@ First things first. Let's add WebGPU to our `xmake.lua` with `add_requires("wgpu
 
 Our goal when starting up our graphics manager is to initialize `WebGPU` (by creating a `WGPUInstance`, `WGPUSurface`, `WGPUAdapter`, `WGPUDevice`, and `WGPUQueue`, [oh my](https://staging.cohostcdn.org/attachment/45fea200-d670-4fab-9788-6462930f8eba/wgpu1-2.0.png)) and prepare structures we will use when drawing: vertex and uniform (global) data (`WGPUBuffer`s), a swap chain (`WGPUSwapChain`) to avoid screen refresh artifacts, and the pipeline (`WGPURenderPipeline`). We'll store all these as instance variables. `WGPUInstance` is the WebGPU API itself, `WGPUSurface` is WebGPU's information about the window we want to draw into, `WGPUAdapter` is a GPU, `WGPUDevice` is a configured GPU ready to use, and `WGPUQueue` is queues commands to execute on the GPU.
 
-To initialize WebGPU, we start by calling `WGPUInstance instance = wgpuCreateInstance( to_ptr( WGPUInstanceDescriptor{} ) )`. We must do this after setting up `GLFW` (in our graphics manager's startup function). The curly-braces are C++ for initialize all members to zero if they don't have constructors. (It's called [aggregate initialization](https://en.cppreference.com/w/cpp/language/aggregate_initialization); [designated initializers](https://www.cppstories.com/2021/designated-init-cpp20) are a special kind.) `WebGPU` uses zeros to mean default values, which are often what we want. `WebGPU` is a C API, so initializing structs to zero is our responsibility. We can also pass `nullptr` when a function parameter is marked "optional" (in the [spec](https://www.w3.org/TR/webgpu/)) or `WGPU_NULLABLE` (in [`webgpu.h`](https://github.com/webgpu-native/webgpu-headers/blob/main/webgpu.h)).  `wgpuCreateInstance()` will return null upon failure. You can check for that and print a message and call `glfwTerminate()`. Let's be responsible and make `instance` an instance variable and add `wgpuInstanceRelease( instance );` to our graphics manager's shutdown function.
+To initialize WebGPU, we start by calling `WGPUInstance instance = wgpuCreateInstance( to_ptr( WGPUInstanceDescriptor{} ) )`. We must do this after setting up `GLFW` (in our graphics manager's startup function). The curly-braces are C++ for initialize all members to zero if they don't have constructors. (It's called [aggregate initialization](https://en.cppreference.com/w/cpp/language/aggregate_initialization); [designated initializers](https://www.cppstories.com/2021/designated-init-cpp20) are a special kind.) `WebGPU` uses zeros to mean default values, which are often what we want. `WebGPU` is a C API, so initializing structs to zero is our responsibility. We can also pass `nullptr` when a function parameter is marked "optional" (in the [spec](https://www.w3.org/TR/webgpu/)) or `WGPU_NULLABLE` (in [`webgpu.h`](https://github.com/webgpu-native/webgpu-headers/blob/main/webgpu.h)).  `wgpuCreateInstance()` will return null upon failure. You can check for that and print a message and call `glfwTerminate()`.
 
 Next we need to initialize the rest of the sequence (`WGPUSurface`, `WGPUAdapter`, `WGPUDevice`, `WGPUQueue`). The code is fairly boilerplate. Requesting an adapter and a device requires a callback function, perhaps because JavaScript is asynchronous. We don't have `await` in C++, so the code looks a bit uglier:
 
@@ -413,7 +413,7 @@ wgpuDeviceSetUncapturedErrorCallback(
 WGPUQueue queue = wgpuDeviceGetQueue( device );
 ```
 
-You should make those instance variables so your graphics manager's shutdown can call `wgpuAdapterRelease()` and `wgpuDeviceRelease()` in reverse initialization order, too.
+You should make these all instance variables so your graphics manager's shutdown can call `wgpuInstanceRelease()`, `wgpuSurfaceRelease()`, `wgpuAdapterRelease()`, `wgpuDeviceRelease()`, and `wgpuQueueRelease()` in reverse initialization order, too.
 
 For the remainder of this checkpoint, I will describe all the pieces of a simple way to draw sprites with a modern graphics pipeline. It's not the only way to do it, but it suffices for our purposes. Once you get the hang of WebGPU, you are welcome to try a different approach or enhance my approach.
 
@@ -491,7 +491,7 @@ WGPUSwapChain swapchain = wgpuDeviceCreateSwapChain( device, surface, to_ptr( WG
     }) );
 ```
 
-You'll also want to keep `swapchain` around as an instance variable so you can call `wgpuSwapChainRelease( swapchain )` in shutdown. **N.B.** The swap chain is created based on the window size. If the user resizes your window, rendering will break. Turn off resizing with `glfwWindowHint( GLFW_RESIZABLE, GLFW_FALSE );` before you create the window (`glfwCreateWindow()`), or else release and re-create the swap chain with the above code in a callback you pass to `glfwSetFramebufferSizeCallback()`.
+You'll also want to keep `swapchain` around as an instance variable so you can call `wgpuSwapChainRelease()` in shutdown. **N.B.** The swap chain is created based on the window size. If the user resizes your window, rendering will break. Turn off resizing with `glfwWindowHint( GLFW_RESIZABLE, GLFW_FALSE );` before you create the window (`glfwCreateWindow()`), or else release and re-create the swap chain with the above code in a callback you pass to `glfwSetFramebufferSizeCallback()`.
 
 The final stop before actually creating the pipeline is creating the pipeline's shader module. WebGPU shaders are written in [WebGPU Shading Language (WGSL)](https://www.w3.org/TR/WGSL/). You can put vertex and fragment shaders together in the same file. Remember that these programs access per-vertex/fragment data as well as global data. One weird thing to understand about a lot of GPU programming APIs, including WebGPU, is that we label variables in our shader programs with numerical indices, and then refer to those indices when telling the pipeline which data to run on. Per-vertex variable indices are labelled with "locations" and global constants (uniforms) are labelled with "bindings". Let's see our shaders:
 
@@ -722,6 +722,8 @@ WGPURenderPipeline pipeline = wgpuDeviceCreateRenderPipeline( device, to_ptr( WG
 
 We now have a graphics pipeline capable of drawing sprites.
 
+**N.B.** The calls to `wgpuDeviceCreatePipelineLayout()` and `wgpuDeviceCreateBindGroupLayout()` technically leak, since we don't call `wgpuPipelineLayoutRelease()` and `wgpuBindGroupLayoutRelease()` on their return values. This doesn't bother me too much. We are only ever creating the pipeline once, and the memory should be freed when we release `device` at the end of our program. If this bothers you, you can release them after creating the pipeline (or hold onto the `WGPUBindGroupLayout`, since you'll refer to it later when drawing sprites). Nice [RAII](https://en.cppreference.com/w/cpp/language/raii) [C++ wrappers for WebGPU](https://source.chromium.org/chromium/chromium/src/+/main:out/Debug/gen/third_party/dawn/include/dawn/webgpu_cpp.h) are in development and make these kinds of issues go away.
+
 ## Loading data
 
 Let's make a function to load images. The load function should have a signature like:
@@ -885,8 +887,9 @@ At the end of the draw function, free `instance_buffer` with `wgpuBufferRelease(
 The last thing to do before actually drawing the sprite with `wgpuRenderPassEncoderDraw()` is to attach the bindings for the uniform data (`uniforms`, `texSampler`, and `texData`). Different sprites have different images, so we have to do this if the image changes from one sprite to the next. First create the group of bindings:
 
 ```c++
+auto layout = wgpuRenderPipelineGetBindGroupLayout( pipeline, 0 );
 WGPUBindGroup bind_group = wgpuDeviceCreateBindGroup( device, to_ptr( WGPUBindGroupDescriptor{
-    .layout = wgpuRenderPipelineGetBindGroupLayout( pipeline, 0 ),
+    .layout = layout,
     .entryCount = 3,
     // The entries `.binding` matches what we wrote in the shader.
     .entries = (WGPUBindGroupEntry[]){
@@ -905,6 +908,7 @@ WGPUBindGroup bind_group = wgpuDeviceCreateBindGroup( device, to_ptr( WGPUBindGr
         }
         }
     } ) );
+wgpuBindGroupLayoutRelease( layout );
 ```
 
 Next, attach it:
@@ -917,7 +921,7 @@ Now you are ready for the call to `wgpuRenderPassEncoderDraw()`.
 
 ### Cleaning up
 
-At the end of draw, after `wgpuQueueSubmit()`, it's safe to release any resources we created in the function. This definitely includes the swap chain's texture view (`wgpuTextureViewRelease()`), the command encoder (`wgpuCommandEncoderRelease()`), and the render pass encoder (`wgpuRenderPassEncoderRelease()`). This can also include instance data buffer (see above), per-sprite bind groups (`wgpuBindGroupRelease()`), and texture views (`wgpuTextureViewRelease()`), unless you find a way to keep them around from frame to frame. The bind groups and texture views are unique per image, so you could create them once when loading an image.
+At the end of draw, after `wgpuQueueSubmit()`, it's safe to release any resources we created in the function. This definitely includes the swap chain's texture view (`wgpuTextureViewRelease()`), the command encoder (`wgpuCommandEncoderRelease()`), and the render pass encoder (`wgpuRenderPassEncoderRelease()`). This can also include instance data buffer (see above), per-sprite bind groups (`wgpuBindGroupRelease()`), texture views (`wgpuTextureViewRelease()`), and the result of the call to `wgpuRenderPipelineGetBindGroupLayout()` (via ``), unless you find a way to keep them around from frame to frame. The bind groups and texture views are unique per image, so you could create them once when loading an image.
 
 ### Extensions
 
@@ -1343,3 +1347,4 @@ You don't need anything else. You might want:
 * 2023-09-09: Added link to WebGPU Samples.
 * 2023-09-10: Mention releasing the render pass encoder.
 * 2023-09-10: Mentioned `stb_truetype.h` for text rendering.
+* 2023-09-11: Calling `wgpuBindGroupLayoutRelease()` when binding data to sprite drawing. Mention releasing layout objects when creating the pipeline.
