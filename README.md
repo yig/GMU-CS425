@@ -419,7 +419,7 @@ wgpuDeviceSetUncapturedErrorCallback(
 WGPUQueue queue = wgpuDeviceGetQueue( device );
 ```
 
-You should make these all instance variables so your graphics manager's shutdown can call `wgpuInstanceRelease()`, `wgpuSurfaceRelease()`, `wgpuAdapterRelease()`, `wgpuDeviceRelease()`, and `wgpuQueueRelease()` in reverse initialization order, too. (Nice [RAII](https://en.cppreference.com/w/cpp/language/raii) [C++ wrappers for WebGPU](https://source.chromium.org/chromium/chromium/src/+/main:out/Debug/gen/third_party/dawn/include/dawn/webgpu_cpp.h) are in development. In fact, I made one for you: [`webgpu_raii`](https://github.com/yig/webgpu_raii/tree/wgpu-native). With RAII, the release functions will be called automatically when the variables go out of scope. That means it's enough to declare them as instance variables in the right order.)
+You should make these all instance variables so your graphics manager's shutdown can call `wgpuInstanceRelease()`, `wgpuSurfaceRelease()`, `wgpuAdapterRelease()`, `wgpuDeviceRelease()`, and `wgpuQueueRelease()` in reverse initialization order, too. (Nice [RAII](https://en.cppreference.com/w/cpp/language/raii) [C++ wrappers for WebGPU](https://source.chromium.org/chromium/chromium/src/+/main:out/Debug/gen/third_party/dawn/include/dawn/webgpu_cpp.h) are in development. In fact, I made a simple one for you: [`webgpu_raii`](https://github.com/yig/webgpu_raii/tree/wgpu-native). With RAII, the release functions will be called automatically when the variables go out of scope. That means it's enough to declare them as instance variables in the right order.)
 
 For the remainder of this checkpoint, I will describe all the pieces of a simple way to draw sprites with a modern graphics pipeline. It's not the only way to do it, but it suffices for our purposes. Once you get the hang of WebGPU, you are welcome to try a different approach or enhance my approach.
 
@@ -803,7 +803,7 @@ When it's time to draw a set of sprites:
         wgpuQueueSubmit( queue, 1, &command );
         ```
     3. Present the new frame with: `wgpuSwapChainPresent( swapchain );`
-    4. Cleanup anything you created in the loop. (such as the instance data buffer, the swap chain's texture view, the command encoder, per-sprite bind groups, etc).
+    4. Cleanup anything you created in the loop (such as the instance data buffer, the swap chain's texture view, the command encoder, per-sprite bind groups, etc).
 
 Steps 6, 7, 8, and 10 need a bit more elaboration.
 
@@ -1372,4 +1372,4 @@ You don't need anything else. You might want:
 * 2023-09-11: Calling `wgpuBindGroupLayoutRelease()` when binding data to sprite drawing. Mention releasing layout objects when creating the pipeline.
 * 2023-09-11: Switched back to automatic pipeline layout to avoid discussing RAII. Mention RAII in a few places. Release shader module. Added a gotchas section with zero initialization and the explicit pipeline layout. Added sub-sub-sub-headings for checking upload.
 * 2023-09-11: Mention calling `wgpuQueueWriteBuffer` once for all sprites as an extension.
-* 2023-09-11: Linked to my `webgpu_raii` solution.
+* 2023-09-11: Linked to my `webgpu_raii.h` header.
