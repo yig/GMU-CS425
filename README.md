@@ -419,7 +419,7 @@ wgpuDeviceSetUncapturedErrorCallback(
 WGPUQueue queue = wgpuDeviceGetQueue( device );
 ```
 
-You should make these all instance variables so your graphics manager's shutdown can call `wgpuInstanceRelease()`, `wgpuSurfaceRelease()`, `wgpuAdapterRelease()`, `wgpuDeviceRelease()`, and `wgpuQueueRelease()` in reverse initialization order, too.
+You should make these all instance variables so your graphics manager's shutdown can call `wgpuInstanceRelease()`, `wgpuSurfaceRelease()`, `wgpuAdapterRelease()`, `wgpuDeviceRelease()`, and `wgpuQueueRelease()` in reverse initialization order, too. (Nice [RAII](https://en.cppreference.com/w/cpp/language/raii) [C++ wrappers for WebGPU](https://source.chromium.org/chromium/chromium/src/+/main:out/Debug/gen/third_party/dawn/include/dawn/webgpu_cpp.h) are in development. In face, I made one for you: [`webgpu_raii`](https://github.com/yig/webgpu_raii/tree/wgpu-native). With RAII, the release functions will be called automatically when the variables go out of scope. That means it's enough to declare them as instance variables in the right order.)
 
 For the remainder of this checkpoint, I will describe all the pieces of a simple way to draw sprites with a modern graphics pipeline. It's not the only way to do it, but it suffices for our purposes. Once you get the hang of WebGPU, you are welcome to try a different approach or enhance my approach.
 
@@ -456,7 +456,7 @@ Tell the `queue` to copy the data by writing into the GPU buffer `vertex_buffer`
 wgpuQueueWriteBuffer( queue, vertex_buffer, 0, vertices, sizeof(vertices) );
 ```
 
-The GPU now has a copy of `vertices`, so we are fine letting its memory become automatically de-allocated when the enclosing scope of our graphics manager's startup function terminates. You can make `vertex_buffer` an instance variable and `wgpuBufferDestroy()` and `wgpuBufferRelease()` it during shutdown.
+The GPU now has a copy of `vertices`, so we are fine letting its memory become automatically de-allocated when the enclosing scope of our graphics manager's startup function terminates. You can make `vertex_buffer` an instance variable and `wgpuBufferRelease()` it during shutdown (or use RAII via [`webgpu_raii`](https://github.com/yig/webgpu_raii/tree/wgpu-native)).
 
 The approach I will describe is called instanced rendering. Each instance of drawing the rectangle will get a different translation and scale (and possibly rotation!). You can use the following struct for that data.
 
@@ -560,11 +560,11 @@ WGPUBuffer uniform_buffer = wgpuDeviceCreateBuffer( device, to_ptr( WGPUBufferDe
     }) );
 ```
 
-You can make `uniform_buffer` an instance variable and `wgpuBufferDestroy()` and `wgpuBufferRelease()` it during shutdown.
+You can make `uniform_buffer` an instance variable and `wgpuBufferRelease()` it during shutdown (or use RAII via [`webgpu_raii`](https://github.com/yig/webgpu_raii/tree/wgpu-native)).
 
 Next the shader declares a `sampler` called `texSampler`. The sampler is what we use to reduce aliasing artifacts when reading data from our textures. Without it, all we can do is "nearest neighbor" interpolation. (If you prefer nearest neighbor interpolation, you can delete the sampler and replace the fragment shader line with `let color = textureLoad( texData, vec2i( in.texcoords * vec2f(textureDimensions(texData)) ), 0 ).rgba;`.)
 
-You'll also want to create a sampler at some point during startup (and release it with `wgpuSamplerRelease()` during shutdown):
+You'll also want to create a sampler at some point during startup (and release it with `wgpuSamplerRelease()` during shutdown or use [`webgpu_raii`](https://github.com/yig/webgpu_raii/tree/wgpu-native)):
 
 ```c++
 WGPUSampler = wgpuDeviceCreateSampler( device, to_ptr( WGPUSamplerDescriptor{
@@ -699,7 +699,7 @@ WGPURenderPipeline pipeline = wgpuDeviceCreateRenderPipeline( device, to_ptr( WG
     } ) );
 ```
 
-We now have a graphics pipeline capable of drawing sprites. You can release the `shader_module` with `wgpuShaderModuleRelease()`. (Nice [RAII](https://en.cppreference.com/w/cpp/language/raii) [C++ wrappers for WebGPU](https://source.chromium.org/chromium/chromium/src/+/main:out/Debug/gen/third_party/dawn/include/dawn/webgpu_cpp.h) are in development. With RAII, the release functions will be called automatically when the variables go out of scope.)
+We now have a graphics pipeline capable of drawing sprites. You can release the `shader_module` with `wgpuShaderModuleRelease()` (or use [`webgpu_raii`](https://github.com/yig/webgpu_raii/tree/wgpu-native)).
 
 ### Loading data
 
@@ -709,7 +709,7 @@ Let's make a function to load images. The load function should have a signature 
 bool LoadImage( const string& name, const string& path );
 ```
 
-This lets our engine's users load an image from a `path` and then refer it by a convenient `name`. Don't forget to resolve `path` with your resource manager. Let's use an [`std::unordered_map< string, SOMETHING >`](https://en.cppreference.com/w/cpp/container/unordered_map) as our name-to-image map. You will want it to be an instance variable. `SOMETHING` should be a little struct you declare to hold the data we want to store about the image. You will want it to have fields for the image's native width and height, so you can compute its natural aspect ratio. You will also want a `WGPUTexture` field to keep the texture you create when loading. You can even make `SOMETHING`'s destructor call `wgpuTextureDestroy()` and `wgpuTextureRelease()` if the `WGPUTexture` field is not `nullptr`. Then calling `.clear()` or `.erase()` on the map will properly free GPU resources.
+This lets our engine's users load an image from a `path` and then refer it by a convenient `name`. Don't forget to resolve `path` with your resource manager. Let's use an [`std::unordered_map< string, SOMETHING >`](https://en.cppreference.com/w/cpp/container/unordered_map) as our name-to-image map. You will want it to be an instance variable. `SOMETHING` should be a little struct you declare to hold the data we want to store about the image. You will want it to have fields for the image's native width and height, so you can compute its natural aspect ratio. You will also want a `WGPUTexture` field to keep the texture you create when loading. You can even make `SOMETHING`'s destructor call `wgpuTextureDestroy()` and `wgpuTextureRelease()` if the `WGPUTexture` field is not `nullptr`. Then calling `.clear()` or `.erase()` on the map will properly free GPU resources. (If you use RAII via [`webgpu_raii`](https://github.com/yig/webgpu_raii/tree/wgpu-native), then it's enough to store `WGPUTextureRef` and the resources will be released automatically.)
 
 For actually reading images from disk and decoding them into CPU memory, we'll use the wonderful `std_image` image loader. The documentation is [the header](https://github.com/nothings/stb/blob/master/stb_image.h). Add it to your `xmake.lua` with `add_requires("stb")` near the top and `add_packages("stb")` inside `target("illengine")`. `stb_image` is header only, but requires us to `#define STB_IMAGE_IMPLEMENTATION` in one compilation unit before `#include "stb_image.h"`. We'll only use it here, so:
 
@@ -888,6 +888,8 @@ WGPUBindGroup bind_group = wgpuDeviceCreateBindGroup( device, to_ptr( WGPUBindGr
 wgpuBindGroupLayoutRelease( layout );
 ```
 
+(If you are using [`webgpu_raii`](https://github.com/yig/webgpu_raii/tree/wgpu-native), you can write `.layout = ref(wgpuRenderPipelineGetBindGroupLayout( pipeline, 0 ))` instead of `auto layout = ...` and `wgpuBindGroupLayoutRelease(layout)`.)
+
 Next, attach it:
 
 ```c++
@@ -898,7 +900,7 @@ Now you are ready for the call to `wgpuRenderPassEncoderDraw()`.
 
 ### Cleaning up
 
-At the end of draw, after `wgpuQueueSubmit()`, it's safe to release any resources we created in the function. (This is another place where a C++ [RAII](https://en.cppreference.com/w/cpp/language/raii) wrapper will improve our lives.) This definitely includes the swap chain's texture view (`wgpuTextureViewRelease()`), the command encoder (`wgpuCommandEncoderRelease()`), and the render pass encoder (`wgpuRenderPassEncoderRelease()`). This can also include instance data buffer (see above), per-sprite bind groups (`wgpuBindGroupRelease()`), texture views (`wgpuTextureViewRelease()`), and the result of the call to `wgpuRenderPipelineGetBindGroupLayout()` (via `wgpuBindGroupLayoutRelease()`), unless you find a way to keep them around from frame to frame. The bind groups and texture views are unique per image, so you could create them once when loading an image.
+At the end of draw, after `wgpuQueueSubmit()`, it's safe to release any resources we created in the function. (This is another place where a C++ [RAII](https://en.cppreference.com/w/cpp/language/raii) wrapper like [`webgpu_raii`](https://github.com/yig/webgpu_raii/tree/wgpu-native) will improve our lives.) This definitely includes the swap chain's texture view (`wgpuTextureViewRelease()`), the command encoder (`wgpuCommandEncoderRelease()`), and the render pass encoder (`wgpuRenderPassEncoderRelease()`). This can also include instance data buffer (see above), per-sprite bind groups (`wgpuBindGroupRelease()`), texture views (`wgpuTextureViewRelease()`), and the result of the call to `wgpuRenderPipelineGetBindGroupLayout()` (via `wgpuBindGroupLayoutRelease()`), unless you find a way to keep them around from frame to frame. The bind groups and texture views are unique per image, so you could create them once when loading an image.
 
 ### Extensions
 
@@ -1370,3 +1372,4 @@ You don't need anything else. You might want:
 * 2023-09-11: Calling `wgpuBindGroupLayoutRelease()` when binding data to sprite drawing. Mention releasing layout objects when creating the pipeline.
 * 2023-09-11: Switched back to automatic pipeline layout to avoid discussing RAII. Mention RAII in a few places. Release shader module. Added a gotchas section with zero initialization and the explicit pipeline layout. Added sub-sub-sub-headings for checking upload.
 * 2023-09-11: Mention calling `wgpuQueueWriteBuffer` once for all sprites as an extension.
+* 2023-09-11: Linked to my `webgpu_raii` solution.
