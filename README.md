@@ -1019,6 +1019,7 @@ The basic functionality you must implement is a class for your entity component 
 * A method to **create** a new entity (returning its entity ID) or to return an unused entity ID: `EntityID Create();` or `EntityID UnusedEntity();`. It is fine if your `Create()` requires the user to specify all components for the entity.
 * A method to **destroy** an entity, removing all of its components: `void Destroy( EntityID e );`
 * A method to **get** a given component for an entity. By returning a reference `&`, callers can also set the component: `template< typename T > T& Get( EntityID e );`
+* A method to **drop** a given component from an entity.
 * A method to iterate over all entities with a given set of entities and call a callback function once **for each** entity: `template< typename... EntitiesThatHaveTheseComponents > void ForEach( callback );`
 
 ### Implementation Possibility
@@ -1112,6 +1113,12 @@ GetAppropriateSparseSet() {
 
 Now we can write the rest of our user-facing (public) functions:
 ```c++
+// Drop the component from the entity.
+template< typename T >
+void Drop( EntityID e ) {
+    GetAppropriateSparseSet<T>().erase( e );
+}
+
 // Destroy the entity by removing all components.
 void Destroy( EntityID e ) {
     for( const auto& comps : m_components ) { comps->Drop( e ); }
@@ -1180,7 +1187,7 @@ If your ECS is global (or lives inside a global variable), you can make your `En
 
 **You have reached the fifth checkpoint.** Upload your code. Run `xmake clean --all` and then zip your entire directory. For this checkpoint:
 
-* Your engine should have an entity component system that lets users create entities, attach components to them, and run algorithms over the components.
+* Your engine should have an entity component system that lets users create entities, attach and remove components to and from them, and run algorithms over the components.
 * Your graphics manager's draw method should iterate over your ECS entities rather than taking a parameter.
 * Your `demo/helloworld.cpp` should create entities with a `Sprite` component. You can re-use the `Sprite` class you made for the previous checkpoint as the component.
 
@@ -1375,3 +1382,4 @@ You don't need anything else. You might want:
 * 2023-09-11: Linked to my `webgpu_raii.h` header.
 * 2023-09-12: Also linked to LearnWebGPU in C++'s RAII wrapper
 * 2023-09-13: Added some API URLs in the early parts of the guide.
+* 2023-09-14: ECS gained a method to drop a given component from an entity.
