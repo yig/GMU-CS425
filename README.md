@@ -216,7 +216,7 @@ Managing the time step means making sure that your game loop runs 60 times per s
 
 ## The `GraphicsManager`
 
-At this point, all we want from the graphics manager is to create a window. We will use [GLFW](https://www.glfw.org/) for this. It's an extremely lightweight graphics and input handling library. Declare your need for it at the top of your `xmake.lua` (just below the `add_rules()` line:
+At this point, all we want from the graphics manager is to create a window. We will use [GLFW](https://www.glfw.org/) for this. It's an extremely lightweight graphics and input handling library. Declare your need for it at the top of your `xmake.lua` (just below the `add_rules()` line):
 
 ```
 add_requires("glfw")
@@ -364,7 +364,14 @@ The modern way to program GPUs is to describe all the state involved in the GPU'
 
 When our graphics manager starts up, it will initialize the WebGPU API, compile the shader programs, upload vertex data, and create a pipeline ready to use in our draw function. Later, when it's time to draw sprites, we will tell our GPU to activate the pipeline and apply it to our per-sprite data (which image and where the sprite should appear). We will also need to add code to load images from disk and upload them to the GPU as textures.
 
-First things first. Let's add WebGPU to our `xmake.lua` with `add_requires("wgpu-native", "glfw3webgpu")` near the top and `add_packages("wgpu-native", "glfw3webgpu")` inside `target("illengine")`. Include the `<webgpu/webgpu.h>` header file in your graphics manager `.cpp` file and the `<glfw3webgpu.h>` header which allows us to use it with `GLFW`. One more thing; the [widely-supported](https://en.cppreference.com/w/cpp/compiler_support) [designated initializers](https://www.cppstories.com/2021/designated-init-cpp20) part of the C++20 standard lets us write much nicer looking WebGPU code. Change `set_languages("cxx17")` to `set_languages("cxx20")` to turn it on. We're going to be passing pointers to temporary `struct`s to WebGPU a lot. C allows this, but C++ needs a workaround; put the following one-line function somewhere near the top of your graphics manager `.cpp` to get a pointer to a temporary: `template< typename T > const T* to_ptr( const T& val ) { return &val; }`.
+First things first. Let's add WebGPU to our `xmake.lua` with `add_requires("wgpu-native", "glfw3webgpu")` near the top and `add_packages("wgpu-native", "glfw3webgpu")` inside `target("illengine")`. Include the `<webgpu/webgpu.h>` header file in your graphics manager `.cpp` file and the `<glfw3webgpu.h>` header which allows us to use it with `GLFW`. One more thing; the [widely-supported](https://en.cppreference.com/w/cpp/compiler_support) [designated initializers](https://www.cppstories.com/2021/designated-init-cpp20) part of the C++20 standard lets us write much nicer looking WebGPU code. Change `set_languages("cxx17")` to `set_languages("cxx20")` to turn it on. We're going to be passing pointers to temporary `struct`s and arrays of `struct`s to WebGPU a lot. C allows this, but C++ needs a couple of workarounds. Add these two lines near the top of your graphics manager `.cpp`:
+
+```c++
+template< typename T > const T* to_ptr( const T& val ) { return &val; }
+template< typename T > using arr = T[];
+```
+
+The one-line `to_ptr()` function legally returns a pointer to a temporary. The `using arr = T[]` is a type alias (generic typedef) for an array of any type; C++ requires a `typedef` or type alias for temporary arrays. (Although many compilers permit parentheses around temporary type names as in `(Foo[]){ ... }`, MSVC is [strict](https://stackoverflow.com/questions/15458883/using-array-init-list-as-temporary-in-c11#comment24292271_15458897) and needs a workaround.) Finally, if you are using GCC as your compiler and can't switch to clang or MSVC, GCC has a [bug](https://stackoverflow.com/a/56196014) whose workaround is to replace `arr<T>{ ... }` with `std::array<T,length>{ ... }.data()`. If all this is too much C++ magic for you, you can modify the suggested code to declare your WebGPU `struct`s with names and take addresses of those.
 
 ### Startup
 
@@ -610,13 +617,13 @@ WGPURenderPipeline pipeline = wgpuDeviceCreateRenderPipeline( device, to_ptr( WG
         .entryPoint = "vertex_shader_main",
         // Vertex attributes.
         .bufferCount = 2,
-        .buffers = (WGPUVertexBufferLayout[]){
+        .buffers = arr<WGPUVertexBufferLayout>{
             // We have one buffer with our per-vertex position and UV data. This data never changes.
             // Note how the type, byte offset, and stride (bytes between elements) exactly matches our `vertex_buffer`.
             {
                 .arrayStride = 4*sizeof(float),
                 .attributeCount = 2,
-                .attributes = (WGPUVertexAttribute[]){
+                .attributes = arr<WGPUVertexAttribute>{
                     // Position x,y are first.
                     {
                         .format = WGPUVertexFormat_Float32x2,
@@ -638,7 +645,7 @@ WGPURenderPipeline pipeline = wgpuDeviceCreateRenderPipeline( device, to_ptr( WG
                 // The type, byte offset, and stride (bytes between elements) exactly match the array of `InstanceData` structs we will upload in our draw function.
                 .stepMode = WGPUVertexStepMode_Instance,
                 .attributeCount = 2,
-                .attributes = (WGPUVertexAttribute[]){
+                .attributes = arr<WGPUVertexAttribute>{
                     // Translation as a 3D vector.
                     {
                         .format = WGPUVertexFormat_Float32x3,
@@ -674,7 +681,7 @@ WGPURenderPipeline pipeline = wgpuDeviceCreateRenderPipeline( device, to_ptr( WG
         
         // Our fragment shader outputs a single color value per pixel.
         .targetCount = 1,
-        .targets = (WGPUColorTargetState[]){
+        .targets = arr<WGPUColorTargetState>{
             {
                 .format = swap_chain_format,
                 // The images we want to draw may have transparency, so let's turn on alpha blending with over compositing (ɑ⋅foreground + (1-ɑ)⋅background).
@@ -775,7 +782,7 @@ When it's time to draw a set of sprites:
     ```c++
     WGPURenderPassEncoder render_pass = wgpuCommandEncoderBeginRenderPass( encoder, to_ptr<WGPURenderPassDescriptor>({
         .colorAttachmentCount = 1,
-        .colorAttachments = (WGPURenderPassColorAttachment[]){{
+        .colorAttachments = arr<WGPURenderPassColorAttachment>{{
             .view = current_texture_view,
             .loadOp = WGPULoadOp_Clear,
             .storeOp = WGPUStoreOp_Store,
@@ -869,7 +876,7 @@ WGPUBindGroup bind_group = wgpuDeviceCreateBindGroup( device, to_ptr( WGPUBindGr
     .layout = layout,
     .entryCount = 3,
     // The entries `.binding` matches what we wrote in the shader.
-    .entries = (WGPUBindGroupEntry[]){
+    .entries = arr<WGPUBindGroupEntry>{
         {
             .binding = 0,
             .buffer = uniform_buffer,
@@ -923,9 +930,9 @@ Another gotcha may arise if you edit the shaders I provide. There is an optional
     // This exactly matches what's in the shader.
     // We're not actually passing data, we're just declaring matching types.
     .layout = wgpuDeviceCreatePipelineLayout( device, to_ptr( WGPUPipelineLayoutDescriptor{
-        .bindGroupLayoutCount = 1, .bindGroupLayouts = (WGPUBindGroupLayout[]){
+        .bindGroupLayoutCount = 1, .bindGroupLayouts = arr<WGPUBindGroupLayout>{
             wgpuDeviceCreateBindGroupLayout(
-                device, to_ptr( WGPUBindGroupLayoutDescriptor{ .entryCount = 3, .entries = (WGPUBindGroupLayoutEntry[]){
+                device, to_ptr( WGPUBindGroupLayoutDescriptor{ .entryCount = 3, .entries = arr<WGPUBindGroupLayoutEntry>{
                     {
                         .binding = 0,
                         .visibility = WGPUShaderStage_Vertex,
@@ -1384,3 +1391,4 @@ You don't need anything else. You might want:
 * 2023-09-13: Added some API URLs in the early parts of the guide.
 * 2023-09-14: ECS gained a method to drop a given component from an entity.
 * 2023-09-16: WGPUSwapChainDescriptor fields defined in declared order
+* 2023-09-17: Switched to `arr<T>` for arrays because MSVC is strict and correct.
