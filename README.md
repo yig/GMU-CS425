@@ -367,11 +367,11 @@ When our graphics manager starts up, it will initialize the WebGPU API, compile 
 First things first. Let's add WebGPU to our `xmake.lua` with `add_requires("wgpu-native", "glfw3webgpu")` near the top and `add_packages("wgpu-native", "glfw3webgpu")` inside `target("illengine")`. Include the `<webgpu/webgpu.h>` header file in your graphics manager `.cpp` file and the `<glfw3webgpu.h>` header which allows us to use it with `GLFW`. One more thing; the [widely-supported](https://en.cppreference.com/w/cpp/compiler_support) [designated initializers](https://www.cppstories.com/2021/designated-init-cpp20) part of the C++20 standard lets us write much nicer looking WebGPU code. Change `set_languages("cxx17")` to `set_languages("cxx20")` to turn it on. We're going to be passing pointers to temporary `struct`s and arrays of `struct`s to WebGPU a lot. C allows this, but C++ needs a couple of workarounds. Add these two lines near the top of your graphics manager `.cpp`:
 
 ```c++
-template< typename T > const T* to_ptr( const T& val ) { return &val; }
-template< typename T > using arr = T[];
+template< typename T > constexpr const T* to_ptr( const T& val ) { return &val; }
+template< typename T, std::size_t N > constexpr const T* to_ptr( const T (&&arr)[N] ) { return arr; }
 ```
 
-The one-line `to_ptr()` function legally returns a pointer to a temporary. The `using arr = T[]` is a type alias (generic typedef) for an array of any type; C++ requires a `typedef` or type alias for temporary arrays. (Although many compilers permit parentheses around temporary type names as in `(Foo[]){ ... }`, MSVC is [strict](https://stackoverflow.com/questions/15458883/using-array-init-list-as-temporary-in-c11#comment24292271_15458897) and needs a workaround.) Finally, if you are using GCC as your compiler and can't switch to clang or MSVC, GCC has a [bug](https://stackoverflow.com/questions/32941846/c-error-taking-address-of-temporary-array/56196014#56196014) whose workaround is to replace `arr<T>{ ... }` with `std::array<T,length>{ ... }.data()`. If all this is too much C++ magic for you, you can modify the suggested code to declare your WebGPU `struct`s with names and take addresses of those.
+The first `to_ptr()` function legally returns a pointer to a temporary. The second `to_ptr()` does the same for an array of any type. If all this is too much C++ magic for you, you can modify the suggested code to declare your WebGPU `struct`s with names and take addresses of those.
 
 ### Startup
 
@@ -617,13 +617,13 @@ WGPURenderPipeline pipeline = wgpuDeviceCreateRenderPipeline( device, to_ptr( WG
         .entryPoint = "vertex_shader_main",
         // Vertex attributes.
         .bufferCount = 2,
-        .buffers = arr<WGPUVertexBufferLayout>{
+        .buffers = to_ptr<WGPUVertexBufferLayout>({
             // We have one buffer with our per-vertex position and UV data. This data never changes.
             // Note how the type, byte offset, and stride (bytes between elements) exactly matches our `vertex_buffer`.
             {
                 .arrayStride = 4*sizeof(float),
                 .attributeCount = 2,
-                .attributes = arr<WGPUVertexAttribute>{
+                .attributes = to_ptr<WGPUVertexAttribute>({
                     // Position x,y are first.
                     {
                         .format = WGPUVertexFormat_Float32x2,
@@ -636,7 +636,7 @@ WGPURenderPipeline pipeline = wgpuDeviceCreateRenderPipeline( device, to_ptr( WG
                         .offset = 2*sizeof(float),
                         .shaderLocation = 1
                     }
-                    }
+                    })
             },
             // We will use a second buffer with our per-sprite translation and scale. This data will be set in our draw function.
             {
@@ -645,7 +645,7 @@ WGPURenderPipeline pipeline = wgpuDeviceCreateRenderPipeline( device, to_ptr( WG
                 // The type, byte offset, and stride (bytes between elements) exactly match the array of `InstanceData` structs we will upload in our draw function.
                 .stepMode = WGPUVertexStepMode_Instance,
                 .attributeCount = 2,
-                .attributes = arr<WGPUVertexAttribute>{
+                .attributes = to_ptr<WGPUVertexAttribute>({
                     // Translation as a 3D vector.
                     {
                         .format = WGPUVertexFormat_Float32x3,
@@ -658,9 +658,9 @@ WGPURenderPipeline pipeline = wgpuDeviceCreateRenderPipeline( device, to_ptr( WG
                         .offset = offsetof(InstanceData, scale),
                         .shaderLocation = 3
                     }
-                    }
+                    })
             }
-            }
+            })
         },
     
     // Interpret our 4 vertices as a triangle strip
@@ -681,7 +681,7 @@ WGPURenderPipeline pipeline = wgpuDeviceCreateRenderPipeline( device, to_ptr( WG
         
         // Our fragment shader outputs a single color value per pixel.
         .targetCount = 1,
-        .targets = arr<WGPUColorTargetState>{
+        .targets = to_ptr<WGPUColorTargetState>({
             {
                 .format = swap_chain_format,
                 // The images we want to draw may have transparency, so let's turn on alpha blending with over compositing (ɑ⋅foreground + (1-ɑ)⋅background).
@@ -701,7 +701,7 @@ WGPURenderPipeline pipeline = wgpuDeviceCreateRenderPipeline( device, to_ptr( WG
                         }
                     } ),
                 .writeMask = WGPUColorWriteMask_All
-            }}
+            }})
         } )
     } ) );
 ```
@@ -782,13 +782,13 @@ When it's time to draw a set of sprites:
     ```c++
     WGPURenderPassEncoder render_pass = wgpuCommandEncoderBeginRenderPass( encoder, to_ptr<WGPURenderPassDescriptor>({
         .colorAttachmentCount = 1,
-        .colorAttachments = arr<WGPURenderPassColorAttachment>{{
+        .colorAttachments = to_ptr<WGPURenderPassColorAttachment>({{
             .view = current_texture_view,
             .loadOp = WGPULoadOp_Clear,
             .storeOp = WGPUStoreOp_Store,
             // Choose the background color.
             .clearValue = WGPUColor{ red, green, blue, 1.0 }
-            }}
+            }})
         }) );
     ```
 4. Set the pipeline with `wgpuRenderPassEncoderSetPipeline( render_pass, pipeline );`.
@@ -876,7 +876,7 @@ WGPUBindGroup bind_group = wgpuDeviceCreateBindGroup( device, to_ptr( WGPUBindGr
     .layout = layout,
     .entryCount = 3,
     // The entries `.binding` matches what we wrote in the shader.
-    .entries = arr<WGPUBindGroupEntry>{
+    .entries = to_ptr<WGPUBindGroupEntry>({
         {
             .binding = 0,
             .buffer = uniform_buffer,
@@ -890,7 +890,7 @@ WGPUBindGroup bind_group = wgpuDeviceCreateBindGroup( device, to_ptr( WGPUBindGr
             .binding = 2,
             .textureView = wgpuTextureCreateView( tex, nullptr )
         }
-        }
+        })
     } ) );
 wgpuBindGroupLayoutRelease( layout );
 ```
@@ -930,9 +930,9 @@ Another gotcha may arise if you edit the shaders I provide. There is an optional
     // This exactly matches what's in the shader.
     // We're not actually passing data, we're just declaring matching types.
     .layout = wgpuDeviceCreatePipelineLayout( device, to_ptr( WGPUPipelineLayoutDescriptor{
-        .bindGroupLayoutCount = 1, .bindGroupLayouts = arr<WGPUBindGroupLayout>{
+        .bindGroupLayoutCount = 1, .bindGroupLayouts = to_ptr<WGPUBindGroupLayout>({
             wgpuDeviceCreateBindGroupLayout(
-                device, to_ptr( WGPUBindGroupLayoutDescriptor{ .entryCount = 3, .entries = arr<WGPUBindGroupLayoutEntry>{
+                device, to_ptr( WGPUBindGroupLayoutDescriptor{ .entryCount = 3, .entries = to_ptr<WGPUBindGroupLayoutEntry>({
                     {
                         .binding = 0,
                         .visibility = WGPUShaderStage_Vertex,
@@ -949,8 +949,8 @@ Another gotcha may arise if you edit the shaders I provide. There is an optional
                         .texture.sampleType = WGPUTextureSampleType_Float,
                         .texture.viewDimension = WGPUTextureViewDimension_2D
                     }
-                } } ) )
-            } } ) ),
+                }) } ) )
+            }) } ) ),
 ```
 
 Those calls to `wgpuDeviceCreatePipelineLayout()` and `wgpuDeviceCreateBindGroupLayout()` technically leak, since we don't call `wgpuPipelineLayoutRelease()` and `wgpuBindGroupLayoutRelease()` on their return values. Since this is for debug code, you can ignore that. Or you could ignore the leaks since we are only ever creating the pipeline once, and the memory should be freed when we release `device` at the end of our program. This is another place where nice [RAII](https://en.cppreference.com/w/cpp/language/raii) C++ wrappers for WebGPU [1](https://source.chromium.org/chromium/chromium/src/+/main:out/Debug/gen/third_party/dawn/include/dawn/webgpu_cpp.h) [2](https://eliemichel.github.io/LearnWebGPU/advanced-techniques/raii.html) can simplify your code.
@@ -1392,3 +1392,4 @@ You don't need anything else. You might want:
 * 2023-09-14: ECS gained a method to drop a given component from an entity.
 * 2023-09-16: WGPUSwapChainDescriptor fields defined in declared order
 * 2023-09-17: Switched to `arr<T>` for arrays because MSVC is strict and correct.
+* 2023-09-17: Switched `arr<T>` to `to_ptr<T>` for arrays to work around a gcc bug.
