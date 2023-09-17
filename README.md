@@ -490,10 +490,10 @@ and create a matching swap chain:
 int width, height;
 glfwGetFramebufferSize( window, &width, &height );
 WGPUSwapChain swapchain = wgpuDeviceCreateSwapChain( device, surface, to_ptr( WGPUSwapChainDescriptor{
-    .width = (uint32_t)width,
-    .height = (uint32_t)height,
     .usage = WGPUTextureUsage_RenderAttachment,
-    .format = swap_chain_format
+    .format = swap_chain_format,
+    .width = (uint32_t)width,
+    .height = (uint32_t)height
     }) );
 ```
 
@@ -1383,3 +1383,4 @@ You don't need anything else. You might want:
 * 2023-09-12: Also linked to LearnWebGPU in C++'s RAII wrapper
 * 2023-09-13: Added some API URLs in the early parts of the guide.
 * 2023-09-14: ECS gained a method to drop a given component from an entity.
+* 2023-09-16: WGPUSwapChainDescriptor fields defined in declared order
