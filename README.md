@@ -736,12 +736,12 @@ The output parameters `width` and `height` store the image's dimensions. We'll n
 
 ```c++
 WGPUTexture tex = wgpuDeviceCreateTexture( device, to_ptr( WGPUTextureDescriptor{
+    .usage = WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopyDst,
     .dimension = WGPUTextureDimension_2D,
     .size = { (uint32_t)width, (uint32_t)height, 1 },
-    .mipLevelCount = 1,
-    .sampleCount = 1,
     .format = WGPUTextureFormat_RGBA8Unorm,
-    .usage = WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopyDst
+    .mipLevelCount = 1,
+    .sampleCount = 1
     } ) );
 ```
 
@@ -1393,3 +1393,4 @@ You don't need anything else. You might want:
 * 2023-09-16: WGPUSwapChainDescriptor fields defined in declared order
 * 2023-09-17: Switched to `arr<T>` for arrays because MSVC is strict and correct.
 * 2023-09-17: Switched `arr<T>` to `to_ptr<T>` for arrays to work around a gcc bug.
+* 2023-09-17: Fixed WGPUTextureDescriptor fields out of declaration order.
