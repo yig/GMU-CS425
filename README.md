@@ -1137,41 +1137,21 @@ void Destroy( EntityID e ) {
 }
 ```
 
-The `ForEach()` function can be used like: `ForEach<Position,Velocity,Health>( callback )`. It takes multiple templated types. The idea behind this implementation is to find the container for the first component. That gives us candidate `EntityID`s. We will iterate over those `EntityID`s and call the callback for entities that have all the other components. Let's first write a helper function `HasAll<Position,Velocity,Health>()` that returns true if an entity has all needed components and false otherwise. It makes use of some C++17 features [1](https://stackoverflow.com/questions/71726669/c-17-what-is-the-difference-between-a-fold-expression-and-if-constexpr-when-us) [2](https://stackoverflow.com/questions/48405482/variadic-template-no-matching-function-for-call/48405556#48405556) for dealing with variadic templates (a variable number of template arguments).
-
-```c++
-// Returns true if the entity has all types.
-template <typename T, typename... Rest>
-bool HasAll( EntityID entity ) {
-    bool result = true;
-    if constexpr (sizeof...(Rest) > 0) { result = HasAll<Rest...>(entity); }
-    return result && GetAppropriateSparseSet<T>().count( entity ) > 0;
-}
-```
-
-Now we can write `ForEach()`:
+The `ForEach()` function can be used like: `ForEach<Position,Velocity,Health>( callback )`. It takes multiple templated types. The idea behind this implementation is to find the container for the first component. That gives us candidate `EntityID`s. You will iterate over those `EntityID`s and call the callback for entities that have all the other components. Here is the outline of that function for you to fill in:
 
 ```c++
 typedef std::function<void( EntityID )> ForEachCallback;
 template<typename EntitiesThatHaveThisComponent, typename... AndAlsoTheseComponents>
 void ForEach( const ForEachCallback& callback ) {
-    // Iterate over elements of the first container.
-    auto& container = GetAppropriateSparseSet<EntitiesThatHaveThisComponent>();
-    for( const auto& [entity, value] : container ) {
-        // We know it has the first component.
-        // Skip the entity if it doesn't have the remaining components.
-        // This `if constexpr` is evaluated at compile time. It is needed when AndAlsoTheseComponents is empty.
-        if constexpr (sizeof...(AndAlsoTheseComponents) > 0) {
-            if( !HasAll<AndAlsoTheseComponents...>( entity ) ) {
-                continue;
-            }
-        }
-        callback( entity );
-    }
+    // Get a vector of ComponentIndex we can use with `m_components[ index ]->Has( entity )`.
+    std::vector<ComponentIndex> also{ std::type_index(typeid(AndAlsoTheseComponents))... };
+    // Iterate over entities in the first container.
+    // If the entity has all components in `also`, call `callback( entity )`.
+    // ... your code goes here ...
 }
 ```
 
-That's it!
+That's it! (It's also possible to write this function without the `std::vector` inside by using [some C++17 features](https://stackoverflow.com/questions/71726669/c-17-what-is-the-difference-between-a-fold-expression-and-if-constexpr-when-us) and a recursive helper function.)
 
 Note that this `ForEach()` function doesn't pass the components by reference to the callback. Use `Get<Component>(entity)` in the callback. For example, you could replace a for loop over an `std::vector<Sprite> sprites`:
 ```c++
@@ -1403,3 +1383,4 @@ You don't need anything else. You might want:
 * 2023-09-18: Spelled out a few xmake commands to make them appear more intuitive.
 * 2023-09-18: Mention not using `LoadImage()` as the function name in windows.
 * 2023-09-19: Simplified ECS description.
+* 2023-09-19: Simplified ECS further.
