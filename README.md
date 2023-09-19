@@ -1056,37 +1056,13 @@ This declares a function `Get()` that takes an `EntityID` parameter. The functio
 Get<Position>(entity).x // Get access to the position's x component.
 Get<Position>(entity) = p; // Set the component given another Position p.
 ```
+This also has the side effect that `Get<Position>(entity)` will add that component to an entity if it didn't exist.
 
-How will we store all of these sparse sets? In an `std::vector`. C++ is statically typed. We can't directly create a vector of heterogeneous types, such as `{ SparseSet<Position>, SparseSet<Health> }`. Instead, we will create a `SparseSetHolder` superclass and store a vector of pointers to the superclasses in our ECS:
-
-```c++
-std::vector< std::unique_ptr< SparseSetHolder > > m_components;
-```
-
-> 💣 Gotcha: If you try to make a copy of a `unique_ptr`, such as by returning a copy of this vector or passing your entity component system class by value, you will get an obtuse error message. You almost certainly want to return or pass by reference instead. (We don't want multiple instances reading and writing and freeing the same memory.)
-
-How will we know which element in the vector stores the component we are looking for? We will create a function that returns a deterministic index for each unique type it sees. It uses static variables to always returns the same index for the same type.
-
-```c++
-typedef int ComponentIndex;
-template<typename T> ComponentIndex GetComponentIndex() {
-    static ComponentIndex index = GetNextIndex(); // Only calls GetNextIndex() the first time this function is called.
-    return index;
-}
-ComponentIndex GetNextIndex() {
-    static ComponentIndex index = -1; // Returns the sequence 0, 1, 2, … every time this is called.
-    index += 1;
-    return index;
-}
-```
-
-(If you allow the user to create multiple instances of your ECS (multiple worlds), be aware that `GetComponentIndex()` values are global across all instances. So if ECS one has Position components and ECS two doesn't, there will be a gap in ECS two's `m_components` vector. This is fine, so long as your `GetAppropriateSparseSet()` can handle it. Alternatively, `m_components` could be an `std::unordered_map` that uses `std::type_index(typeid(T))` to get a unique integer for each type. You don't have to worry about any of this if your engine stores one global ECS instance.)
-
-We need a `SparseSetHolder` subclass for each type, and a superclass for operations we'll need without knowing about the type being held by the subclass.
+How will we store all of these sparse sets? In other words, how does `GetAppropriateSparseSet<T>()` work? We need a container for the components. The challenge is that we, the engine makers, can’t know what types of components game makers will create. C++ is statically typed. We can't directly create a vector or map of heterogeneous types, such as `{ SparseSet<Position>, SparseSet<Health> }`. (Templated types are different types.) As a solution, we can create a `SparseSetHolder` parent class that each `SparseSet<T>` inherits from, and store those. The `SparseSetHolder` superclass has methods we can call without knowing the component type held by the subclass:
 ```c++
 class SparseSetHolder {
 public:
-    // A virtual destructor, since we store pointers to this superclass yet have subclasses with destructors that need to run.
+    // A virtual destructor, since subclasses need their destructors to run to free memory.
     virtual ~SparseSetHolder() = default;
     virtual bool Has( EntityID ) const = 0;
     virtual void Drop( EntityID ) = 0;
@@ -1100,18 +1076,46 @@ public:
 };
 ```
 
-Now we can write a templated function to return a reference to the underlying `unordered_map`:
+Our ECS can store a map of pointers to the superclasses:
+
+```c++
+std::unordered_map< ComponentIndex, std::unique_ptr< SparseSetHolder > > m_components;
+```
+
+(We use an `std::unique_ptr` so we don't have to worry about memory leaks.)
+
+> 💣 Gotcha: If you try to make a copy of a `unique_ptr`, such as by returning a copy of the entire ECS or passing your entity component system class by value, you will get an obtuse error message. This is a good thing, since it prevents you from accidentally copying the entire registry of components. You almost certainly want to return or pass by reference instead.
+
+What is a `ComponentIndex`? C++ provides a special type called `std::type_index` that we can use in maps. We'll use that via a `typedef`:
+
+```c++
+typedef std::type_index ComponentIndex;
+```
+
+When we need one for a type `T`, we can call `std::type_index(typeid(T))`. Don't forget to `#include <typeindex>`.
+
+> 🎩🪄 (If you want to avoid the C++ compiler magic that powers `std::type_index(typeid(T))`, there is another way to get a unique, deterministic integer for a type. It makes clever use of a pair of functions with static variables inside to always returns the same index for the same type:
+> ```c++
+> typedef int ComponentIndex;
+> template<typename T> ComponentIndex GetComponentIndex() {
+>     static ComponentIndex index = GetNextIndex(); // Only calls GetNextIndex() the first time this function is called.
+>     return index;
+> }
+> ComponentIndex GetNextIndex() {
+>     static ComponentIndex index = -1; // Returns the sequence 0, 1, 2, … every time this is called.
+>     index += 1;
+>     return index;
+> }
+> ```
+> It's shorter and simpler to just use `std::type_index`. (If you allow the user to create multiple instances of your ECS (multiple worlds), be aware that `GetComponentIndex()` values are global across all instances. So if ECS one has Position components and ECS two doesn't, there will be a gap in ECS two's `m_components` vector.))
+
+Now that we are ready to write `GetAppropriateSparseSet<T>()`. It's a templated function that returns a reference to the `unordered_map` inside the `SparseSetHolder`:
 ```c++
 template< typename T >
 std::unordered_map< EntityID, T >&
 GetAppropriateSparseSet() {
     // Get the index for T's SparseSet
-    const ComponentIndex index = GetComponentIndex<T>();
-    // If we haven't seen it yet, it must be past the end.
-    // Since component indices are shared by all ECS instances,
-    // it could happen that index is more than one past the end.
-    if( index >= m_components.size() ) { m_components.resize( index+1 ); }
-    assert( index < m_components.size() );
+    const ComponentIndex index = std::type_index(typeid(T));
     // Create the actual sparse set if needed.
     if( m_components[ index ] == nullptr ) m_components[index] = std::make_unique< SparseSet<T> >();
     // It's safe to cast the SparseSetHolder to its subclass and return the std::unordered_map< EntityID, T > inside.
@@ -1121,7 +1125,7 @@ GetAppropriateSparseSet() {
 
 Now we can write the rest of our user-facing (public) functions:
 ```c++
-// Drop the component from the entity.
+// Drop a component from an entity.
 template< typename T >
 void Drop( EntityID e ) {
     GetAppropriateSparseSet<T>().erase( e );
@@ -1129,11 +1133,24 @@ void Drop( EntityID e ) {
 
 // Destroy the entity by removing all components.
 void Destroy( EntityID e ) {
-    for( const auto& comps : m_components ) { comps->Drop( e ); }
+    for( const auto& [index, comps] : m_components ) { comps->Drop( e ); }
 }
 ```
 
-The `ForEach` function can be used like: `ForEach<Position,Velocity,Health>( callback )`. It takes multiple templated types. The idea behind this implementation is to find the container for the first component. That gives us candidate `EntityID`s. We will iterate over those `EntityID`s and call the callback for entities that have all the other components.
+The `ForEach()` function can be used like: `ForEach<Position,Velocity,Health>( callback )`. It takes multiple templated types. The idea behind this implementation is to find the container for the first component. That gives us candidate `EntityID`s. We will iterate over those `EntityID`s and call the callback for entities that have all the other components. Let's first write a helper function `HasAll<Position,Velocity,Health>()` that returns true if an entity has all needed components and false otherwise. It makes use of some C++17 features [1](https://stackoverflow.com/questions/71726669/c-17-what-is-the-difference-between-a-fold-expression-and-if-constexpr-when-us) [2](https://stackoverflow.com/questions/48405482/variadic-template-no-matching-function-for-call/48405556#48405556) for dealing with variadic templates (a variable number of template arguments).
+
+```c++
+// Returns true if the entity has all types.
+template <typename T, typename... Rest>
+bool HasAll( EntityID entity ) {
+    bool result = true;
+    if constexpr (sizeof...(Rest) > 0) { result = HasAll<Rest...>(entity); }
+    return result && GetAppropriateSparseSet<T>().count( entity ) > 0;
+}
+```
+
+Now we can write `ForEach()`:
+
 ```c++
 typedef std::function<void( EntityID )> ForEachCallback;
 template<typename EntitiesThatHaveThisComponent, typename... AndAlsoTheseComponents>
@@ -1144,7 +1161,6 @@ void ForEach( const ForEachCallback& callback ) {
         // We know it has the first component.
         // Skip the entity if it doesn't have the remaining components.
         // This `if constexpr` is evaluated at compile time. It is needed when AndAlsoTheseComponents is empty.
-        // https://stackoverflow.com/questions/48405482/variadic-template-no-matching-function-for-call/48405556#48405556
         if constexpr (sizeof...(AndAlsoTheseComponents) > 0) {
             if( !HasAll<AndAlsoTheseComponents...>( entity ) ) {
                 continue;
@@ -1152,17 +1168,6 @@ void ForEach( const ForEachCallback& callback ) {
         }
         callback( entity );
     }
-}
-```
-The `HasAll<Position,Velocity,Health>()` helper method is easier to write:
-```c++
-// Returns true if the entity has all types.
-template <typename T, typename... Rest>
-bool HasAll( EntityID entity ) {
-    bool result = true;
-    // https://stackoverflow.com/questions/48405482/variadic-template-no-matching-function-for-call/48405556#48405556
-    if constexpr (sizeof...(Rest) > 0) { result = HasAll<Rest...>(entity); }
-    return result && GetAppropriateSparseSet<T>().count( entity ) > 0;
 }
 ```
 
@@ -1397,3 +1402,4 @@ You don't need anything else. You might want:
 * 2023-09-17: Fixed WGPUTextureDescriptor fields out of declaration order.
 * 2023-09-18: Spelled out a few xmake commands to make them appear more intuitive.
 * 2023-09-18: Mention not using `LoadImage()` as the function name in windows.
+* 2023-09-19: Simplified ECS description.
