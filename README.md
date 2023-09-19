@@ -716,6 +716,7 @@ Let's make a function to load images. The load function should have a signature 
 bool LoadImage( const string& name, const string& path );
 ```
 
+(On Windows, call it something other than `LoadImage()`. That name is [trampled upon](https://stackoverflow.com/questions/2321713/how-do-i-avoid-name-collision-with-macros-defined-in-windows-header-files).)
 This lets our engine's users load an image from a `path` and then refer it by a convenient `name`. Don't forget to resolve `path` with your resource manager. Let's use an [`std::unordered_map< string, SOMETHING >`](https://en.cppreference.com/w/cpp/container/unordered_map) as our name-to-image map. You will want it to be an instance variable. `SOMETHING` should be a little struct you declare to hold the data we want to store about the image. You will want it to have fields for the image's native width and height, so you can compute its natural aspect ratio. You will also want a `WGPUTexture` field to keep the texture you create when loading. You can even make `SOMETHING`'s destructor call `wgpuTextureDestroy()` and `wgpuTextureRelease()` if the `WGPUTexture` field is not `nullptr`. Then calling `.clear()` or `.erase()` on the map will properly free GPU resources. (If you use RAII via [`webgpu_raii`](https://github.com/yig/webgpu_raii/tree/wgpu-native), then it's enough to store `WGPUTextureRef` and the resources will be released automatically.)
 
 For actually reading images from disk and decoding them into CPU memory, we'll use the wonderful `std_image` image loader. The documentation is [the header](https://github.com/nothings/stb/blob/master/stb_image.h). Add it to your `xmake.lua` with `add_requires("stb")` near the top and `add_packages("stb")` inside `target("illengine")`. `stb_image` is header only, but requires us to `#define STB_IMAGE_IMPLEMENTATION` in one compilation unit before `#include "stb_image.h"`. We'll only use it here, so:
@@ -1395,3 +1396,4 @@ You don't need anything else. You might want:
 * 2023-09-17: Switched `arr<T>` to `to_ptr<T>` for arrays to work around a gcc bug.
 * 2023-09-17: Fixed WGPUTextureDescriptor fields out of declaration order.
 * 2023-09-18: Spelled out a few xmake commands to make them appear more intuitive.
+* 2023-09-18: Mention not using `LoadImage()` as the function name in windows.
