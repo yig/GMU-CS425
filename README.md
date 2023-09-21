@@ -767,7 +767,7 @@ stbi_image_free( data );
 
 ### Drawing
 
-Add a `Draw()` method to your to your graphics manager that takes a parameter something like `const std::vector< Sprite >& sprites` and draws them. What should a `Sprite` be? It could be a small struct containing an image name, position, scale, and z value. Since we don't yet have an entity manager, the engine itself can't call `Draw()`, since no one is tracking drawable entities. For now, you can call `Draw()` in your main loop's callback function. We'll revisit this later, once we have an entity manager.
+Add a `Draw()` method to your graphics manager that takes a parameter something like `const std::vector< Sprite >& sprites` and draws them. What should a `Sprite` be? It could be a small struct containing an image name, position, scale, and z value. Since we don't yet have an entity manager, the engine itself can't call `Draw()`, since no one is tracking drawable entities. For now, you can call `Draw()` in your main loop's callback function. We'll revisit this later, once we have an entity manager.
 
 When it's time to draw a set of sprites:
 
@@ -793,17 +793,21 @@ When it's time to draw a set of sprites:
         }) );
     ```
 4. Set the pipeline with `wgpuRenderPassEncoderSetPipeline( render_pass, pipeline );`.
-5. Attach the vertex data (positions and texture coordinates) for our quad.
+5. Attach the vertex data (positions and texture coordinates) for our quad as slot 0:
     ```c++
-    wgpuRenderPassEncoderSetVertexBuffer( render_pass, 0, vertex_buffer, 0, 4*4*sizeof(float) );
+    wgpuRenderPassEncoderSetVertexBuffer( render_pass, 0 /* slot */, vertex_buffer, 0, 4*4*sizeof(float) );
     ```
-6. Make a `Uniforms` struct. Compute `uniforms.projection` from the window's `width` and `height` (see below). Copy it to the GPU.
-7. Sort the sprites so we can draw them back-to-front.
-8. Draw each sprite.
+6. Attach the per-sprite instance data (the GPU memory holding `InstanceData`, described below) as slot 1:
+    ```c++
+    wgpuRenderPassEncoderSetVertexBuffer( render_pass, 1 /* slot */, instance_buffer, 0, sizeof(InstanceData) * number of sprites );
+    ```
+7. Make a `Uniforms` struct. Compute `uniforms.projection` from the window's `width` and `height` (see below). Copy it to the GPU.
+8. Sort the sprites so we can draw them back-to-front.
+9. Draw each sprite.
     1. Compute the `i`-th sprite's `InstanceData` (scale and translation) and copy it to the GPU.
     2. Apply the sprite's bindings. You can skip this step if the correct image is already bound (because the previous sprite also used it).
     3. Draw one (`1`) instance of our quad. That is, draw four (`4`) vertices starting at vertex `0` in our vertex buffer, but index `i` in our `InstanceData` buffer. We do this with `wgpuRenderPassEncoderDraw( render_pass, 4, 1, 0, i );`
-9. Finish drawing.
+10. Finish drawing.
     1. End the render pass with `wgpuRenderPassEncoderEnd( render_pass );`.
     2. Finish encoding our commands and submit them to the GPU's work queue.
         ```c++
@@ -813,7 +817,7 @@ When it's time to draw a set of sprites:
     3. Present the new frame with: `wgpuSwapChainPresent( swapchain );`
     4. Cleanup anything you created in the loop (such as the instance data buffer, the swap chain's texture view, the command encoder, per-sprite bind groups, etc).
 
-Steps 6, 7, 8, and 10 need a bit more elaboration.
+Steps 7–10 need a bit more elaboration.
 
 ### Making the `Uniforms` struct
 
@@ -1384,3 +1388,4 @@ You don't need anything else. You might want:
 * 2023-09-18: Mention not using `LoadImage()` as the function name in windows.
 * 2023-09-19: Simplified ECS description.
 * 2023-09-19: Simplified ECS further.
+* 2023-09-20: Mentioned attaching the per-sprite instance data as slot 1 via `wgpuRenderPassEncoderSetVertexBuffer()`
