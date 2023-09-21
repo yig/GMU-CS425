@@ -905,7 +905,7 @@ wgpuBindGroupLayoutRelease( layout );
 Next, attach it:
 
 ```c++
-wgpuRenderPassEncoderSetBindGroup( render_pass, 1, bind_group, 0, nullptr );
+wgpuRenderPassEncoderSetBindGroup( render_pass, 0, bind_group, 0, nullptr );
 ```
 
 Now you are ready for the call to `wgpuRenderPassEncoderDraw()`.
@@ -1391,3 +1391,4 @@ You don't need anything else. You might want:
 * 2023-09-20: Mentioned attaching the per-sprite instance data as slot 1 via `wgpuRenderPassEncoderSetVertexBuffer()`
 * 2023-09-20: Mentioned the danger of image info struct's destructor over-calling `wgpuTextureRelease()`
 * 2023-09-20: Mentioned not calling `wgpuTextureDestroy()` with RAII. Renamed LoadImage() suggestion LoadTexture().
+* 2023-09-21: Fixed `wgpuRenderPassEncoderSetBindGroup()` to use the correct group index.
