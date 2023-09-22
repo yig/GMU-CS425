@@ -910,6 +910,8 @@ Next, attach it:
 wgpuRenderPassEncoderSetBindGroup( render_pass, 0, bind_group, 0, nullptr );
 ```
 
+*N.B.* Don't release a bind group you set until after `wgpuRenderPassEncoderEnd()`. This may force you to awkwardly store bind groups you create as you iterate over sprites in a list. You can actually create the bind groups when you load a texture and store them persistently in your name-to-image map.
+
 Now you are ready for the call to `wgpuRenderPassEncoderDraw()`.
 
 ### Cleaning up
@@ -1395,3 +1397,4 @@ You don't need anything else. You might want:
 * 2023-09-20: Mentioned not calling `wgpuTextureDestroy()` with RAII. Renamed LoadImage() suggestion LoadTexture().
 * 2023-09-21: Fixed `wgpuRenderPassEncoderSetBindGroup()` to use the correct group index.
 * 2023-09-22: Graphics mentions to multiply the texture aspect scale by whatever scale the sprite asks for.
+* 2023-09-22: Mentioned not to release bind groups before calling wgpuRenderPassEncoderEnd().
