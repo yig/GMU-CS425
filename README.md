@@ -858,6 +858,8 @@ if( image_width < image_height ) {
 }
 ```
 
+Multiply that `scale` by whatever scale your sprite asks for.
+
 Once you have finished creating the `InstanceData` for the sprite, you can copy it to the GPU. At some point at the beginning of the entire draw function, you should allocate a buffer big enough to store an `InstanceData` for each sprite:
 ```c++
 WGPUBuffer instance_buffer = wgpuDeviceCreateBuffer( device, to_ptr<WGPUBufferDescriptor>({
@@ -1392,3 +1394,4 @@ You don't need anything else. You might want:
 * 2023-09-20: Mentioned the danger of image info struct's destructor over-calling `wgpuTextureRelease()`
 * 2023-09-20: Mentioned not calling `wgpuTextureDestroy()` with RAII. Renamed LoadImage() suggestion LoadTexture().
 * 2023-09-21: Fixed `wgpuRenderPassEncoderSetBindGroup()` to use the correct group index.
+* 2023-09-22: Graphics mentions to multiply the texture aspect scale by whatever scale the sprite asks for.
