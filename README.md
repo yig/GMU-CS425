@@ -39,7 +39,7 @@ target("helloworld")
 This declares that we want to support debug and release builds in general, and that we want to see lots of compiler warnings.
 It also declares a target program named `helloworld`.
 (It would have declared a library if instead of `binary` we had written `static` or `shared`.)
-We want to use the C++17 standard.
+We want to use the C++17 standard. ([This](https://github.com/mortennobel/cpp-cheatsheet) is a pretty good modern C++ cheat sheet.)
 This Hello, World! program will verify that your environment is working correctly.
 Let's put the program in a `demo` directory. Create `demo/helloworld.cpp` and put the most basic C++ program inside:
 
@@ -1407,3 +1407,4 @@ You don't need anything else. You might want:
 * 2023-09-25: Fixed misspelling in xmake debug mode.
 * 2023-09-25: Mentioned that running in a debugger provides the same or better information as RUST_BACKTRACE.
 * 2023-09-25: Map primer in graphics manager adapted from sound manager
+* 2023-09-25: Added a link to a C++ cheat sheet.
