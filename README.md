@@ -844,7 +844,7 @@ Copy `uniforms` to the GPU with `wgpuQueueWriteBuffer( queue, uniform_buffer, 0,
 
 ### Sorting the sprites
 
-We didn't turn on a depth buffer. If you have images with non-trivial transparency—pixels whose alpha is not 0 or 1—you'll get wrong colors unless you draw back to front, which defeats the purpose of a depth buffer. You will notice this if, for example, your images have feathered or anti-aliased borders. To sort the sprites, you can use the `std::sort()` function available when you `#include <algorithm>`. You can sort on an arbitrary field using a lambda. For example, an `std::vector< Sprite > sprites;` could be sorted on the `.z` property via `std::sort( sprites.begin(), sprites.end(), []( const Sprite& lhs, const Sprite& rhs ) { return lhs.z > rhs.z; } );`. This performs a reverse sort that puts larger z values corresponding to farther `Sprite`s first.)
+We didn't turn on a depth buffer. If you have images with non-trivial transparency—pixels whose alpha is not 0 or 1—you'll get wrong colors unless you draw back to front, which defeats the purpose of a depth buffer. You will notice this if, for example, your images have feathered or anti-aliased borders. To sort the sprites, you can use the `std::sort()` function available when you `#include <algorithm>`. You can sort on an arbitrary field using a lambda. For example, an `std::vector< Sprite > sprites;` could be sorted on the `.z` property via `std::sort( sprites.begin(), sprites.end(), []( const Sprite& lhs, const Sprite& rhs ) { return lhs.z > rhs.z; } );`. This performs a reverse sort that puts larger z values corresponding to farther `Sprite`s first.) *N.B.* You can't call `std::sort()` on a `const` vector, since `sort` modifies its parameters in place. Yet your draw function probably takes a `const` vector of sprites. The solution is to make a copy first, as in `auto sprites_copy = sprites;`. Or you could rename the `sprites` parameter in the `.cpp` file (parameter *names* don't have to match between the `.h` and `.cpp`) something like `sprites_input_parameter_pick_whatever_name_you_like` and then write `auto sprites = sprites_input_parameter_pick_whatever_name_you_like;`.
 
 ### Drawing a sprite
 
@@ -1413,3 +1413,4 @@ You don't need anything else. You might want:
 * 2023-09-26: Warn away from using the destructor for the texture structs to drop/release.
 * 2023-09-26: Added missing variable name for WGPUSampler.
 * 2023-09-26: Encourage creating bind groups in load texture.
+* 2023-09-26: Mentioned copying a const vector before sorting.
