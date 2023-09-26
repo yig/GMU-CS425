@@ -980,7 +980,7 @@ Those calls to `wgpuDeviceCreatePipelineLayout()` and `wgpuDeviceCreateBindGroup
 
 ## Game Objects (Entity Component System)
 
-Your engine is now capable of playing sounds, drawing graphics, and reading input. It's time to add a notion of game objects. This will allow users of your engine to populate their games with objects and update them in response to user input and the passage of time (such as physics). This will also give your graphics manager something to draw every frame. Rather than creating a game object base class that all user classes derive from, we will implement a modern game architecture design called [Entity Component System (ECS)](https://github.com/SanderMertens/ecs-faq). The key idea is to separate data (Components) from game Entities (integers IDs) and algorithms (Systems). This has several advantages:
+Your engine is now capable of drawing graphics, reading input, and (optionally) playing sounds. It's time to add a notion of game objects. This will allow users of your engine to populate their games with objects and update them in response to user input and the passage of time (such as physics). This will also give your graphics manager something to draw every frame. Rather than creating a game object base class that all user classes derive from, we will implement a modern game architecture design called [Entity Component System (ECS)](https://github.com/SanderMertens/ecs-faq). The key idea is to separate data (Components) from game Entities (integers IDs) and algorithms (Systems). This has several advantages:
 
 1. You avoid awkward OOP hierarchies (do drawable objects subclass physics body objects or vice versa).
 2. When a game's requirements change, you don't have to refactor your OOP classes.
@@ -1414,3 +1414,4 @@ You don't need anything else. You might want:
 * 2023-09-26: Added missing variable name for WGPUSampler.
 * 2023-09-26: Encourage creating bind groups in load texture.
 * 2023-09-26: Mentioned copying a const vector before sorting.
+* 2023-09-26: ECS said playing sound is required, but it's optional.
