@@ -574,7 +574,7 @@ Next the shader declares a `sampler` called `texSampler`. The sampler is what we
 You'll also want to create a sampler at some point during startup (and release it with `wgpuSamplerRelease()` during shutdown or use [`webgpu_raii`](https://github.com/yig/webgpu_raii/tree/wgpu-native)):
 
 ```c++
-WGPUSampler = wgpuDeviceCreateSampler( device, to_ptr( WGPUSamplerDescriptor{
+WGPUSampler sampler = wgpuDeviceCreateSampler( device, to_ptr( WGPUSamplerDescriptor{
     .addressModeU = WGPUAddressMode_ClampToEdge,
     .addressModeV = WGPUAddressMode_ClampToEdge,
     .magFilter = WGPUFilterMode_Linear,
@@ -1409,3 +1409,4 @@ You don't need anything else. You might want:
 * 2023-09-25: Map primer in graphics manager adapted from sound manager
 * 2023-09-25: Added a link to a C++ cheat sheet.
 * 2023-09-26: Warn away from using the destructor for the texture structs to drop/release.
+* 2023-09-26: Added missing variable name for WGPUSampler.
