@@ -1246,7 +1246,7 @@ lua.new_enum( "KEYBOARD",
 ```
 Then a Lua script can call `KeyIsDown( KEYBOARD.SPACE )` as needed. You should also expose a function to quit your game.
 
-You should expose your **sound manager**'s ability to play a sound.
+You should expose your **sound manager**'s ability to play a sound (optional).
 
 You should expose your **entity component systems**'s functionality for creating an entity, destroying an entity, and getting built-in components. Exposing the functions to create and destroy entities is straightforward. However, you can't directly expose your ECS's templated get-a-component function. You will have to expose a different getter for each component. For example, expose a `"GetSprite"` Lua function that returns your ECS's `Get<Sprite>(e)` by reference (or by pointer). `sol` will make the struct available to Lua by reference. (If you are using a C++ lambda to wrap your `Get<Sprite>(e)`, you'll need to explicitly specify its return value to be a reference, as in `[&]( EntityID e ) -> Sprite& { return ecs.Get<Sprite>(e); }` or else return a pointer.) This means that Lua scripts will be able to directly modify the struct members, as in `GetPosition(e).x = 10`. (The only things `sol` doesn't pass by reference are primitive Lua type like an integer, float, or string.) You will need to register `struct`s like `Sprite` and our hypothetical `Position` with `sol`. To do that, use the [`new_usertype` function](https://sol2.readthedocs.io/en/latest/tutorial/cxx-in-lua.html). For example, you can expose a `struct Person { string name; int age; };` via:
 ```c++
@@ -1289,7 +1289,7 @@ If you wish, you can organize the functionality you expose to Lua with [somethin
 **You have reached the sixth checkpoint.** Upload your code. Run `xmake clean --all` and then zip your entire directory. For this checkpoint:
 
 * Your engine should have a script manager that lets users run Lua scripts on demand or attach a `Script` component to entities that will be run automatically in the game loop.
-* Your engine should expose to Lua scripts the ability to query input state, quit the game, play sounds, and manipulate sprites.
+* Your engine should expose to Lua scripts the ability to query input state, quit the game, manipulate sprites, and (optionally) play sounds.
 
 ## What's Next?
 
@@ -1416,3 +1416,4 @@ You don't need anything else. You might want:
 * 2023-09-26: Mentioned copying a const vector before sorting.
 * 2023-09-26: ECS said playing sound is required, but it's optional.
 * 2023-10-03: Added a link to Learn WebGPU in C++'s swap chain explanation.
+* 2023-10-05: Sound manager is optional from the script manager.
