@@ -1096,7 +1096,7 @@ Our ECS can store a map of pointers to the superclasses:
 std::unordered_map< ComponentIndex, std::unique_ptr< SparseSetHolder > > m_components;
 ```
 
-(We use an `std::unique_ptr` so we don't have to worry about memory leaks.)
+(We use an `std::unique_ptr` so we don't have to worry about memory leaks. Be sure to `#include <memory>`.)
 
 > 💣 Gotcha: If you try to make a copy of a `unique_ptr`, such as by returning a copy of the entire ECS or passing your entity component system class by value, you will get an obtuse error message. This is a good thing, since it prevents you from accidentally copying the entire registry of components. You almost certainly want to return or pass by reference instead.
 
@@ -1417,3 +1417,4 @@ You don't need anything else. You might want:
 * 2023-09-26: ECS said playing sound is required, but it's optional.
 * 2023-10-03: Added a link to Learn WebGPU in C++'s swap chain explanation.
 * 2023-10-05: Sound manager is optional from the script manager.
+* 2023-10-05: Mentioned `#include <memory>` in ECS for `unique_ptr`
