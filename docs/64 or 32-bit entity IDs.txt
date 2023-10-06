@@ -1,10 +1,10 @@
-If you have a 10 GHz processor and you create an entity every cycle (so 10 giga entities per second), you will use up all 64 bits in 58+ years. With 32-bits, you'll run out in half a second.
+If you have a 5 GHz processor and you create an entity every cycle (so 5 giga entities per second), you will use up all 64 bits in 117+ years. With 32-bits, you'll run out in less than a second.
 
-    (2*64/(10100010001000))/60/60/168/52 = 58.654940201813545
-    (2*32/(10100010001000)) = 0.4294967296
+    2**64/(5*10**9)/60/60/168/52 = 117.30988040362709
+    2**32/(5*10**9) = 0.8589934592
 
 But 64-bits uses more memory and memory bandwidth and cache.
 
-32-bits is probably fine. From another point of view, you'd have to create ~1200 entities per second over the course of 1000 hours to exhaust all 32-bits.
+32-bits is probably fine. From another point of view, you'd have to create ~1200 entities per second over the course of around 1000 hours to exhaust all 32-bits.
 
-    2*32/(100060*60) = 1193.046471111111.
+    2**32/(1200*60*60) = 994.2053925925926.
