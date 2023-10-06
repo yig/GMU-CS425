@@ -18,6 +18,8 @@ On Linux, install gcc or clang.
 
 One you have a compiler and `xmake` installed, we are ready to begin.
 
+> 🤖: I don't discuss or describe it, but it is possible to use [CMake](https://cmake.org/) to compile the project. [Modern CMake](https://cliutils.gitlab.io/modern-cmake/) is actually pretty nice and worth learning. You can then use [FetchContent](https://web.archive.org/web/20220211151524/https://bewagner.net/programming/2020/05/02/cmake-fetchcontent/) as a sort of distributed package manager. It's a bit jankier. Not all packages are set up for it. On the other hand, you can DIY a solution for such packages in your `CMakeLists.txt` without relying on a centralized package manager. I put a `CMakeLists.txt` capable of compiling the project [here](cmake/CMakeLists.txt), but I won't be discussing it much further. (You can compile with it by putting it at the top of your directory. Then compile the usual way. From the command line: (1) create a build folder `mkdir build-cmake`, (2) enter that directory (`cd build-cmake`), (3) let CMake configure the project `cmake ..`, and finally (4) compile `make` or `cmake --build .`.)
+
 ## Making a project
 
 Create a new directory. Since we're making a "little engine", I called mine `illengine` (🤷).
@@ -933,7 +935,7 @@ At the end of draw, after `wgpuQueueSubmit()`, it's safe to release any resource
 
 If your program is crashing inside WebGPU calls, you will get more informative error messages by setting the environment variable `RUST_BACKTRACE=1` or `RUST_BACKTRACE=full`. This will print the function names, file names, and line numbers in the call stack that caused the error. (*N.B.* You will get the same or better information by running in a debugger via `xmake run -d`.) You will want to be compiling in debug mode (`xmake config -m debug`). Then look for your files and line numbers in the output. The C++ function names will look mangled. On *Windows*, type `set RUST_BACKTRACE=1` on your command prompt. That sets an environment variable for the duration of the command prompt window. Every time you type `xmake run` in that window, it will see the environment variable. On *Unix* (Linux, macOS), you can type `RUST_BACKTRACE=1 xmake run` each time. To set it for your entire terminal window duration, the syntax varies based on shell (bash/zsh: `export RUST_BACKTRACE=1`, csh: `setenv RUST_BACKTRACE 1`, fish: either of those or `set -x RUST_BACKTRACE 1`).
 
-Don't release WebGPU objects too often or too early. Don't call release at all until you get your graphics manager working. Don't call release on a null or uninitialized pointer. Don't release bind group you set until after `wgpuRenderPassEncoderEnd()` (see above). This is a known issue with `wgpu-native` that will be fixed someday. Don't release textures in your little struct's destructor if you create them outside of the name-to-struct map (see above).
+Don't release WebGPU objects too often or too early. Don't call release at all until you get your graphics manager working. Don't call release on a null or uninitialized pointer. Don't release bind groups you set until after `wgpuRenderPassEncoderEnd()` (see above). This is a known issue with `wgpu-native` that will be fixed someday. Don't release textures in your little struct's destructor if you create them outside of the name-to-struct map (see above).
 
 Don't forget to zero initialize the WebGPU structs. All my examples use aggregate or designated initializers with `{ ... }`, which takes care of that. If you ever declare a variable in C++ and aren't sure if it has a default constructor (a constructor with no parameters that initializes undefined values), you can always use `{}`. For example, you can write `WGPUBlendState blend_state{};` or `WGPUBlendState blend_state = {};`. That works for everything, even plain old data types like `int`, `float`, `double`, `bool`, and pointers. Plain old data types don't have default constructors, even inside structs or classes. Initializing them with `{}` sets them to 0. Initializing a `struct` with `{}` does this for all the plain old data types inside.
 
@@ -969,6 +971,8 @@ Another gotcha may arise if you edit the shaders I provide. There is an optional
 ```
 
 Those calls to `wgpuDeviceCreatePipelineLayout()` and `wgpuDeviceCreateBindGroupLayout()` technically leak, since we don't call `wgpuPipelineLayoutRelease()` and `wgpuBindGroupLayoutRelease()` on their return values. Since this is for debug code, you can ignore that. Or you could ignore the leaks since we are only ever creating the pipeline once, and the memory should be freed when we release `device` at the end of our program. This is another place where nice [RAII](https://en.cppreference.com/w/cpp/language/raii) C++ wrappers for WebGPU [1](https://source.chromium.org/chromium/chromium/src/+/main:out/Debug/gen/third_party/dawn/include/dawn/webgpu_cpp.h) [2](https://eliemichel.github.io/LearnWebGPU/advanced-techniques/raii.html) can simplify your code.
+
+If you run into some unsolvable issue with the `wgpu` implementation of WebGPU that we're using, it is possible to try [Google's Dawn WebGPU implementation](https://dawn.googlesource.com/dawn). For that, use CMake via [the CMakeLists.txt](cmake/CMakeLists.txt) and set the `WEBGPU_BACKEND` option to `dawn`.
 
 ### Checkpoint 4 Upload
 
@@ -1418,3 +1422,4 @@ You don't need anything else. You might want:
 * 2023-10-03: Added a link to Learn WebGPU in C++'s swap chain explanation.
 * 2023-10-05: Sound manager is optional from the script manager.
 * 2023-10-05: Mentioned `#include <memory>` in ECS for `unique_ptr`
+* 2023-10-06: Mentioned CMakeLists.txt and dawn.
