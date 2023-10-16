@@ -275,7 +275,7 @@ It's time to create an input manager. The input manager provides an interface to
 
 There isn't a perfect separation between the graphics manager and the input manager. The input manager needs to call GLFW functions and pass them the `GLFWwindow*` created by the graphics manager. This is why your Engine stores all the managers—so they can access each other. Modify your graphics manager to store the `GLFWwindow*` as an instance variable. You can make it `public` or `private`. If you make it `private`, you will need to add an accessor method or else have the graphics manager class announce that the input manager class is a `friend` (by writing `friend class InputManager;` inside your graphics manager class declaration). (`friend`s can access `private` fields and methods.)
 
-It's time to add a user update callback to your game engine. In C++, a reasonable type to use for the user's update callback is: `std::function<void(Engine&)>`. That is, the user's callback is a function that takes an `Engine&` as a parameter and doesn't return anything. If you have an `Engine` global variable, then you can just use `std::function<void()>`, which is a function that takes no parameters and returns nothing. You can typedef that and then use it as a parameter to your game loop. Example syntax:
+It's time to add a user update callback to your game engine. In C++, a reasonable type to use for the user's update callback is: `std::function<void()>`. That is, the user's callback is a function that takes no parameters and returns nothing. You can typedef that and then use it as a parameter to your game loop. Example syntax:
 
 ```c++
 typedef std::function<void()> UpdateCallback;
@@ -285,7 +285,7 @@ void RunGameLoop( const UpdateCallback& callback );
 You will need to `#include <functional>` to access `std::function`. It's a general type that can take any kind of function a C++ user might want to pass. The user of your engine can create a [lambda](https://en.cppreference.com/w/cpp/language/lambda) function to pass, as in:
 
 ```c++
-engine.RunGameLoop( [&]( Engine& ) {
+engine.RunGameLoop( [&]() {
     // code that will run inside the game loop
     } );
 ```
@@ -1423,3 +1423,4 @@ You don't need anything else. You might want:
 * 2023-10-05: Sound manager is optional from the script manager.
 * 2023-10-05: Mentioned `#include <memory>` in ECS for `unique_ptr`
 * 2023-10-06: Mentioned CMakeLists.txt and dawn.
+* 2023-10-16: Removed Engine& parameter to main loop callback. It's confusing and unnecessary (because of the capture-by-reference).
