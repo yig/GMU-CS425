@@ -1294,7 +1294,7 @@ If you wish, you can organize the functionality you expose to Lua with [somethin
 
 **You have reached the sixth checkpoint.** Upload your code. Run `xmake clean --all` and then zip your entire directory. For this checkpoint:
 
-* Your engine should have a script manager that lets users run Lua scripts on demand or attach a `Script` component to entities that will be run automatically in the game loop.
+* Your engine should have a script manager that lets users run Lua scripts on demand and lets users attach a `Script` component to entities that will be run automatically in the game loop.
 * Your engine should expose to Lua scripts the ability to query input state, quit the game, manipulate sprites, and (optionally) play sounds.
 
 ## What's Next?
@@ -1427,3 +1427,4 @@ You don't need anything else. You might want:
 * 2023-10-06: Mentioned CMakeLists.txt and dawn.
 * 2023-10-16: Removed Engine& parameter to main loop callback. It's confusing and unnecessary (because of the capture-by-reference).
 * 2023-10-24: Mentioned std::move() to move rather than copy a loaded lua script into the map.
+* 2023-10-25: Clarified that script manager should support running scripts on demand and a Script component.
