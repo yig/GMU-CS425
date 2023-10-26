@@ -523,7 +523,7 @@ struct VertexInput {
     @location(0) position: vec2f,
     @location(1) texcoords: vec2f,
     @location(2) translation: vec3f,
-    @location(3) scale: f32,
+    @location(3) scale: vec2f,
 };
 
 struct VertexOutput {
@@ -1428,3 +1428,4 @@ You don't need anything else. You might want:
 * 2023-10-16: Removed Engine& parameter to main loop callback. It's confusing and unnecessary (because of the capture-by-reference).
 * 2023-10-24: Mentioned std::move() to move rather than copy a loaded lua script into the map.
 * 2023-10-25: Clarified that script manager should support running scripts on demand and a Script component.
+* 2023-10-26: Scale was wrongly used in the shader as a scalar instead of a vec2.
