@@ -357,6 +357,7 @@ The modern way to program GPUs is to describe all the state involved in the GPU'
 * [WebGPU Fundamentals](https://webgpufundamentals.org/): A JavaScript tutorial. This tutorial has nice diagrams.
 * [WebGPU Specification](https://www.w3.org/TR/webgpu/): The API spec. If you are wondering what a parameter is in excruciating detail, this is the place to look. I use it by searching for symbols.
 * [`webgpu.h`](https://github.com/webgpu-native/webgpu-headers/blob/main/webgpu.h): The official C header developed along with the spec. It's more succinct than the specification, and shows the data structures precisely. I use it by searching for symbols.
+* [Tour of WGSL](https://google.github.io/tour-of-wgsl/): This is a nice introduction to the shading language.
 * [WGSL WebGPU Shading Language Specification](https://www.w3.org/TR/WGSL/): This is the specification for the shading language.
 * [WebGPU Samples](https://webgpu.github.io/webgpu-samples/): These samples are written in JavaScript, but our C++ programming style is quite similar.
 * [I want to talk about WebGPU](https://cohost.org/mcc/post/1406157-i-want-to-talk-about-webgpu): The history of graphics API's and why WebGPU is exciting. At the end, there are excellent overview diagrams that explain using WebGPU.
@@ -1429,3 +1430,4 @@ You don't need anything else. You might want:
 * 2023-10-24: Mentioned std::move() to move rather than copy a loaded lua script into the map.
 * 2023-10-25: Clarified that script manager should support running scripts on demand and a Script component.
 * 2023-10-26: Scale was wrongly used in the shader as a scalar instead of a vec2.
+* 2023-10-31: Added a link to "Tour of WGSL"
