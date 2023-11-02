@@ -94,10 +94,14 @@ Before going any further, let's set up version control with git. You can use git
 /build
 /.xmake
 
+# vscode
+.vscode
+
 # macOS
 .DS_Store
 # Windows
 Thumbs.db
+.vs
 ```
 
 Now you should initialize your git repository and make a first commit.
@@ -1431,3 +1435,4 @@ You don't need anything else. You might want:
 * 2023-10-25: Clarified that script manager should support running scripts on demand and a Script component.
 * 2023-10-26: Scale was wrongly used in the shader as a scalar instead of a vec2.
 * 2023-10-31: Added a link to "Tour of WGSL"
+* 2023-11-01: Added .vs and .vscode to .gitignore
