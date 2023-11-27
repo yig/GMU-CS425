@@ -5,6 +5,7 @@ project(
 )
 
 option(USE_DEAR_IMGUI "Use Dear ImGUI" OFF)
+option(USE_SOLOUD "Use soloud" OFF)
 set(WEBGPU_BACKEND "wgpu" CACHE STRING "WebGPU backend (wgpu or dawn)")
 
 ## Load packages
@@ -55,24 +56,26 @@ FetchContent_Populate(glfw3webgpu)
 FetchContent_GetProperties(glfw3webgpu)
 add_subdirectory(${glfw3webgpu_SOURCE_DIR})
 
-FetchContent_Declare(
-  soloud
-  GIT_REPOSITORY https://github.com/jarikomppa/soloud
-  GIT_TAG        master
-  GIT_SHALLOW TRUE
-  GIT_PROGRESS TRUE
-)
-FetchContent_Populate(soloud)
-FetchContent_GetProperties(soloud)
-# add_subdirectory(${soloud_SOURCE_DIR}/contrib)
-file(GLOB soloud_sources "${soloud_SOURCE_DIR}/src/audiosource/*/*.c*" "${soloud_SOURCE_DIR}/src/c_api/*.c*" "${soloud_SOURCE_DIR}/src/core/*.c*" "${soloud_SOURCE_DIR}/src/filter/*.c*" "${soloud_SOURCE_DIR}/src/backend/miniaudio/soloud_miniaudio.cpp")
-add_library(soloud ${soloud_sources})
-target_compile_definitions(soloud PRIVATE WITH_MINIAUDIO MA_NO_RUNTIME_LINKING)
-target_include_directories(soloud PUBLIC "${soloud_SOURCE_DIR}/include")
-if(APPLE)
-    find_library(AudioUnit_LIBRARY AudioUnit)
-    find_library(CoreAudio_LIBRARY CoreAudio)
-    target_link_libraries(soloud INTERFACE ${AudioUnit_LIBRARY} ${CoreAudio_LIBRARY})
+if( USE_SOLOUD )
+    FetchContent_Declare(
+      soloud
+      GIT_REPOSITORY https://github.com/jarikomppa/soloud
+      GIT_TAG        master
+      GIT_SHALLOW TRUE
+      GIT_PROGRESS TRUE
+    )
+    FetchContent_Populate(soloud)
+    FetchContent_GetProperties(soloud)
+    # add_subdirectory(${soloud_SOURCE_DIR}/contrib)
+    file(GLOB soloud_sources "${soloud_SOURCE_DIR}/src/audiosource/*/*.c*" "${soloud_SOURCE_DIR}/src/c_api/*.c*" "${soloud_SOURCE_DIR}/src/core/*.c*" "${soloud_SOURCE_DIR}/src/filter/*.c*" "${soloud_SOURCE_DIR}/src/backend/miniaudio/soloud_miniaudio.cpp")
+    add_library(soloud ${soloud_sources})
+    target_compile_definitions(soloud PRIVATE WITH_MINIAUDIO MA_NO_RUNTIME_LINKING)
+    target_include_directories(soloud PUBLIC "${soloud_SOURCE_DIR}/include")
+    if(APPLE)
+        find_library(AudioUnit_LIBRARY AudioUnit)
+        find_library(CoreAudio_LIBRARY CoreAudio)
+        target_link_libraries(soloud INTERFACE ${AudioUnit_LIBRARY} ${CoreAudio_LIBRARY})
+    endif()
 endif()
 
 FetchContent_Declare(
@@ -145,9 +148,12 @@ add_library(illengine STATIC
     )
 set_target_properties(illengine PROPERTIES CXX_STANDARD 20 )
 target_include_directories(illengine PUBLIC src)
-target_link_libraries(illengine PUBLIC glfw glm::glm spdlog::spdlog webgpu glfw3webgpu stb soloud sol2 lua_static)
+target_link_libraries(illengine PUBLIC glfw glm::glm spdlog::spdlog webgpu glfw3webgpu stb sol2 lua_static)
 if( USE_DEAR_IMGUI )
     target_link_libraries(illengine PUBLIC imgui)
+endif()
+if( USE_SOLOUD )
+    target_link_libraries(illengine PUBLIC soloud)
 endif()
 
 
