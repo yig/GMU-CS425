@@ -95,13 +95,15 @@ Before going any further, let's set up version control with git. You can use git
 /.xmake
 
 # vscode
-.vscode
+/.vscode
+/.vs
+/vsxmake2022
+/out
 
 # macOS
 .DS_Store
 # Windows
 Thumbs.db
-.vs
 ```
 
 Now you should initialize your git repository and make a first commit.
@@ -1441,3 +1443,4 @@ You don't need anything else. You might want:
 * 2023-10-31: Added a link to "Tour of WGSL"
 * 2023-11-01: Added .vs and .vscode to .gitignore
 * 2023-11-27: Added some WebGPU troubleshooting via additional `WGPURequestAdapterOptions`
+* 2023-12-05: Added paths to suggested gitignore
