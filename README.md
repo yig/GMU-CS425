@@ -831,7 +831,7 @@ WGPUTexture tex = wgpuDeviceCreateTexture( device, to_ptr( WGPUTextureDescriptor
     .usage = WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopyDst,
     .dimension = WGPUTextureDimension_2D,
     .size = { (uint32_t)width, (uint32_t)height, 1 },
-    .format = WGPUTextureFormat_RGBA8Unorm,
+    .format = WGPUTextureFormat_RGBA8UnormSrgb,
     .mipLevelCount = 1,
     .sampleCount = 1
     } ) );
@@ -1569,3 +1569,4 @@ You don't need anything else. You might want:
 * 2023-11-27: Added some WebGPU troubleshooting via additional `WGPURequestAdapterOptions`
 * 2023-12-05: Added paths to suggested gitignore
 * 2024-08-19: Switched from xmake to CMake. Updated WebGPU to remove swap chains.
+* 2024-08-20: Texture is stored as sRGB, since it is.
