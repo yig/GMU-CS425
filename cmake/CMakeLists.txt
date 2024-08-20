@@ -120,7 +120,7 @@ if( USE_DEAR_IMGUI )
     FetchContent_Declare(
         imgui
         GIT_REPOSITORY https://github.com/ocornut/imgui
-        GIT_TAG v1.91.1
+        GIT_TAG v1.91.0
         GIT_SHALLOW TRUE
         GIT_PROGRESS TRUE
         )
