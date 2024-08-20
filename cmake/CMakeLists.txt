@@ -13,10 +13,8 @@ include(FetchContent)
 set(FETCHCONTENT_QUIET FALSE)
 FetchContent_Declare(
     glfw3
-    # URL https://github.com/glfw/glfw/releases/download/3.3.8/glfw-3.3.8.zip
-    # URL_HASH SHA256=4d025083cc4a3dd1f91ab9b9ba4f5807193823e565a5bcf4be202669d9911ea6
     GIT_REPOSITORY https://github.com/glfw/glfw.git
-    GIT_TAG 3.3-stable
+    GIT_TAG 3.4
     GIT_SHALLOW TRUE
     GIT_PROGRESS TRUE
     )
@@ -29,7 +27,7 @@ FetchContent_MakeAvailable( glfw3 )
 FetchContent_Declare(
     glm
     GIT_REPOSITORY https://github.com/g-truc/glm.git
-    GIT_TAG 47585fde0c49fa77a2bf2fb1d2ead06999fd4b6e
+    GIT_TAG 1.0.1
     GIT_SHALLOW TRUE
     GIT_PROGRESS TRUE
     )
@@ -122,7 +120,7 @@ if( USE_DEAR_IMGUI )
     FetchContent_Declare(
         imgui
         GIT_REPOSITORY https://github.com/ocornut/imgui
-        GIT_TAG v1.89.9
+        GIT_TAG v1.91.1
         GIT_SHALLOW TRUE
         GIT_PROGRESS TRUE
         )

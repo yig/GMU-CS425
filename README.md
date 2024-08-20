@@ -4,44 +4,42 @@ In this class you will make your own game engine from scratch.
 
 ## Platform setup
 
-The first thing we need is a compiler and build system. In this class, we will use [`xmake`](https://xmake.io/) as our build system.
-`xmake` is simple, modern, cross-platform, and comes with a package manager.
-There are [installation instructions](https://xmake.io/#/guide/installation) for many platforms.
-On macOS, you can use [Homebrew](https://brew.sh/): `brew install xmake`.
-On Windows, you can use `winget` (or other options): `winget install xmake`.
-On Linux, there are instructions for various flavors.
+The first thing we need is a compiler and build system. In this class, we will use [CMake](https://cmake.org/) as our build system. CMake is a popular, cross-platform build system. [Modern CMake](https://cliutils.gitlab.io/modern-cmake/) is actually pretty nice and worth learning. (We'll avoid the older, gross bits as much as possible.)
+With CMake, we can use [FetchContent](https://web.archive.org/web/20220211151524/https://bewagner.net/programming/2020/05/02/cmake-fetchcontent/) as a sort of distributed package manager.
+
+To install it:
+On Windows, you can use `winget` (or other options): `winget install -e --id Kitware.CMake`.
+On macOS, you can use [Homebrew](https://brew.sh/): `brew install cmake`.
+On Linux, use your distribution's package manager.
 
 You also need a compiler.
-On macOS, you should install `Xcode` with the `App Store`.
+On macOS, you should install `Xcode` via the `App Store`.
 On Windows, install Visual Studio.
 On Linux, install gcc or clang.
 
-One you have a compiler and `xmake` installed, we are ready to begin.
+One you have a compiler and `cmake` installed, we are ready to begin.
 
-> 🤖: I don't discuss or describe it, but it is possible to use [CMake](https://cmake.org/) to compile the project. [Modern CMake](https://cliutils.gitlab.io/modern-cmake/) is actually pretty nice and worth learning. You can then use [FetchContent](https://web.archive.org/web/20220211151524/https://bewagner.net/programming/2020/05/02/cmake-fetchcontent/) as a sort of distributed package manager. It's a bit jankier. Not all packages are set up for it. On the other hand, you can DIY a solution for such packages in your `CMakeLists.txt` without relying on a centralized package manager. I put a `CMakeLists.txt` capable of compiling the project [here](cmake/CMakeLists.txt), but I won't be discussing it much further. (You can compile with it by putting it at the top of your directory. Then compile the usual way. From the command line: (1) create a build folder `mkdir build-cmake`, (2) enter that directory (`cd build-cmake`), (3) let CMake configure the project `cmake ..`, and finally (4) compile `make` or `cmake --build .`.)
+> 🤖: Previous versions of this guide used [`xmake`](https://xmake.io/) as the build system. It has a lot going for it, like a clean language and built-in package manager. However, it's esoteric, so I switched this year's guide to the standard CMake. You can see the previous instructions and even try xmake by switching to the 2023 branch of this repository.
 
 ## Making a project
 
 Create a new directory. Since we're making a "little engine", I called mine `illengine` (🤷).
-Create a file `xmake.lua` and put the following inside:
+Create a file `CMakeLists.txt` and put the following inside:
 
 ```
-add_rules("mode.debug", "mode.release")
+cmake_minimum_required(VERSION 3.12...3.25)
+project(
+    illengine # Name this whatever you want
+    LANGUAGES CXX C
+)
 
-set_policy("build.warning", true) -- show warnings
-set_warnings("all") -- warn about many things
-
-target("helloworld")
-    set_kind("binary")
-    set_languages("cxx17")
-    
-    add_files("demo/helloworld.cpp")
+add_executable( helloworld demo/helloworld.cpp )
+set_target_properties( helloworld PROPERTIES CXX_STANDARD 20 )
 ```
 
-This declares that we want to support debug and release builds in general, and that we want to see lots of compiler warnings.
+This declares that we require a relatively recent version of CMake, our project's name (choose something other than `illengine`), and that we'll be using C++ and C.
 It also declares a target program named `helloworld`.
-(It would have declared a library if instead of `binary` we had written `static` or `shared`.)
-We want to use the C++17 standard. ([This](https://github.com/mortennobel/cpp-cheatsheet) is a pretty good modern C++ cheat sheet.)
+We want to use the C++20 standard. ([This](https://github.com/mortennobel/cpp-cheatsheet) is a pretty good modern C++ cheat sheet.)
 This Hello, World! program will verify that your environment is working correctly.
 Let's put the program in a `demo` directory. Create `demo/helloworld.cpp` and put the most basic C++ program inside:
 
@@ -54,45 +52,46 @@ int main( int argc, const char* argv[] ) {
 }
 ```
 
-Then type `xmake` on the command line. Unless something has gone wrong, you should see something like:
+> 🤖: Behind the scenes, CMake is a build system generator. It can output Makefiles, Visual Studio Solutions, Xcode project files, etc. Some IDE's like Visual Studio open `CMakeLists.txt` directly. I will describe using `cmake` on the command line in this guide, but there are other ways to use it.
+
+To compile this on the command line, we first tell CMake to process the `CMakeLists.txt`. On the command line, navigate into this folder and run `cmake -B build`. You have to re-run this command anytime you make changes to your `CMakeLists.txt`. The `.` points CMake to the current directory and the `build` tells CMake to place the compiler's output (programs, libraries, dependencies) into a directory named `build`.
+
+To compile, run `cmake --build build`. (The second `build` in that command is the directory name.) Unless something has gone wrong, you should see something like:
 
 ```
-[ 25%]: ccache compiling.release demo/helloworld.cpp
-[ 50%]: linking.release helloworld
-[100%]: build ok!
+[ 50%] Building CXX object CMakeFiles/helloworld.dir/demo/helloworld.cpp.o
+[100%] Linking CXX executable helloworld
+[100%] Built target helloworld
 ```
 
-`xmake` puts the resulting program (`binary`) somewhere inside a new directory it creates (and manages) named `build`. You can run it directly (for me, it's `./build/macosx/arm64/release/helloworld`). It's easier to just ask `xmake` to run it for you with `xmake run helloworld`. This will print:
+You can now run the executable (for me, it's `./build/helloworld`). This will print:
 
 ```
 Hello, World!
 ```
 
-## Some useful `xmake` commands:
+We can ask `cmake` to run the executable for us, compiling or re-compiling as needed if any source files have changed. To do this, add the following line to the `CMakeLists.txt`: `add_custom_target( run_helloworld helloworld )`. Refresh by running `cmake -B build`. Now you can call `cmake --build build --target run_helloworld`. You should see:
 
-* `xmake` compiles all targets.
-* `xmake run <target>` runs the given target.
-* `xmake clean --all` clears xmake's build cache.
-* `xmake run -d helloworld` launches the program in a debugger. If you are using a debugger, you will want to compile in debug mode.
-* `xmake config --menu` opens a command-line menu system you can use to switch between debug and release modes.
-* `xmake config -m debug` and `xmake config -m release` directly switch between debug and release mode.
-* `xmake project -k xcode -m debug` or `xmake project -k vsxmake -m debug` to generate an Xcode project on macOS or a Visual Studio solution on Windows. You make prefer debugging directly in the IDE. [[docs](https://xmake.io/#/plugin/builtin_plugins)]
-* `xmake watch` will re-run `xmake` automatically when any code changes. `xmake watch -r -t helloworld` will do the same and then run the `helloworld` target.
-* If you are having trouble with `xmake`, run with the flags `-vwD` to print a lot of diagnostic output.
-* If you install or remove a compiler, run `xmake global --clean` to clear the global compiler detection cache. `xmake config --clean` clears the cached user configuration and compiler detection cache.
-* `xmake run -w <path> <target>` runs the target with path as the working directory.
-* There are some other helpful questions and answers in the [`xmake` FAQ](https://xmake.io/#/guide/faq).
-* The following error when `xmake` tries to download a package, `error: curl: (60) SSL certificate problem: unable to get local issuer certificate`, can be solved with [this workaround](https://xmake.io/#/guide/faq?id=what-should-i-do-if-the-download-package-failed-to-get-the-local-issuer-certificate): `xmake g --insecure-ssl=y`
-* To update the packages `xmake` knows about from its repository, run `xmake repo --update`.
+```
+[100%] Built target helloworld
+Hello, World!
+[100%] Built target run_helloworld
+```
+
+## Some useful CMake commands:
+
+* Use `ccmake -B build` to choose compile-time options. (Note the extra `c`.) You can switch from Release to Debug mode in the menu.
+* The command `cmake -B build` is equivalent to `cd build` and then running `cmake ..`.
+* The command `cmake --build build` is equivalent to `cd build` and then `make`. Run `make run_helloworld` to run the custom target we specified.
+* You can ask `cmake` to generate a Visual Studio Solution or an Xcode file. With those, you can open the project in your IDE and use its visual debugger. For example, adding `-G Xcode` (as in `cmake -B build-xcode -G Xcode`) will generate a file that can be opened with the Xcode IDE on macOS. Running `cmake --help` will print your available generators in place of `Xcode`.
 
 ## Setting up version control
 
 Before going any further, let's set up version control with git. You can use git on the command line or using your favorite git gui. Before we proceed with git, we need to create a `.gitignore` file at the top level of our project directory so we don't add build products or other extraneous files to our git repository. Put this inside:
 
 ```
-# Xmake
+# CMake
 /build
-/.xmake
 
 # vscode
 /.vscode
@@ -110,13 +109,13 @@ Now you should initialize your git repository and make a first commit.
 
 ### Checkpoint 1 Upload
 
-**You have reached the first checkpoint.** Upload your code. Run `xmake clean --all` and then zip your entire directory. Your directly tree should look like:
+**You have reached the first checkpoint.** Upload your code. Delete or move aside your `build` subdirectory and then zip your entire directory. Your directly tree should look like:
 
 ```
 .git/
     ... lots of stuff
 .gitignore
-xmake.lua
+CMakeLists.txt
 demo/
     helloworld.cpp
 ```
@@ -132,31 +131,25 @@ It's time to start designing and building your game engine. We will work in the 
 5. Manage game objects (`EntityManager`).
 6. Add scripting support (`ScriptManager`).
 
-We'll put our engine source code in a new directory called `src` next to `demo`. Create a file named something like `Engine.h`. The `Engine.h` header will declare an `Engine` class that stores all of the various managers, starts them up, runs the game loop, and shuts the managers down. We will also need a new target in our `xmake.lua`, a library for our engine. Since I'm calling mine `illengine`, that's what I'm calling this target. Let's make it a `static` library, since those are usually less trouble. (Our operating system doesn't have to worry about finding them dynamically.)
+We'll put our engine source code in a new directory called `src` next to `demo`. Create a file named something like `Engine.h`. The `Engine.h` header will declare an `Engine` class that stores all of the various managers, starts them up, runs the game loop, and shuts the managers down. We will also need a new target in our `CMakeLists.txt`, a library for our engine. Since I'm calling mine `illengine`, that's what I'm calling this target. Let's make it a static library, since those are usually less trouble. (Our operating system doesn't have to worry about finding them dynamically.) Place the following in your `CMakeLists.txt` above `add_executable( helloworld ... )`:
 
 ```
-target("illengine")
-    set_kind("static")
-    set_languages("cxx17")
-    
-    -- Declare our engine's header path.
-    -- This allows targets that depend on the engine to #include them.
-    add_includedirs("src", {public = true})
-    
-    -- Add all .cpp files in the `src` directory.
-    add_files("src/*.cpp")
+## Declare the engine library
+add_library( illengine STATIC
+    src/Engine.cpp
+    )
+set_target_properties( illengine PROPERTIES CXX_STANDARD 20 )
+## Declare our engine's header path.
+## This allows targets that depend on the engine to #include them.
+target_include_directories( illengine PUBLIC src )
 ```
 
-Let's make our `helloworld` target depend on `illengine` by adding the line `add_deps("illengine")` to it:
+Let's make our `helloworld` target depend on `illengine` by adding the line `target_link_libraries( helloworld PRIVATE illengine )` to it:
 
 ```
-target("helloworld")
-    set_kind("binary")
-    set_languages("cxx17")
-    
-    add_deps("illengine")
-    
-    add_files("demo/helloworld.cpp")
+add_executable( helloworld demo/helloworld.cpp )
+set_target_properties( helloworld PROPERTIES CXX_STANDARD 20 )
+target_link_libraries( helloworld PRIVATE illengine )
 ```
 
 ### Digression on C++ Software Design
@@ -224,19 +217,35 @@ Managing the time step means making sure that your game loop runs 60 times per s
 
 ## The `GraphicsManager`
 
-At this point, all we want from the graphics manager is to create a window. We will use [GLFW](https://www.glfw.org/) for this. It's an extremely lightweight graphics and input handling library. Declare your need for it at the top of your `xmake.lua` (just below the `add_rules()` line):
+At this point, all we want from the graphics manager is to create a window. We will use [GLFW](https://www.glfw.org/) for this. It's an extremely lightweight graphics and input handling library. We will use CMake's decentralized package management to install it. Add the following near the top of your `CMakeLists.txt` (just below the `project()` line):
 
 ```
-add_requires("glfw")
+## Enable decentralized package loading
+include(FetchContent)
+set(FETCHCONTENT_QUIET FALSE)
+
+## Install glfw
+FetchContent_Declare(
+    glfw3
+    GIT_REPOSITORY https://github.com/glfw/glfw.git
+    GIT_TAG 3.4
+    GIT_SHALLOW TRUE
+    GIT_PROGRESS TRUE
+    )
+set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable( glfw3 )
 ```
 
-Inside `target("illengine")`, add it as a package:
+After `target_include_directories( illengine PUBLIC src )`, add it as a dependency:
 
 ```
-    add_packages("glfw")
+target_link_libraries( illengine PRIVATE glfw )
 ```
 
-In your graphics manager C++ file, you will need to include the GLFW headers. You can do this in the implementation file only (the `.cpp` file). Users of your engine don't need to know that it uses GLFW to create a window. The engine is abstracting this detail! (If you include the GLFW headers in one of your `.h` files, you would need to write `add_packages("glfw", {public = true})` instead.)
+In your graphics manager C++ file, you will need to include the GLFW headers. You can do this in the implementation file only (the `.cpp` file). Users of your engine don't need to know that it uses GLFW to create a window. The engine is abstracting this detail! (If you include the GLFW headers in one of your `.h` files, you would need to change `PUBLIC` to `PRIVATE`.)
 
 Since we are using `WebGPU` as our GPU API, we don't want GLFW to include any OpenGL headers directly for us. This is how to do it:
 
@@ -263,13 +272,26 @@ if( !window )
 
 This code expects a few parameters: the `window_width` and `window_height`, a name for the window (`window_name`), and a boolean to specify whether the window should be fullscreen (`window_fullscreen`). You can hard-code some reasonable values or you can find a way to take parameters. You might store the parameters in a configuration `struct` in the `Engine`. The user can set them directly or pass it in to your engine's startup method. Your graphics manager's shutdown only needs to call `glfwTerminate();`.
 
-Finally, this is a good time to mention that I recommend a proper logging library rather than outputting to `std::cout` and `std::cerr`. You have a lot of options. I used [spdlog](https://github.com/gabime/spdlog). That way I can do things like: `spdlog::error( "Failed to create a window." );` or `spdlog::info( "Calling UpdateCallback()." );`. To use spdlog, you have to include it (`#include "spdlog/spdlog.h"`) and add it to your `xmake.lua` (`add_requires("spdlog")` near the top and `add_packages("spdlog")` in your `illengine` target).
+Finally, this is a good time to mention that I recommend a proper logging library rather than outputting to `std::cout` and `std::cerr`. You have a lot of options. I used [spdlog](https://github.com/gabime/spdlog). That way I can do things like: `spdlog::error( "Failed to create a window." );` or `spdlog::info( "Calling UpdateCallback()." );`. To use spdlog, you have to include it (`#include "spdlog/spdlog.h"`) and add it to your `CMakeLists.txt`. Near the top of your `CMakeLists.txt`, where you fetch your packages with `FetchContent_Declare`, add:
+
+```
+FetchContent_Declare(
+    spdlog
+    GIT_REPOSITORY https://github.com/gabime/spdlog/
+    GIT_TAG v1.x
+    GIT_SHALLOW TRUE
+    GIT_PROGRESS TRUE
+    )
+FetchContent_MakeAvailable( spdlog )
+```
+
+Add `target_link_libraries( illengine PRIVATE spdlog::spdlog )` in the appropriate place, too.
 
 Modify `demo/helloworld.cpp` to start up your engine, run its main loop, and shut it down when the main loop terminates.
 
 ### Checkpoint 2 Upload
 
-**You have reached the second checkpoint.** Commit your code to your git repository. Upload it for grading. Run `xmake clean --all` and then zip your entire directory. This checkpoint should contain:
+**You have reached the second checkpoint.** Commit your code to your git repository. Upload it for grading. Delete or move aside your `build` subdirectory and then zip your entire directory. This checkpoint should contain:
 
 * A graphics manager class that creates a window.
 * A game engine class that starts up the graphics manager and runs a game loop 60 times per second. Your game engine won't take a user update callback yet.
@@ -277,7 +299,7 @@ Modify `demo/helloworld.cpp` to start up your engine, run its main loop, and shu
 
 ## Detecting input
 
-It's time to create an input manager. The input manager provides an interface to the various input hardware state, such as which keyboard/mouse/joystick buttons are pressed and where the mouse or joystick is. Each time the game loop runs, the engine gives the input manager a chance to process input events (`input.Update()` in the pseudocode above). A fancy input manager lets users map physical actions (e.g. pressing a hardware button) to game actions. We will start with a simple input manager that just makes GLFW's input state available for querying by users of our engine. The input manager's `Update()` method only needs to call [`glfwPollEvents();`](https://www.glfw.org/docs/3.3/group__window.html#ga37bd57223967b4211d60ca1a0bf3c832). We will create a method called something like `KeyIsPressed` that takes a key name as a parameter and returns a boolean. It will be a thin wrapped around [`glfwGetKey()`](https://www.glfw.org/docs/3.3/group__input.html#gadd341da06bc8d418b4dc3a3518af9ad2). You can make the key name an `int` and just pass it along directly to GLFW, or you can create your own `enum class` for key names that you expose to users. Your enum can choose the same numbers for keys as GLFW (see [here](https://www.glfw.org/docs/3.3/group__keys.html); you can cast your `enum class` to an `int`). It is fine to simply ask users to use GLFW key names (e.g. `GLFW_KEY_LEFT`). (In that case, you will want to include the GLFW headers in your `.h` file and use `add_packages("glfw", {public = true})` in your `xmake.lua`.)
+It's time to create an input manager. The input manager provides an interface to the various input hardware state, such as which keyboard/mouse/joystick buttons are pressed and where the mouse or joystick is. Each time the game loop runs, the engine gives the input manager a chance to process input events (`input.Update()` in the pseudocode above). A fancy input manager lets users map physical actions (e.g. pressing a hardware button) to game actions. We will start with a simple input manager that just makes GLFW's input state available for querying by users of our engine. The input manager's `Update()` method only needs to call [`glfwPollEvents();`](https://www.glfw.org/docs/3.3/group__window.html#ga37bd57223967b4211d60ca1a0bf3c832). We will create a method called something like `KeyIsPressed` that takes a key name as a parameter and returns a boolean. It will be a thin wrapped around [`glfwGetKey()`](https://www.glfw.org/docs/3.3/group__input.html#gadd341da06bc8d418b4dc3a3518af9ad2). You can make the key name an `int` and just pass it along directly to GLFW, or you can create your own `enum class` for key names that you expose to users. Your enum can choose the same numbers for keys as GLFW (see [here](https://www.glfw.org/docs/3.3/group__keys.html); you can cast your `enum class` to an `int`). It is fine to simply ask users to use GLFW key names (e.g. `GLFW_KEY_LEFT`). (In that case, you will want to include the GLFW headers in your `.h` file and change `PRIVATE` to `PUBLIC` in the line `target_link_libraries( illengine PRIVATE glfw )` in your `CMakeLists.txt`.)
 
 There isn't a perfect separation between the graphics manager and the input manager. The input manager needs to call GLFW functions and pass them the `GLFWwindow*` created by the graphics manager. This is why your Engine stores all the managers—so they can access each other. Modify your graphics manager to store the `GLFWwindow*` as an instance variable. You can make it `public` or `private`. If you make it `private`, you will need to add an accessor method or else have the graphics manager class announce that the input manager class is a `friend` (by writing `friend class InputManager;` inside your graphics manager class declaration). (`friend`s can access `private` fields and methods.)
 
@@ -302,7 +324,7 @@ You may have noticed that there's no way to quit your program (without asking yo
 
 ### Checkpoint 3 Upload
 
-**You have reached the third checkpoint.** Upload your code. Run `xmake clean --all` and then zip your entire directory. For this checkpoint:
+**You have reached the third checkpoint.** Upload your code. Delete or move aside your `build` subdirectory and then zip your entire directory. For this checkpoint:
 
 * Your engine should have an input manager that lets users detect key presses.
 * Your engine should take a user callback to execute in its main loop.
@@ -311,23 +333,9 @@ You may have noticed that there's no way to quit your program (without asking yo
 
 ## Resources and the Resource Manager
 
-Our resource management needs are pretty basic. We will create an `assets` directory to organize all the things that we'll want to access from our game. Modern build systems (like cmake and xmake) perform out of source builds, which means that the executable will be created in a funky location in some separate build directory. Since we'll want to load files from the `assets` directory, let's tell xmake to run the executable with the working directory set to the project directory, rather than the build directory. Add the following snippet to `xmake.lua` somewhere inside the `target("helloworld")`:
+Our resource management needs are pretty basic. We will create an `assets` directory to organize all the things that we'll want to access from our game. Modern build systems (like CMake and xmake) perform out of source builds, which means that the executable will be created in a funky location in some separate build directory. Since we'll want to load files from the `assets` directory, let's tell CMake to run the executable with the working directory set to the project directory, rather than the build directory. (If you are running from an IDE like Xcode or Visual Studio, look up how to set the working directory when you run from there.) In `CMakeLists.txt`, modify the line `add_custom_target( run_helloworld helloworld )` to `add_custom_target( run_helloworld helloworld WORKING_DIRECTORY ${CMAKE_SOURCE_DIR} )`.
 
-```
-    set_rundir("$(projectdir)")
-```
-
-(I used to instead recommend the following snippet to copy `assets` next to the executable. I no longer do. It duplicates disk space, requires you to run `xmake` each time you change an asset, and makes it harder to implement live reloading. I'm leaving the snippet here in case you want or need it for scenarios in which you don't run using `xmake run` and can't set the working directory.)
-
-```
-    -- Copy assets
-    after_build(function (target)
-        cprint("Copying assets")
-        os.cp("$(projectdir)/assets", path.directory(target:targetfile()))
-    end)
-```
-
-At this point, reading a file from a path like `assets/sounds/coin.wav` or `assets/textures/coin.png` should just work from your engine. (*N.B.* Do **not** change the `/` to `\` on Windows. `/` is cross platform. Windows handles `/` just fine.) For the most straightforward cases, we could skip creating a resource manager altogether. However, it's a good idea to centralize our path handling. For that, you can make a resource manager that simply provides a method that resolves paths. The method would take in a partial path and return a path to a real file. Our `xmake.lua` sets the working directory so paths like `assets/textures/coin.png` just work, so the most basic resource manager would have a resolve path method that simply returns its input. You should create at least this resource manager now, and then use it to resolve paths in your sound or graphics manager (and any manager that loads resources). A better resource manager would have a method to set the path root (it could default to `assets` or not) which could let users resolve `textures/coin.png`. Use [`std::filesystem::path`](https://en.cppreference.com/w/cpp/filesystem/path) to append `path` to the root path. `std::filesystem::path` is neat. It overloads `/` so that you can do things like `relative_to_foo = std::filesystem::path("foo") / relative_path`. You can create an `std::filesystem::path` from an `std::string` and vice versa.
+At this point, reading a file from a path like `assets/sounds/coin.wav` or `assets/textures/coin.png` should just work from your engine. (*N.B.* Do **not** change the `/` to `\` on Windows. `/` is cross platform. Windows handles `/` just fine.) For the most straightforward cases, we could skip creating a resource manager altogether. However, it's a good idea to centralize our path handling. For that, you can make a resource manager that simply provides a method that resolves paths. The method would take in a partial path and return a path to a real file. Our `CMakeLists.txt` sets the working directory so paths like `assets/textures/coin.png` just work, so the most basic resource manager would have a resolve path method that simply returns its input. You should create at least this resource manager now, and then use it to resolve paths in your sound or graphics manager (and any manager that loads resources). A better resource manager would have a method to set the path root (it could default to `assets` or not) which could let users resolve `textures/coin.png`. Use [`std::filesystem::path`](https://en.cppreference.com/w/cpp/filesystem/path) to append `path` to the root path. `std::filesystem::path` is neat. It overloads `/` so that you can do things like `relative_to_foo = std::filesystem::path("foo") / relative_path`. You can create an `std::filesystem::path` from an `std::string` and vice versa.
 
 ### Extensions
 
@@ -339,7 +347,31 @@ Even fancier resource managers could do more. Some possibilities:
 
 ## Sound Manager (optional, bonus)
 
-It's easier (much less code) to play sounds than draw graphics to the screen, so you can warm up with a sound manager or come back to this later. We will use [SoLoud](https://sol.gfxile.net/soloud/) as our sound library. It has a really nice C++ API. (Click the link! Look at the sample code!) I added it to the `xmake` package repository, so we can write `add_requires("soloud")` near the top of our `xmake.lua` and `add_packages("soloud")` in our engine target. (You will need to do `add_packages("soloud", {public = true})` if your sound manager header includes a SoLoud header.)
+It's easier (much less code) to play sounds than draw graphics to the screen, so you can warm up with a sound manager or come back to this later. We will use [SoLoud](https://sol.gfxile.net/soloud/) as our sound library. It has a really nice C++ API. (Click the link! Look at the sample code!) You can import its code into your `CMakeLists.txt` by adding the following near the top of your `CMakeLists.txt`, where you fetch your packages with `FetchContent_Declare`:
+
+```
+FetchContent_Declare(
+  soloud
+  GIT_REPOSITORY https://github.com/jarikomppa/soloud
+  GIT_TAG        master
+  GIT_SHALLOW TRUE
+  GIT_PROGRESS TRUE
+)
+FetchContent_Populate(soloud)
+FetchContent_GetProperties(soloud)
+# add_subdirectory(${soloud_SOURCE_DIR}/contrib)
+file(GLOB soloud_sources "${soloud_SOURCE_DIR}/src/audiosource/*/*.c*" "${soloud_SOURCE_DIR}/src/c_api/*.c*" "${soloud_SOURCE_DIR}/src/core/*.c*" "${soloud_SOURCE_DIR}/src/filter/*.c*" "${soloud_SOURCE_DIR}/src/backend/miniaudio/soloud_miniaudio.cpp")
+add_library(soloud ${soloud_sources})
+target_compile_definitions(soloud PRIVATE WITH_MINIAUDIO MA_NO_RUNTIME_LINKING)
+target_include_directories(soloud PUBLIC "${soloud_SOURCE_DIR}/include")
+if(APPLE)
+    find_library(AudioUnit_LIBRARY AudioUnit)
+    find_library(CoreAudio_LIBRARY CoreAudio)
+    target_link_libraries(soloud INTERFACE ${AudioUnit_LIBRARY} ${CoreAudio_LIBRARY})
+endif()
+```
+
+Add it as a dependency to your engine by adding `soloud` to the list of packages in your `target_link_libraries( illengine )` command, as in `target_link_libraries( illengine PUBLIC glfw spdlog::spdlog soloud )`. (If your sound manager header never includes a SoLoud header, you can add it as a `PRIVATE` dependency.)
 
 Let's wrap SoLoud in a sound manager class. The sound manager will contain an instance of `SoLoud::Soloud`. (Yes, the capitalization is different for the namespace and the class.) You'll need to `#include "soloud.h"`. The startup method must call `.init()` and the shutdown method must call `.deinit()` on the `SoLoud::Soloud` instance. More interesting, let's add a method to load, destroy, and play a sound. We will follow a similar pattern for all of our resources (sounds, images, scripts). The load function will always have a signature like:
 
@@ -373,7 +405,35 @@ The modern way to program GPUs is to describe all the state involved in the GPU'
 
 When our graphics manager starts up, it will initialize the WebGPU API, compile the shader programs, upload vertex data, and create a pipeline ready to use in our draw function. Later, when it's time to draw sprites, we will tell our GPU to activate the pipeline and apply it to our per-sprite data (which image and where the sprite should appear). We will also need to add code to load images from disk and upload them to the GPU as textures.
 
-First things first. Let's add WebGPU to our `xmake.lua` with `add_requires("wgpu-native", "glfw3webgpu")` near the top and `add_packages("wgpu-native", "glfw3webgpu")` inside `target("illengine")`. Include the `<webgpu/webgpu.h>` header file in your graphics manager `.cpp` file and the `<glfw3webgpu.h>` header which allows us to use it with `GLFW`. One more thing; the [widely-supported](https://en.cppreference.com/w/cpp/compiler_support) [designated initializers](https://www.cppstories.com/2021/designated-init-cpp20) part of the C++20 standard lets us write much nicer looking WebGPU code. Change `set_languages("cxx17")` to `set_languages("cxx20")` to turn it on. We're going to be passing pointers to temporary `struct`s and arrays of `struct`s to WebGPU a lot. C allows this, but C++ needs a couple of workarounds. Add these two lines near the top of your graphics manager `.cpp`:
+First things first. Let's add WebGPU to our `CMakeLists.txt`. In your list of packages, add:
+
+```
+set(WEBGPU_BACKEND "wgpu" CACHE STRING "WebGPU backend (wgpu or dawn)")
+FetchContent_Declare(
+  webgpu
+  GIT_REPOSITORY https://github.com/eliemichel/WebGPU-distribution
+  ## Can change `wgpu` to `dawn`
+  GIT_TAG        ${WEBGPU_BACKEND}
+  GIT_SHALLOW TRUE
+  GIT_PROGRESS TRUE
+)
+FetchContent_MakeAvailable( webgpu )
+
+FetchContent_Declare(
+  glfw3webgpu
+  GIT_REPOSITORY https://github.com/eliemichel/glfw3webgpu
+  GIT_TAG        main
+  GIT_SHALLOW TRUE
+  GIT_PROGRESS TRUE
+)
+FetchContent_Populate(glfw3webgpu)
+FetchContent_GetProperties(glfw3webgpu)
+add_subdirectory(${glfw3webgpu_SOURCE_DIR})
+```
+
+Add `webgpu` and `glfw3webgpu` to your list of libraries in `target_link_libraries( illengine )`.
+
+Include the `<webgpu/webgpu.h>` header file in your graphics manager `.cpp` file and the `<glfw3webgpu.h>` header which allows us to use it with `GLFW`. One more thing; the [widely-supported](https://en.cppreference.com/w/cpp/compiler_support) [designated initializers](https://www.cppstories.com/2021/designated-init-cpp20) part of the C++20 standard lets us write much nicer looking WebGPU code. Change `set_languages("cxx17")` to `set_languages("cxx20")` to turn it on. We're going to be passing pointers to temporary `struct`s and arrays of `struct`s to WebGPU a lot. C allows this, but C++ needs a couple of workarounds. Add these two lines near the top of your graphics manager `.cpp`:
 
 ```c++
 template< typename T > constexpr const T* to_ptr( const T& val ) { return &val; }
@@ -384,7 +444,7 @@ The first `to_ptr()` function legally returns a pointer to a temporary. The seco
 
 ### Startup
 
-Our goal when starting up our graphics manager is to initialize `WebGPU` (by creating a `WGPUInstance`, `WGPUSurface`, `WGPUAdapter`, `WGPUDevice`, and `WGPUQueue`, [oh my](https://staging.cohostcdn.org/attachment/45fea200-d670-4fab-9788-6462930f8eba/wgpu1-2.0.png)) and prepare structures we will use when drawing: vertex and uniform (global) data (`WGPUBuffer`s), a swap chain (`WGPUSwapChain`) [to avoid screen refresh artifacts](https://eliemichel.github.io/LearnWebGPU/getting-started/first-color.html), and the pipeline (`WGPURenderPipeline`). We'll store all these as instance variables. `WGPUInstance` is the WebGPU API itself, `WGPUSurface` is WebGPU's information about the window we want to draw into, `WGPUAdapter` is a GPU, `WGPUDevice` is a configured GPU ready to use, and `WGPUQueue` is queues commands to execute on the GPU.
+Our goal when starting up our graphics manager is to initialize `WebGPU` (by creating a `WGPUInstance`, `WGPUSurface`, `WGPUAdapter`, `WGPUDevice`, and `WGPUQueue`, [oh my](https://staging.cohostcdn.org/attachment/45fea200-d670-4fab-9788-6462930f8eba/wgpu1-2.0.png)) and prepare structures we will use when drawing: vertex and uniform (global) data (`WGPUBuffer`s) and the pipeline (`WGPURenderPipeline`). We'll store all these as instance variables. `WGPUInstance` is the WebGPU API itself, `WGPUSurface` is WebGPU's information about the window we want to draw into, `WGPUAdapter` is a GPU, `WGPUDevice` is a configured GPU ready to use, and `WGPUQueue` is queues commands to execute on the GPU.
 
 To initialize WebGPU, we start by calling `WGPUInstance instance = wgpuCreateInstance( to_ptr( WGPUInstanceDescriptor{} ) )`. We must do this after setting up `GLFW` (in our graphics manager's startup function). The curly-braces are C++ for initialize all members to zero if they don't have constructors. (It's called [aggregate initialization](https://en.cppreference.com/w/cpp/language/aggregate_initialization); [designated initializers](https://www.cppstories.com/2021/designated-init-cpp20) are a special kind.) `WebGPU` uses zeros to mean default values, which are often what we want. `WebGPU` is a C API, so initializing structs to zero is our responsibility. We can also pass `nullptr` when a function parameter is marked "optional" (in the [spec](https://www.w3.org/TR/webgpu/)) or `WGPU_NULLABLE` (in [`webgpu.h`](https://github.com/webgpu-native/webgpu-headers/blob/main/webgpu.h)).  `wgpuCreateInstance()` will return null upon failure. You can check for that and print a message and call `glfwTerminate()`.
 
@@ -427,7 +487,7 @@ wgpuAdapterRequestDevice(
 wgpuDeviceSetUncapturedErrorCallback(
     device,
     []( WGPUErrorType type, char const* message, void* ) {
-        std::cerr << "WebGPU uncaptured error type " << type << " with message: " << message << std::endl;
+        std::cerr << "WebGPU uncaptured error type " << int(type) << " with message: " << message << std::endl;
     },
     nullptr
     );
@@ -435,7 +495,7 @@ wgpuDeviceSetUncapturedErrorCallback(
 WGPUQueue queue = wgpuDeviceGetQueue( device );
 ```
 
-You should make these all instance variables so your graphics manager's shutdown can call `wgpuInstanceRelease()`, `wgpuSurfaceRelease()`, `wgpuAdapterRelease()`, `wgpuDeviceRelease()`, and `wgpuQueueRelease()` in reverse initialization order, too. (Nice [RAII](https://en.cppreference.com/w/cpp/language/raii) C++ wrappers for WebGPU are in development [1](https://source.chromium.org/chromium/chromium/src/+/main:out/Debug/gen/third_party/dawn/include/dawn/webgpu_cpp.h) [2](https://eliemichel.github.io/LearnWebGPU/advanced-techniques/raii.html). In fact, I made a simple one for you: [`webgpu_raii`](https://github.com/yig/webgpu_raii/tree/wgpu-native). With RAII, the release functions will be called automatically when the variables go out of scope. That means it's enough to declare them as instance variables in the right order.)
+You should make these all instance variables so your graphics manager's shutdown can call `wgpuInstanceRelease()`, `wgpuSurfaceRelease()`, `wgpuAdapterRelease()`, `wgpuDeviceRelease()`, and `wgpuQueueRelease()` in reverse initialization order, too. (Nice [RAII](https://en.cppreference.com/w/cpp/language/raii) C++ wrappers for WebGPU are in development [1](https://source.chromium.org/chromium/chromium/src/+/main:out/Debug/gen/third_party/dawn/include/dawn/webgpu_cpp.h) [2](https://eliemichel.github.io/LearnWebGPU/advanced-techniques/raii.html). In fact, I made a simple one for you: [`webgpu_raii`](https://github.com/yig/webgpu_raii/). With RAII, the release functions will be called automatically when the variables go out of scope. That means it's enough to declare them as instance variables in the right order.)
 
 For the remainder of this checkpoint, I will describe all the pieces of a simple way to draw sprites with a modern graphics pipeline. It's not the only way to do it, but it suffices for our purposes. Once you get the hang of WebGPU, you are welcome to try a different approach or enhance my approach.
 
@@ -461,6 +521,7 @@ This is declaring an array of (anonymous) structs with the attributes we want fo
 
 ```c++
 WGPUBuffer vertex_buffer = wgpuDeviceCreateBuffer( device, to_ptr( WGPUBufferDescriptor{
+    .label = "Vertex Buffer",
     .usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex,
     .size = sizeof(vertices)
     }) );
@@ -472,7 +533,7 @@ Tell the `queue` to copy the data by writing into the GPU buffer `vertex_buffer`
 wgpuQueueWriteBuffer( queue, vertex_buffer, 0, vertices, sizeof(vertices) );
 ```
 
-The GPU now has a copy of `vertices`, so we are fine letting its memory become automatically de-allocated when the enclosing scope of our graphics manager's startup function terminates. You can make `vertex_buffer` an instance variable and `wgpuBufferRelease()` it during shutdown (or use RAII via [`webgpu_raii`](https://github.com/yig/webgpu_raii/tree/wgpu-native)).
+The GPU now has a copy of `vertices`, so we are fine letting its memory become automatically de-allocated when the enclosing scope of our graphics manager's startup function terminates. You can make `vertex_buffer` an instance variable and `wgpuBufferRelease()` it during shutdown (or use RAII via [`webgpu_raii`](https://github.com/yig/webgpu_raii/)).
 
 The approach I will describe is called instanced rendering. Each instance of drawing the rectangle will get a different translation and scale (and possibly rotation!). You can use the following struct for that data.
 
@@ -484,7 +545,13 @@ struct InstanceData {
 };
 ```
 
-That `vec3` and `vec2` vector types comes from the [glm](https://github.com/g-truc/glm) library, which was originally created to be a C++ implementation of the vector math in OpenGL's shading language GLSL. To use it, insert `add_requires("glm")` near the top of the `xmake.lua` and `add_packages("glm")` inside `target("illengine")`. Then we can `#include "glm/glm.hpp"` and use its namespace in our `.cpp` file (`using namespace glm`). You might want to make this a public package and `typedef glm::vec2 vec2;` in your `Types.h` (and possibly also `glm::vec3` and `glm::vec4`). Then your engine's users will have access to a full-featured 2D vector type for specifying positions and velocities (and possibly a 3D or 4D vector type for specifying colors).
+That `vec3` and `vec2` vector types comes from the [glm](https://github.com/g-truc/glm) library, which was originally created to be a C++ implementation of the vector math in OpenGL's shading language GLSL. To use it, insert
+
+```
+add_requires("glm")
+```
+
+near where you add your packages in `CMakeLists.txt` and `glm::glm` inside `target_link_libraries( illengine )`. Then we can `#include "glm/glm.hpp"` and use its namespace in our `.cpp` file (`using namespace glm`). You might want to make this a public package and `typedef glm::vec2 vec2;` in your `Types.h` (and possibly also `glm::vec3` and `glm::vec4`). Then your engine's users will have access to a full-featured 2D vector type for specifying positions and velocities (and possibly a 3D or 4D vector type for specifying colors).
 
 Since this `InstanceData` struct won't be seen outside the graphics manager, we can declare it in an unnamed namespace (outside the startup function, somewhere near the top of your graphics `.cpp` file):
 
@@ -494,26 +561,21 @@ namespace {
 }
 ```
 
-We're almost ready to create our pipeline. The pipeline is there to support our shader programs we actually want to run on the GPU. The vertex shader program will run per vertex. The fragment shader program will run per pixel. The GPU will make data available to uniformly (globally) to all vertices/fragments, like textures and a projection matrix. The resulting pixels will get drawn to ... what exactly? They won't get drawn to the screen directly, since we don't want to present something half-drawn to the user. (Imagine a memory game which flashed the image under the cards every so often.) The solution is to draw to offscreen images, which are presented when they are ready. This is called the [swap chain](https://eliemichel.github.io/LearnWebGPU/getting-started/first-color.html). The format of these offscreen images (bits per channel, RGB vs BGR, etc.) should match whatever our surface wants. Let's get this format:
-
-```c++
-WGPUTextureFormat swap_chain_format = wgpuSurfaceGetPreferredFormat( surface, adapter );
-```
-
-and create a matching swap chain:
+We're almost ready to create our pipeline. The pipeline is there to support our shader programs we actually want to run on the GPU. The vertex shader program will run per vertex. The fragment shader program will run per pixel. The GPU will make data available to uniformly (globally) to all vertices/fragments, like textures and a projection matrix. The resulting pixels will get drawn to ... what exactly? They won't get drawn to the screen directly, since we don't want to present something half-drawn to the user. (Imagine a memory game which flashed the image under the cards every so often.) The solution is to draw to offscreen images, which are presented when they are ready. The format of these offscreen images (dimensions, bits per channel, RGB vs BGR, etc.) should match whatever our surface wants. Let's configure our surface appropriately:
 
 ```c++
 int width, height;
 glfwGetFramebufferSize( window, &width, &height );
-WGPUSwapChain swapchain = wgpuDeviceCreateSwapChain( device, surface, to_ptr( WGPUSwapChainDescriptor{
+wgpuSurfaceConfigure( surface, to_ptr( WGPUSurfaceConfiguration{
+    .device = device,
+    .format = wgpuSurfaceGetPreferredFormat( surface, adapter ),
     .usage = WGPUTextureUsage_RenderAttachment,
-    .format = swap_chain_format,
     .width = (uint32_t)width,
     .height = (uint32_t)height
     }) );
 ```
 
-You'll also want to keep `swapchain` around as an instance variable so you can call `wgpuSwapChainRelease()` in shutdown. **N.B.** The swap chain is created based on the window size. If the user resizes your window, rendering will break. Turn off resizing with `glfwWindowHint( GLFW_RESIZABLE, GLFW_FALSE );` before you create the window (`glfwCreateWindow()`), or else release and re-create the swap chain with the above code in a callback you pass to `glfwSetFramebufferSizeCallback()`.
+**N.B.** The surface configuration is based on the window size. If the user resizes your window, rendering will break. Turn off resizing with `glfwWindowHint( GLFW_RESIZABLE, GLFW_FALSE );` before you create the window (`glfwCreateWindow()`), or else re-configure the surface with the above code in a callback you pass to `glfwSetFramebufferSizeCallback()`.
 
 The final stop before actually creating the pipeline is creating the pipeline's shader module. WebGPU shaders are written in [WebGPU Shading Language (WGSL)](https://www.w3.org/TR/WGSL/). You can put vertex and fragment shaders together in the same file. Remember that these programs access per-vertex/fragment data as well as global data. One weird thing to understand about a lot of GPU programming APIs, including WebGPU, is that we label variables in our shader programs with numerical indices, and then refer to those indices when telling the pipeline which data to run on. Per-vertex variable indices are labelled with "locations" and global constants (uniforms) are labelled with "bindings". Let's see our shaders:
 
@@ -571,16 +633,17 @@ At some point during startup (before or after creating the pipeline), we need to
 
 ```c++
 WGPUBuffer uniform_buffer = wgpuDeviceCreateBuffer( device, to_ptr( WGPUBufferDescriptor{
+    .label = "Uniform Buffer",
     .usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform,
     .size = sizeof(Uniforms)
     }) );
 ```
 
-You can make `uniform_buffer` an instance variable and `wgpuBufferRelease()` it during shutdown (or use RAII via [`webgpu_raii`](https://github.com/yig/webgpu_raii/tree/wgpu-native)).
+You can make `uniform_buffer` an instance variable and `wgpuBufferRelease()` it during shutdown (or use RAII via [`webgpu_raii`](https://github.com/yig/webgpu_raii/)).
 
 Next the shader declares a `sampler` called `texSampler`. The sampler is what we use to reduce aliasing artifacts when reading data from our textures. Without it, all we can do is "nearest neighbor" interpolation. (If you prefer nearest neighbor interpolation, you can delete the sampler and replace the fragment shader line with `let color = textureLoad( texData, vec2i( in.texcoords * vec2f(textureDimensions(texData)) ), 0 ).rgba;`.)
 
-You'll also want to create a sampler at some point during startup (and release it with `wgpuSamplerRelease()` during shutdown or use [`webgpu_raii`](https://github.com/yig/webgpu_raii/tree/wgpu-native)):
+You'll also want to create a sampler at some point during startup (and release it with `wgpuSamplerRelease()` during shutdown or use [`webgpu_raii`](https://github.com/yig/webgpu_raii/)):
 
 ```c++
 WGPUSampler sampler = wgpuDeviceCreateSampler( device, to_ptr( WGPUSamplerDescriptor{
@@ -692,7 +755,7 @@ WGPURenderPipeline pipeline = wgpuDeviceCreateRenderPipeline( device, to_ptr( WG
         .targetCount = 1,
         .targets = to_ptr<WGPUColorTargetState>({
             {
-                .format = swap_chain_format,
+                .format = wgpuSurfaceGetPreferredFormat( surface, adapter ),
                 // The images we want to draw may have transparency, so let's turn on alpha blending with over compositing (ɑ⋅foreground + (1-ɑ)⋅background).
                 // This will blend with whatever has already been drawn.
                 .blend = to_ptr( WGPUBlendState{
@@ -715,7 +778,7 @@ WGPURenderPipeline pipeline = wgpuDeviceCreateRenderPipeline( device, to_ptr( WG
     } ) );
 ```
 
-We now have a graphics pipeline capable of drawing sprites. You can release the `shader_module` with `wgpuShaderModuleRelease()` (or use [`webgpu_raii`](https://github.com/yig/webgpu_raii/tree/wgpu-native)).
+We now have a graphics pipeline capable of drawing sprites. You can release the `shader_module` with `wgpuShaderModuleRelease()` (or use [`webgpu_raii`](https://github.com/yig/webgpu_raii/)).
 
 ### Loading data
 
@@ -726,11 +789,27 @@ bool LoadTexture( const string& name, const string& path );
 ```
 
 (On Windows, don't call it `LoadImage()`. That name is [trampled upon](https://stackoverflow.com/questions/2321713/how-do-i-avoid-name-collision-with-macros-defined-in-windows-header-files).)
-This lets our engine's users load an image from a `path` and then refer it by a convenient `name`. Don't forget to resolve `path` with your resource manager. Let's use an [`std::unordered_map< string, USEFUL STRUCT >`](https://en.cppreference.com/w/cpp/container/unordered_map) as our name-to-image map. (With a map like that called `m`—call yours something better—we can write `m[ name ].property = value;`. That's it! An `std::unordered_map` will instantiate the `USEFUL STRUCT` if it doesn't already exist when looking up the value for a key and return a reference. (If you'd like to know in advance, you can use `m.count( name ) == 0` to check if `m` already has something by that name. In C++20, that shortens to `m.contains( name )`.) You can remove an element via `m.erase( name );`.) You will want it to be an instance variable. `USEFUL STRUCT` should be a little struct you declare to hold the data we want to store about the image. You will want it to have fields for the image's native width and height, so you can compute its natural aspect ratio. You will also want a `WGPUTexture` field to keep the texture you create when loading. (You can also create a `WGPUBindGroup` field and store it in this struct. Creating the bind group is described later under [Drawing a Sprite](#drawing-a-sprite), but can just as well be done in this function.) If you use RAII via [`webgpu_raii`](https://github.com/yig/webgpu_raii/tree/wgpu-native), then it's enough to store `WGPUTextureRef` (and `WGPUBindGroupRef`) and the resources will be released automatically.
+This lets our engine's users load an image from a `path` and then refer it by a convenient `name`. Don't forget to resolve `path` with your resource manager. Let's use an [`std::unordered_map< string, USEFUL STRUCT >`](https://en.cppreference.com/w/cpp/container/unordered_map) as our name-to-image map. (With a map like that called `m`—call yours something better—we can write `m[ name ].property = value;`. That's it! An `std::unordered_map` will instantiate the `USEFUL STRUCT` if it doesn't already exist when looking up the value for a key and return a reference. (If you'd like to know in advance, you can use `m.count( name ) == 0` to check if `m` already has something by that name. In C++20, that shortens to `m.contains( name )`.) You can remove an element via `m.erase( name );`.) You will want it to be an instance variable. `USEFUL STRUCT` should be a little struct you declare to hold the data we want to store about the image. You will want it to have fields for the image's native width and height, so you can compute its natural aspect ratio. You will also want a `WGPUTexture` field to keep the texture you create when loading. (You can also create a `WGPUBindGroup` field and store it in this struct. Creating the bind group is described later under [Drawing a Sprite](#drawing-a-sprite), but can just as well be done in this function.) If you use RAII via [`webgpu_raii`](https://github.com/yig/webgpu_raii/), then it's enough to store `WGPUTextureRef` (and `WGPUBindGroupRef`) and the resources will be released automatically.
 
-> You may be tempted to make `USEFUL STRUCT`'s destructor call `wgpuTextureDestroy()` and `wgpuTextureRelease()` provided that the `WGPUTexture` field is not `nullptr` (and `WGPUBindGroupRelease()` if the `WGPUBindGroup` field is not `nullptr`). That way, the map would properly free GPU resources as needed when re-assigning a value to a key, when calling `.erase()` or `.clear()`, or when the map itself goes out of scope. However, this is dangerous unless handled correctly. That's because `WGPUTexture` and `WGPUBindGroup` are actually pointers. If you copy a `USEFUL STRUCT`, such as by creating a temporary one and assigning it, you'll have copied the pointers. Now two `USEFUL STRUCT`s are storing the same pointers, and both will release it, which means it may get released too early or released twice. You can prevent this by [deleting the copy constructor and assignment operator](https://stackoverflow.com/questions/33776697/deleting-copy-constructors-and-copy-assignment-operators-which-of-them-are-esse/33776856#33776856) `USEFUL STRUCT(const USEFUL STRUCT&) = delete; USEFUL STRUCT& operator=(const USEFUL STRUCT&) = delete;`. You could also lean in to the reference counting by defining them and calling `wgpuTextureReference()` (and `wgpuBindGroupReference()`); in that case, don't call `wgpuTextureDestroy()`, since you can't be certain someone else isn't still holding a valid reference. Or just use [`webgpu_raii`](https://github.com/yig/webgpu_raii/tree/wgpu-native).
+> You may be tempted to make `USEFUL STRUCT`'s destructor call `wgpuTextureDestroy()` and `wgpuTextureRelease()` provided that the `WGPUTexture` field is not `nullptr` (and `WGPUBindGroupRelease()` if the `WGPUBindGroup` field is not `nullptr`). That way, the map would properly free GPU resources as needed when re-assigning a value to a key, when calling `.erase()` or `.clear()`, or when the map itself goes out of scope. However, this is dangerous unless handled correctly. That's because `WGPUTexture` and `WGPUBindGroup` are actually pointers. If you copy a `USEFUL STRUCT`, such as by creating a temporary one and assigning it, you'll have copied the pointers. Now two `USEFUL STRUCT`s are storing the same pointers, and both will release it, which means it may get released too early or released twice. You can prevent this by [deleting the copy constructor and assignment operator](https://stackoverflow.com/questions/33776697/deleting-copy-constructors-and-copy-assignment-operators-which-of-them-are-esse/33776856#33776856) `USEFUL STRUCT(const USEFUL STRUCT&) = delete; USEFUL STRUCT& operator=(const USEFUL STRUCT&) = delete;`. You could also lean in to the reference counting by defining them and calling `wgpuTextureReference()` (and `wgpuBindGroupReference()`); in that case, don't call `wgpuTextureDestroy()`, since you can't be certain someone else isn't still holding a valid reference. Or just use [`webgpu_raii`](https://github.com/yig/webgpu_raii/).
 
-For actually reading images from disk and decoding them into CPU memory, we'll use the wonderful `std_image` image loader. The documentation is [the header](https://github.com/nothings/stb/blob/master/stb_image.h). Add it to your `xmake.lua` with `add_requires("stb")` near the top and `add_packages("stb")` inside `target("illengine")`. `stb_image` is header only, but requires us to `#define STB_IMAGE_IMPLEMENTATION` in one compilation unit before `#include "stb_image.h"`. We'll only use it here, so:
+For actually reading images from disk and decoding them into CPU memory, we'll use the wonderful `std_image` image loader. The documentation is [the header](https://github.com/nothings/stb/blob/master/stb_image.h). Add it to your `CMakeLists.txt` with
+
+```
+FetchContent_Declare(
+  stb
+  GIT_REPOSITORY https://github.com/nothings/stb/
+  GIT_TAG        master
+  GIT_SHALLOW TRUE
+  GIT_PROGRESS TRUE
+)
+FetchContent_Populate(stb)
+FetchContent_GetProperties(stb)
+add_library(stb INTERFACE)
+target_include_directories(stb INTERFACE ${stb_SOURCE_DIR})
+```
+
+in your list of packages and `stb` inside `target_link_libraries( illengine ... )`. `stb_image` is header only, but requires us to `#define STB_IMAGE_IMPLEMENTATION` in one compilation unit before `#include "stb_image.h"`. We'll only use it here, so:
 
 ```c++
 #define STB_IMAGE_IMPLEMENTATION
@@ -748,6 +827,7 @@ The output parameters `width` and `height` store the image's dimensions. We'll n
 
 ```c++
 WGPUTexture tex = wgpuDeviceCreateTexture( device, to_ptr( WGPUTextureDescriptor{
+    .label = path.c_str(),
     .usage = WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopyDst,
     .dimension = WGPUTextureDimension_2D,
     .size = { (uint32_t)width, (uint32_t)height, 1 },
@@ -786,9 +866,11 @@ When it's time to draw a set of sprites:
     ```c++
     WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder( device, nullptr );
     ```
-2. Get the window's swap chain's "texture view" we will draw into.
+2. Get the window surface's "texture view" we will draw into.
     ```c++
-    WGPUTextureView current_texture_view = wgpuSwapChainGetCurrentTextureView( swapchain );
+    WGPUSurfaceTexture surface_texture{};
+    wgpuSurfaceGetCurrentTexture( surface, &surface_texture );
+    WGPUTextureView current_texture_view = wgpuTextureCreateView( surface_texture.texture, nullptr ) );
     ```
 3. Begin our render pass by clearing the screen.
     ```c++
@@ -825,7 +907,7 @@ When it's time to draw a set of sprites:
         WGPUCommandBuffer command = wgpuCommandEncoderFinish( encoder, nullptr );
         wgpuQueueSubmit( queue, 1, &command );
         ```
-    3. Present the new frame with: `wgpuSwapChainPresent( swapchain );`
+    3. Present the new frame with: `wgpuSurfacePresent( surface );`
     4. Cleanup anything you created in the loop (such as the instance data buffer, the swap chain's texture view, the command encoder, per-sprite bind groups, etc).
 
 Steps 7–10 need a bit more elaboration.
@@ -874,6 +956,7 @@ Multiply that `scale` by whatever scale your sprite asks for.
 Once you have finished creating the `InstanceData` for the sprite, you can copy it to the GPU. At some point at the beginning of the entire draw function, you should allocate a buffer big enough to store an `InstanceData` for each sprite:
 ```c++
 WGPUBuffer instance_buffer = wgpuDeviceCreateBuffer( device, to_ptr<WGPUBufferDescriptor>({
+    .label = "Instance Buffer",
     .usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex,
     .size = sizeof(InstanceData) * sprites.size()
     }) );
@@ -913,7 +996,7 @@ WGPUBindGroup bind_group = wgpuDeviceCreateBindGroup( device, to_ptr( WGPUBindGr
 wgpuBindGroupLayoutRelease( layout );
 ```
 
-(If you are using [`webgpu_raii`](https://github.com/yig/webgpu_raii/tree/wgpu-native), you can write `.layout = ref(wgpuRenderPipelineGetBindGroupLayout( pipeline, 0 ))` instead of `auto layout = ...` and `wgpuBindGroupLayoutRelease(layout)`.)
+(If you are using [`webgpu_raii`](https://github.com/yig/webgpu_raii/), you can write `.layout = ref(wgpuRenderPipelineGetBindGroupLayout( pipeline, 0 ))` instead of `auto layout = ...` and `wgpuBindGroupLayoutRelease(layout)`.)
 
 Next, attach it:
 
@@ -927,7 +1010,7 @@ Now you are ready for the call to `wgpuRenderPassEncoderDraw()`.
 
 ### Cleaning up
 
-At the end of draw, after `wgpuQueueSubmit()`, it's safe to release any resources we created in the function. (This is another place where a C++ [RAII](https://en.cppreference.com/w/cpp/language/raii) wrapper like [`webgpu_raii`](https://github.com/yig/webgpu_raii/tree/wgpu-native) will improve our lives.) This definitely includes the swap chain's texture view (`wgpuTextureViewRelease()`), the command encoder (`wgpuCommandEncoderRelease()`), and the render pass encoder (`wgpuRenderPassEncoderRelease()`). This can also include instance data buffer (see above), per-sprite bind groups (`wgpuBindGroupRelease()`), texture views (`wgpuTextureViewRelease()`), and the result of the call to `wgpuRenderPipelineGetBindGroupLayout()` (via `wgpuBindGroupLayoutRelease()`), unless you find a way to keep them around from frame to frame. The bind groups and texture views are unique per image, so you could create them once when loading an image.
+At the end of draw, after `wgpuQueueSubmit()`, it's safe to release any resources we created in the function. (This is another place where a C++ [RAII](https://en.cppreference.com/w/cpp/language/raii) wrapper like [`webgpu_raii`](https://github.com/yig/webgpu_raii/) will improve our lives.) This definitely includes the swap chain's texture view (`wgpuTextureViewRelease()`), the command encoder (`wgpuCommandEncoderRelease()`), and the render pass encoder (`wgpuRenderPassEncoderRelease()`). This can also include instance data buffer (see above), per-sprite bind groups (`wgpuBindGroupRelease()`), texture views (`wgpuTextureViewRelease()`), and the result of the call to `wgpuRenderPipelineGetBindGroupLayout()` (via `wgpuBindGroupLayoutRelease()`), unless you find a way to keep them around from frame to frame. The bind groups and texture views are unique per image, so you could create them once when loading an image.
 
 ### Extensions
 
@@ -940,7 +1023,7 @@ At the end of draw, after `wgpuQueueSubmit()`, it's safe to release any resource
 
 ### Gotchas
 
-If your program is crashing inside WebGPU calls, you will get more informative error messages by setting the environment variable `RUST_BACKTRACE=1` or `RUST_BACKTRACE=full`. This will print the function names, file names, and line numbers in the call stack that caused the error. (*N.B.* You will get the same or better information by running in a debugger via `xmake run -d`.) You will want to be compiling in debug mode (`xmake config -m debug`). Then look for your files and line numbers in the output. The C++ function names will look mangled. On *Windows*, type `set RUST_BACKTRACE=1` on your command prompt. That sets an environment variable for the duration of the command prompt window. Every time you type `xmake run` in that window, it will see the environment variable. On *Unix* (Linux, macOS), you can type `RUST_BACKTRACE=1 xmake run` each time. To set it for your entire terminal window duration, the syntax varies based on shell (bash/zsh: `export RUST_BACKTRACE=1`, csh: `setenv RUST_BACKTRACE 1`, fish: either of those or `set -x RUST_BACKTRACE 1`).
+If your program is crashing inside WebGPU calls, you will get more informative error messages by setting the environment variable `RUST_BACKTRACE=1` or `RUST_BACKTRACE=full`. This will print the function names, file names, and line numbers in the call stack that caused the error. (*N.B.* You will get the same or better information by running in a debugger.) You will want to be compiling in debug mode (`cmake -DCMAKE_BUILD_TYPE=Debug -B build`). Then look for your files and line numbers in the output. The C++ function names will look mangled. On *Windows*, type `set RUST_BACKTRACE=1` on your command prompt. That sets an environment variable for the duration of the command prompt window. Every time you type `cmake --build build --target run_helloworld` in that window, it will see the environment variable. On *Unix* (Linux, macOS), you can type `RUST_BACKTRACE=1 cmake --build build --target run_helloworld` each time. To set it for your entire terminal window duration, the syntax varies based on shell (bash/zsh: `export RUST_BACKTRACE=1`, csh: `setenv RUST_BACKTRACE 1`, fish: either of those or `set -x RUST_BACKTRACE 1`).
 
 Don't release WebGPU objects too often or too early. Don't call release at all until you get your graphics manager working. Don't call release on a null or uninitialized pointer. Don't release bind groups you set until after `wgpuRenderPassEncoderEnd()` (see above). This is a [known issue](https://gfx-rs.github.io/2023/11/24/arcanization.html) with `wgpu-native` that will be fixed someday. Don't release textures in your little struct's destructor if you create them outside of the name-to-struct map (see above).
 
@@ -987,7 +1070,7 @@ Some computers have multiple GPUs, like a laptop with a discrete and integrated 
 
 ### Checkpoint 4 Upload
 
-**You have reached the fourth checkpoint.** Upload your code. Run `xmake clean --all` and then zip your entire directory. For this checkpoint:
+**You have reached the fourth checkpoint.** Upload your code. Delete or move aside your `build` subdirectory and then zip your entire directory. For this checkpoint:
 
 * Your engine should have a resource manager you use to resolve paths, even if it returns those paths unchanged.
 * Your engine should have a graphics manager that lets users draw images to the screen.
@@ -1207,7 +1290,7 @@ If your ECS is global (or lives inside a global variable), you can make your `En
 
 ### Checkpoint 5 Upload
 
-**You have reached the fifth checkpoint.** Upload your code. Run `xmake clean --all` and then zip your entire directory. For this checkpoint:
+**You have reached the fifth checkpoint.** Upload your code. Delete or move aside your `build` subdirectory and then zip your entire directory. For this checkpoint:
 
 * Your engine should have an entity component system that lets users create entities, attach and remove components to and from them, and run algorithms over the components.
 * Your graphics manager's draw method should iterate over your ECS entities rather than taking a parameter.
@@ -1229,7 +1312,30 @@ To embed Lua in our engines, we will use the [`sol`](https://sol2.readthedocs.io
 
 You will have a lot of architectural freedom in this checkpoint. Should the scripting manager startup first, and then other managers (sound, input, ECS) make calls to the scripting manager to expose their functionality to Lua? Or should the scripting manager startup last and take on the task of exposing the other managers' functionality itself? You are free to make these architectural choices (and discuss them with each other). I will describe scripting functionality that our engines must support. I will also give examples of how to use the `sol` library.
 
-First things first. Let's add `lua` and `sol` to our `xmake.lua` with `add_requires("lua", "sol2")` near the top and, inside `target("illengine")`, `add_packages("lua")` and `add_packages("sol2", {public = true})`. We will want to add the `sol` package publicly so that users can make their game's data structures accessible from inside Lua. Next let's make a script manager. The script manager should include the `sol` header.
+First things first. Let's add `lua` and `sol` to our `CMakeLists.txt` with
+
+```
+FetchContent_Declare(
+    lua
+    GIT_REPOSITORY https://github.com/walterschell/Lua
+    GIT_TAG v5.4.5
+    GIT_SHALLOW TRUE
+    GIT_PROGRESS TRUE
+    )
+set(LUA_ENABLE_TESTING OFF CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable( lua )
+
+FetchContent_Declare(
+    sol2
+    GIT_REPOSITORY https://github.com/ThePhD/sol2
+    GIT_TAG v3.3.1
+    GIT_SHALLOW TRUE
+    GIT_PROGRESS TRUE
+    )
+FetchContent_MakeAvailable( sol2 )
+```
+
+near the top and, inside `target_link_libraries( illengine ... )`, add `sol2` and `lua_static`. We will want to add the `sol2` package publicly so that users can make their game's data structures accessible from inside Lua. Next let's make a script manager. The script manager should include the `sol` header.
 
 ```c++
 #define SOL_ALL_SAFETIES_ON 1
@@ -1303,7 +1409,7 @@ If you wish, you can organize the functionality you expose to Lua with [somethin
 
 ### Checkpoint 6 Upload
 
-**You have reached the sixth checkpoint.** Upload your code. Run `xmake clean --all` and then zip your entire directory. For this checkpoint:
+**You have reached the sixth checkpoint.** Upload your code. Delete or move aside your `build` subdirectory and then zip your entire directory. For this checkpoint:
 
 * Your engine should have a script manager that lets users run Lua scripts on demand and lets users attach a `Script` component to entities that will be run automatically in the game loop.
 * Your engine should expose to Lua scripts the ability to query input state, quit the game, manipulate sprites, and (optionally) play sounds.
@@ -1318,8 +1424,26 @@ You don't need anything else. You might want:
   * Use [`stb_truetype.h`](https://github.com/nothings/stb/blob/master/stb_truetype.h). This is more involved, but you can load any TrueType font and render it efficiently. It precomputes a texture packed full of rasterized glyphs, and then provides positions and texture coordinates for drawing little quads, one for each glyph in the text you want to display.
 * A GUI for inspecting and editing your game state. [Dear ImGui](https://github.com/ocornut/imgui) and [Nuklear](https://github.com/Immediate-Mode-UI/Nuklear) are good for that.
   * To avoid the hooks making your graphics manager code look ugly, I recommend making a GUI manager with its own draw method. (It could be entirely owned and managed by the graphics manager.) Your graphics manager can call it at the appropriate times.
-  * For Dear ImGui, you can `add_requires("imgui", {configs = {glfw = true, wgpu = true}})` and `add_packages("imgui")`. You can then include `<imgui.h>`, `<backends/imgui_impl_wgpu.h>`, and `<backends/imgui_impl_glfw.h>`. For an example, see [Learn WebGPU's Simple GUI example](https://eliemichel.github.io/LearnWebGPU/basic-3d-rendering/some-interaction/simple-gui.html). It boils down to: (1) Call `ImGui::CreateContext();` followed by `ImGui_ImplGlfw_InitForOther()` and `ImGui_ImplWGPU_Init()` on startup. (2) Call `ImGui_ImplGlfw_Shutdown()` followed by `ImGui::DestroyContext()` at shutdown. (3) Call `ImGui_ImplWGPU_NewFrame()`, `ImGui_ImplGlfw_NewFrame()`, and `ImGui::NewFrame()` at the beginning of the GUI manager's draw function and `ImGui::EndFrame()`, `ImGui::Render()`, and `ImGui_ImplWGPU_RenderDrawData()` at the end. Put your GUI drawing commands in between.
-* Networking. This is a big topic. Some options (in `xrepo`):
+  * For Dear ImGui, you can
+    ```
+    FetchContent_Declare(
+        imgui
+        GIT_REPOSITORY https://github.com/ocornut/imgui
+        GIT_TAG v1.91.1
+        GIT_SHALLOW TRUE
+        GIT_PROGRESS TRUE
+        )
+    # FetchContent_MakeAvailable( imgui )
+    FetchContent_Populate( imgui )
+    FetchContent_GetProperties( imgui )
+    file(GLOB imgui_sources "${imgui_SOURCE_DIR}/*.c*" "${imgui_SOURCE_DIR}/backends/imgui_impl_wgpu.cpp*" "${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp*")
+    add_library(imgui ${imgui_sources})
+    target_include_directories(imgui PUBLIC "${imgui_SOURCE_DIR}" "${imgui_SOURCE_DIR}/backends")
+    target_link_libraries(imgui PUBLIC glfw webgpu)
+    set_target_properties(imgui PROPERTIES CXX_STANDARD 17 )
+    ```
+    and add the library `imgui`. You can then include `<imgui.h>`, `<backends/imgui_impl_wgpu.h>`, and `<backends/imgui_impl_glfw.h>`. For an example, see [Learn WebGPU's Simple GUI example](https://eliemichel.github.io/LearnWebGPU/basic-3d-rendering/some-interaction/simple-gui.html). It boils down to: (1) Call `ImGui::CreateContext();` followed by `ImGui_ImplGlfw_InitForOther()` and `ImGui_ImplWGPU_Init()` on startup. (2) Call `ImGui_ImplGlfw_Shutdown()` followed by `ImGui::DestroyContext()` at shutdown. (3) Call `ImGui_ImplWGPU_NewFrame()`, `ImGui_ImplGlfw_NewFrame()`, and `ImGui::NewFrame()` at the beginning of the GUI manager's draw function and `ImGui::EndFrame()`, `ImGui::Render()`, and `ImGui_ImplWGPU_RenderDrawData()` at the end. Put your GUI drawing commands in between.
+* Networking. This is a big topic. Some options:
   * [ENet](http://enet.bespin.org/): The tutorial is quite easy to follow and mentions how you would incorporate this into a game loop.
   * [Asio](http://think-async.com/Asio/): This is a very general library. There isn't a tutorial as well-documented as ENet.
   * [brynet](https://github.com/IronsDu/brynet): The examples aren't well documented.
@@ -1444,3 +1568,4 @@ You don't need anything else. You might want:
 * 2023-11-01: Added .vs and .vscode to .gitignore
 * 2023-11-27: Added some WebGPU troubleshooting via additional `WGPURequestAdapterOptions`
 * 2023-12-05: Added paths to suggested gitignore
+* 2024-08-19: Switched from xmake to CMake. Updated WebGPU to remove swap chains.
