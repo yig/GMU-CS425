@@ -27,7 +27,7 @@ Create a new directory. Since we're making a "little engine", I called mine `ill
 Create a file `CMakeLists.txt` and put the following inside:
 
 ```
-cmake_minimum_required(VERSION 3.12...3.25)
+cmake_minimum_required(VERSION 3.13...3.25)
 project(
     illengine # Name this whatever you want
     LANGUAGES CXX C
@@ -1570,3 +1570,4 @@ You don't need anything else. You might want:
 * 2023-12-05: Added paths to suggested gitignore
 * 2024-08-19: Switched from xmake to CMake. Updated WebGPU to remove swap chains.
 * 2024-08-20: Texture is stored as sRGB, since it is.
+* 2024-08-21: Bumped minimum CMake version to 3.13
