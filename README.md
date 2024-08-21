@@ -878,6 +878,7 @@ When it's time to draw a set of sprites:
         .colorAttachmentCount = 1,
         .colorAttachments = to_ptr<WGPURenderPassColorAttachment>({{
             .view = current_texture_view,
+            .depthSlice = WGPU_DEPTH_SLICE_UNDEFINED,
             .loadOp = WGPULoadOp_Clear,
             .storeOp = WGPUStoreOp_Store,
             // Choose the background color.
@@ -1571,3 +1572,4 @@ You don't need anything else. You might want:
 * 2024-08-19: Switched from xmake to CMake. Updated WebGPU to remove swap chains.
 * 2024-08-20: Texture is stored as sRGB, since it is.
 * 2024-08-21: Bumped minimum CMake version to 3.13
+* 2024-08-21: `.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED`
