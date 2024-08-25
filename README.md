@@ -1078,6 +1078,8 @@ Some computers have multiple GPUs, like a laptop with a discrete and integrated 
 
 ## Game Objects (Entity Component System)
 
+**Warning: Don't work on this checkpoint yet. I am considering making scripting first this year, and then implementing the ECS in Lua.**
+
 Your engine is now capable of drawing graphics, reading input, and (optionally) playing sounds. It's time to add a notion of game objects. This will allow users of your engine to populate their games with objects and update them in response to user input and the passage of time (such as physics). This will also give your graphics manager something to draw every frame. Rather than creating a game object base class that all user classes derive from, we will implement a modern game architecture design called [Entity Component System (ECS)](https://github.com/SanderMertens/ecs-faq). The key idea is to separate data (Components) from game Entities (integers IDs) and algorithms (Systems). This has several advantages:
 
 1. You avoid awkward OOP hierarchies (do drawable objects subclass physics body objects or vice versa).
@@ -1573,3 +1575,4 @@ You don't need anything else. You might want:
 * 2024-08-21: Bumped minimum CMake version to 3.13
 * 2024-08-21: `.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED`
 * 2024-08-21: Deleted `.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED`, since `wgpu`'s last release doesn't yet require it.
+* 2024-08-25: Added a warning about the ECS checkpoint being moved this year.
