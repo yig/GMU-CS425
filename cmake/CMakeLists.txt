@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.12...3.25)
+cmake_minimum_required(VERSION 3.14...3.30)
 project(
     stepbystep-secret
     LANGUAGES CXX C
