@@ -50,9 +50,7 @@ FetchContent_Declare(
   GIT_SHALLOW TRUE
   GIT_PROGRESS TRUE
 )
-FetchContent_Populate(glfw3webgpu)
-FetchContent_GetProperties(glfw3webgpu)
-add_subdirectory(${glfw3webgpu_SOURCE_DIR})
+FetchContent_MakeAvailable( glfw3webgpu )
 
 if( USE_SOLOUD )
     FetchContent_Declare(
@@ -62,9 +60,8 @@ if( USE_SOLOUD )
       GIT_SHALLOW TRUE
       GIT_PROGRESS TRUE
     )
-    FetchContent_Populate(soloud)
-    FetchContent_GetProperties(soloud)
-    # add_subdirectory(${soloud_SOURCE_DIR}/contrib)
+    FetchContent_MakeAvailable( soloud )
+    ## SoLoud doesn't have its own `CMakeLists.txt`, so let's declare a library directly from its sources.
     file(GLOB soloud_sources "${soloud_SOURCE_DIR}/src/audiosource/*/*.c*" "${soloud_SOURCE_DIR}/src/c_api/*.c*" "${soloud_SOURCE_DIR}/src/core/*.c*" "${soloud_SOURCE_DIR}/src/filter/*.c*" "${soloud_SOURCE_DIR}/src/backend/miniaudio/soloud_miniaudio.cpp")
     add_library(soloud ${soloud_sources})
     target_compile_definitions(soloud PRIVATE WITH_MINIAUDIO MA_NO_RUNTIME_LINKING)
@@ -83,10 +80,10 @@ FetchContent_Declare(
   GIT_SHALLOW TRUE
   GIT_PROGRESS TRUE
 )
-FetchContent_Populate(stb)
-FetchContent_GetProperties(stb)
-add_library(stb INTERFACE)
-target_include_directories(stb INTERFACE ${stb_SOURCE_DIR})
+FetchContent_MakeAvailable( stb )
+## stb doesn't have a `CMakeLists.txt`. Let's declare a header-only library with an include path.
+add_library( stb INTERFACE )
+target_include_directories( stb INTERFACE ${stb_SOURCE_DIR} )
 
 FetchContent_Declare(
     spdlog
@@ -124,14 +121,13 @@ if( USE_DEAR_IMGUI )
         GIT_SHALLOW TRUE
         GIT_PROGRESS TRUE
         )
-    # FetchContent_MakeAvailable( imgui )
-    FetchContent_Populate( imgui )
-    FetchContent_GetProperties( imgui )
-    file(GLOB imgui_sources "${imgui_SOURCE_DIR}/*.c*" "${imgui_SOURCE_DIR}/backends/imgui_impl_wgpu.cpp*" "${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp*")
-    add_library(imgui ${imgui_sources})
-    target_include_directories(imgui PUBLIC "${imgui_SOURCE_DIR}" "${imgui_SOURCE_DIR}/backends")
-    target_link_libraries(imgui PUBLIC glfw webgpu)
-    set_target_properties(imgui PROPERTIES CXX_STANDARD 17 )
+    FetchContent_MakeAvailable( imgui )
+    ## imgui doesn't have a `CMakeLists.txt`, so let's create a library for it.
+    file( GLOB imgui_sources "${imgui_SOURCE_DIR}/*.c*" "${imgui_SOURCE_DIR}/backends/imgui_impl_wgpu.cpp*" "${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp*" )
+    add_library( imgui ${imgui_sources} )
+    target_include_directories( imgui PUBLIC "${imgui_SOURCE_DIR}" "${imgui_SOURCE_DIR}/backends" )
+    target_link_libraries( imgui PUBLIC glfw webgpu )
+    set_target_properties( imgui PROPERTIES CXX_STANDARD 17 )
 endif()
 
 ## Declare the engine library

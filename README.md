@@ -27,7 +27,7 @@ Create a new directory. Since we're making a "little engine", I called mine `ill
 Create a file `CMakeLists.txt` and put the following inside:
 
 ```
-cmake_minimum_required(VERSION 3.13...3.25)
+cmake_minimum_required(VERSION 3.14...3.25)
 project(
     illengine # Name this whatever you want
     LANGUAGES CXX C
@@ -70,7 +70,7 @@ You can now run the executable (for me, it's `./build/helloworld`). This will pr
 Hello, World!
 ```
 
-We can ask `cmake` to run the executable for us, compiling or re-compiling as needed if any source files have changed. To do this, add the following line to the `CMakeLists.txt`: `add_custom_target( run_helloworld helloworld )`. Refresh by running `cmake -B build`. Now you can call `cmake --build build --target run_helloworld`. You should see:
+We can ask `cmake` to run the executable for us, compiling or re-compiling as needed if any source files have changed. To do this, add the following line to the `CMakeLists.txt`: `add_custom_target( run_helloworld helloworld USES_TERMINAL )`. Refresh by running `cmake -B build`. Now you can call `cmake --build build --target run_helloworld`. You should see:
 
 ```
 [100%] Built target helloworld
@@ -333,7 +333,7 @@ You may have noticed that there's no way to quit your program (without asking yo
 
 ## Resources and the Resource Manager
 
-Our resource management needs are pretty basic. We will create an `assets` directory to organize all the things that we'll want to access from our game. Modern build systems (like CMake and xmake) perform out of source builds, which means that the executable will be created in a funky location in some separate build directory. Since we'll want to load files from the `assets` directory, let's tell CMake to run the executable with the working directory set to the project directory, rather than the build directory. (If you are running from an IDE like Xcode or Visual Studio, look up how to set the working directory when you run from there.) In `CMakeLists.txt`, modify the line `add_custom_target( run_helloworld helloworld )` to `add_custom_target( run_helloworld helloworld WORKING_DIRECTORY ${CMAKE_SOURCE_DIR} )`.
+Our resource management needs are pretty basic. We will create an `assets` directory to organize all the things that we'll want to access from our game. Modern build systems (like CMake and xmake) perform out of source builds, which means that the executable will be created in a funky location in some separate build directory. Since we'll want to load files from the `assets` directory, let's tell CMake to run the executable with the working directory set to the project directory, rather than the build directory. (If you are running from an IDE like Xcode or Visual Studio, look up how to set the working directory when you run from there.) In `CMakeLists.txt`, modify the line `add_custom_target( run_helloworld helloworld USES_TERMINAL )` to `add_custom_target( run_helloworld helloworld USES_TERMINAL WORKING_DIRECTORY ${CMAKE_SOURCE_DIR} )`.
 
 At this point, reading a file from a path like `assets/sounds/coin.wav` or `assets/textures/coin.png` should just work from your engine. (*N.B.* Do **not** change the `/` to `\` on Windows. `/` is cross platform. Windows handles `/` just fine.) For the most straightforward cases, we could skip creating a resource manager altogether. However, it's a good idea to centralize our path handling. For that, you can make a resource manager that simply provides a method that resolves paths. The method would take in a partial path and return a path to a real file. Our `CMakeLists.txt` sets the working directory so paths like `assets/textures/coin.png` just work, so the most basic resource manager would have a resolve path method that simply returns its input. You should create at least this resource manager now, and then use it to resolve paths in your sound or graphics manager (and any manager that loads resources). A better resource manager would have a method to set the path root (it could default to `assets` or not) which could let users resolve `textures/coin.png`. Use [`std::filesystem::path`](https://en.cppreference.com/w/cpp/filesystem/path) to append `path` to the root path. `std::filesystem::path` is neat. It overloads `/` so that you can do things like `relative_to_foo = std::filesystem::path("foo") / relative_path`. You can create an `std::filesystem::path` from an `std::string` and vice versa.
 
@@ -357,9 +357,8 @@ FetchContent_Declare(
   GIT_SHALLOW TRUE
   GIT_PROGRESS TRUE
 )
-FetchContent_Populate(soloud)
-FetchContent_GetProperties(soloud)
-# add_subdirectory(${soloud_SOURCE_DIR}/contrib)
+FetchContent_MakeAvailable( soloud )
+## SoLoud doesn't have its own `CMakeLists.txt`, so let's declare a library directly from its sources.
 file(GLOB soloud_sources "${soloud_SOURCE_DIR}/src/audiosource/*/*.c*" "${soloud_SOURCE_DIR}/src/c_api/*.c*" "${soloud_SOURCE_DIR}/src/core/*.c*" "${soloud_SOURCE_DIR}/src/filter/*.c*" "${soloud_SOURCE_DIR}/src/backend/miniaudio/soloud_miniaudio.cpp")
 add_library(soloud ${soloud_sources})
 target_compile_definitions(soloud PRIVATE WITH_MINIAUDIO MA_NO_RUNTIME_LINKING)
@@ -426,9 +425,7 @@ FetchContent_Declare(
   GIT_SHALLOW TRUE
   GIT_PROGRESS TRUE
 )
-FetchContent_Populate(glfw3webgpu)
-FetchContent_GetProperties(glfw3webgpu)
-add_subdirectory(${glfw3webgpu_SOURCE_DIR})
+FetchContent_MakeAvailable( glfw3webgpu )
 ```
 
 Add `webgpu` and `glfw3webgpu` to your list of libraries in `target_link_libraries( illengine )`.
@@ -803,10 +800,10 @@ FetchContent_Declare(
   GIT_SHALLOW TRUE
   GIT_PROGRESS TRUE
 )
-FetchContent_Populate(stb)
-FetchContent_GetProperties(stb)
-add_library(stb INTERFACE)
-target_include_directories(stb INTERFACE ${stb_SOURCE_DIR})
+FetchContent_MakeAvailable( stb )
+## stb doesn't have a `CMakeLists.txt`. Let's declare a header-only library with an include path.
+add_library( stb INTERFACE )
+target_include_directories( stb INTERFACE ${stb_SOURCE_DIR} )
 ```
 
 in your list of packages and `stb` inside `target_link_libraries( illengine ... )`. `stb_image` is header only, but requires us to `#define STB_IMAGE_IMPLEMENTATION` in one compilation unit before `#include "stb_image.h"`. We'll only use it here, so:
@@ -1435,14 +1432,13 @@ You don't need anything else. You might want:
         GIT_SHALLOW TRUE
         GIT_PROGRESS TRUE
         )
-    # FetchContent_MakeAvailable( imgui )
-    FetchContent_Populate( imgui )
-    FetchContent_GetProperties( imgui )
-    file(GLOB imgui_sources "${imgui_SOURCE_DIR}/*.c*" "${imgui_SOURCE_DIR}/backends/imgui_impl_wgpu.cpp*" "${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp*")
-    add_library(imgui ${imgui_sources})
-    target_include_directories(imgui PUBLIC "${imgui_SOURCE_DIR}" "${imgui_SOURCE_DIR}/backends")
-    target_link_libraries(imgui PUBLIC glfw webgpu)
-    set_target_properties(imgui PROPERTIES CXX_STANDARD 17 )
+    FetchContent_MakeAvailable( imgui )
+    ## imgui doesn't have a `CMakeLists.txt`, so let's create a library for it.
+    file( GLOB imgui_sources "${imgui_SOURCE_DIR}/*.c*" "${imgui_SOURCE_DIR}/backends/imgui_impl_wgpu.cpp*" "${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp*" )
+    add_library( imgui ${imgui_sources} )
+    target_include_directories( imgui PUBLIC "${imgui_SOURCE_DIR}" "${imgui_SOURCE_DIR}/backends" )
+    target_link_libraries( imgui PUBLIC glfw webgpu )
+    set_target_properties( imgui PROPERTIES CXX_STANDARD 17 )
     ```
     and add the library `imgui`. You can then include `<imgui.h>`, `<backends/imgui_impl_wgpu.h>`, and `<backends/imgui_impl_glfw.h>`. For an example, see [Learn WebGPU's Simple GUI example](https://eliemichel.github.io/LearnWebGPU/basic-3d-rendering/some-interaction/simple-gui.html). It boils down to: (1) Call `ImGui::CreateContext();` followed by `ImGui_ImplGlfw_InitForOther()` and `ImGui_ImplWGPU_Init()` on startup. (2) Call `ImGui_ImplGlfw_Shutdown()` followed by `ImGui::DestroyContext()` at shutdown. (3) Call `ImGui_ImplWGPU_NewFrame()`, `ImGui_ImplGlfw_NewFrame()`, and `ImGui::NewFrame()` at the beginning of the GUI manager's draw function and `ImGui::EndFrame()`, `ImGui::Render()`, and `ImGui_ImplWGPU_RenderDrawData()` at the end. Put your GUI drawing commands in between.
 * Networking. This is a big topic. Some options:
@@ -1576,3 +1572,4 @@ You don't need anything else. You might want:
 * 2024-08-21: `.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED`
 * 2024-08-21: Deleted `.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED`, since `wgpu`'s last release doesn't yet require it.
 * 2024-08-25: Added a warning about the ECS checkpoint being moved this year.
+* 2024-08-27: CMake updates
