@@ -27,7 +27,7 @@ Create a new directory. Since we're making a "little engine", I called mine `ill
 Create a file `CMakeLists.txt` and put the following inside:
 
 ```
-cmake_minimum_required(VERSION 3.14...3.25)
+cmake_minimum_required(VERSION 3.14...3.30)
 project(
     illengine # Name this whatever you want
     LANGUAGES CXX C
@@ -91,7 +91,7 @@ Before going any further, let's set up version control with git. You can use git
 
 ```
 # CMake
-/build
+/build*
 
 # vscode
 /.vscode
@@ -109,7 +109,7 @@ Now you should initialize your git repository and make a first commit.
 
 ### Checkpoint 1 Upload
 
-**You have reached the first checkpoint.** Upload your code. Delete or move aside your `build` subdirectory and then zip your entire directory. Your directly tree should look like:
+**You have reached the first checkpoint.** Upload your code. Delete or move aside your `build` subdirectory and then zip your entire directory. You can do this with a git command: `git archive --format=zip --prefix=checkpoint1/ main > ../checkpoint1.zip`. Your directly tree should look like:
 
 ```
 .git/
@@ -1573,3 +1573,4 @@ You don't need anything else. You might want:
 * 2024-08-21: Deleted `.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED`, since `wgpu`'s last release doesn't yet require it.
 * 2024-08-25: Added a warning about the ECS checkpoint being moved this year.
 * 2024-08-27: CMake updates
+* 2024-08-27: Added git archive command to checkpoint 1.
