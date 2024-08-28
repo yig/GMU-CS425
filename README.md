@@ -54,9 +54,9 @@ int main( int argc, const char* argv[] ) {
 
 > 🤖: Behind the scenes, CMake is a build system generator. It can output Makefiles, Visual Studio Solutions, Xcode project files, etc. Some IDE's like Visual Studio [open `CMakeLists.txt` directly](https://learn.microsoft.com/en-us/cpp/build/cmake-projects-in-visual-studio). I will describe using `cmake` on the command line in this guide, but there are other ways to use it.
 
-To compile this on the command line, we first tell CMake to process the `CMakeLists.txt`. On the command line, navigate into this folder and run `cmake -B build`. You have to re-run this command anytime you make changes to your `CMakeLists.txt`. The `.` points CMake to the current directory and the `build` tells CMake to place the compiler's output (programs, libraries, dependencies) into a directory named `build`.
+To compile this on the command line, we first tell CMake to process the `CMakeLists.txt`. On the command line, navigate into this folder and run `cmake -B build-dir`. You have to re-run this command anytime you make changes to your `CMakeLists.txt`. This tells CMake to place the compiler's output (programs, libraries, dependencies) in a directory named `build-dir`. (You can use any directory name in place of `build-dir`.)
 
-To compile, run `cmake --build build`. (The second `build` in that command is the directory name.) Unless something has gone wrong, you should see something like:
+To compile, run `cmake --build build-dir`. Unless something has gone wrong, you should see something like:
 
 ```
 [ 50%] Building CXX object CMakeFiles/helloworld.dir/demo/helloworld.cpp.o
@@ -70,7 +70,7 @@ You can now run the executable (for me, it's `./build/helloworld`). This will pr
 Hello, World!
 ```
 
-We can ask `cmake` to run the executable for us, compiling or re-compiling as needed if any source files have changed. To do this, add the following line to the `CMakeLists.txt`: `add_custom_target( run_helloworld helloworld USES_TERMINAL )`. Refresh by running `cmake -B build`. Now you can call `cmake --build build --target run_helloworld`. You should see:
+We can ask `cmake` to run the executable for us, compiling or re-compiling as needed if any source files have changed. To do this, add the following line to the `CMakeLists.txt`: `add_custom_target( run_helloworld helloworld USES_TERMINAL )`. Refresh by running `cmake -B build-dir`. Now you can call `cmake --build build-dir --target run_helloworld`. You should see:
 
 ```
 [100%] Built target helloworld
@@ -80,10 +80,15 @@ Hello, World!
 
 ## Some useful CMake commands:
 
-* Use `ccmake -B build` to choose compile-time options. (Note the extra `c`.) You can switch from Release to Debug mode in the menu.
-* The command `cmake -B build` is equivalent to `cd build` and then running `cmake ..`.
-* The command `cmake --build build` is equivalent to `cd build` and then `make`. Run `make run_helloworld` to run the custom target we specified.
+* The command `cmake -B build-dir` is equivalent to `cd build-dir` and then running `cmake ..`.
+* The command `cmake --build build-dir` is equivalent to `cd build-dir` and then `make`. (`make run_helloworld` runs the custom target we created.)
+* Use `ccmake -B build` to choose compile-time options. (Note the extra `c`.) One useful option is `CMAKE_BUILD_TYPE`. You can choose `Release` (optimized code generation), `Debug` (unoptimized code with debug information) or `RelWithDebInfo` (optimized code with debug information; may be hard to debug since compilers move code around when optimizing). You can pass options on the command line with `-D`, as in `cmake -B build-dir -DCMAKE_BUILD_TYPE=Debug`.
 * You can ask `cmake` to generate a Visual Studio Solution or an Xcode file. With those, you can open the project in your IDE and use its visual debugger. For example, adding `-G Xcode` (as in `cmake -B build-xcode -G Xcode`) will generate a file that can be opened with the Xcode IDE on macOS. Running `cmake --help` will print your available generators in place of `Xcode`.
+* `cmake -B build -G Ninja` will use the [Ninja build system](https://ninja-build.org), which is faster than the default one. You'll need to install it. (On macOS, `brew install ninja`.)
+* There are a few flags cmake -DCMAKE_BUILD_TYPE=Debug .. to specify compilation with debug information for use with a debugger.
+cmake -DCMAKE_BUILD_TYPE=Release .. to specify compilation of an optimized build. Your code will run much faster.
+cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo .. to specify compilation of an optimized build with debug information. Your code will run much faster, but you will still sort of be able to debug it (compilers move code around when optimizing).
+
 
 ## Setting up version control
 
@@ -1575,3 +1580,5 @@ You don't need anything else. You might want:
 * 2024-08-27: CMake updates
 * 2024-08-27: Added git archive command to checkpoint 1.
 * 2024-08-27: Updated Windows cmake instructions.
+* 2024-08-27: Mention `-G Ninja` for cmake.
+* 2024-08-28: Cleaned up some cmake discussion.
