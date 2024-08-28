@@ -7,15 +7,15 @@ In this class you will make your own game engine from scratch.
 The first thing we need is a compiler and build system. In this class, we will use [CMake](https://cmake.org/) as our build system. CMake is a popular, cross-platform build system. [Modern CMake](https://cliutils.gitlab.io/modern-cmake/) is actually pretty nice and worth learning. (We'll avoid the older, gross bits as much as possible.)
 With CMake, we can use [FetchContent](https://web.archive.org/web/20220211151524/https://bewagner.net/programming/2020/05/02/cmake-fetchcontent/) as a sort of distributed package manager.
 
-To install it:
-On Windows, you can use `winget` (or other options): `winget install -e --id Kitware.CMake`.
-On macOS, you can use [Homebrew](https://brew.sh/): `brew install cmake`.
-On Linux, use your distribution's package manager.
+To install CMake:
+* On Windows, you can download the CMake installer from the [official website](https://cmake.org/). You should also install the [C++ CMake tools for Windows as part of Visual Studio](https://learn.microsoft.com/en-us/cpp/build/cmake-projects-in-visual-studio). Then you can open a folder with a `CMakeLists.txt` in Visual Studio directly instead of running any of the command line commands.
+* On macOS, you can use [Homebrew](https://brew.sh/): `brew install cmake`.
+* On Linux, use your distribution's package manager.
 
-You also need a compiler.
-On macOS, you should install `Xcode` via the `App Store`.
-On Windows, install Visual Studio.
-On Linux, install gcc or clang.
+You also need a compiler:
+* On macOS, you should install `Xcode` via the `App Store`.
+* On Windows, install Visual Studio.
+* On Linux, install gcc or clang.
 
 One you have a compiler and `cmake` installed, we are ready to begin.
 
@@ -52,7 +52,7 @@ int main( int argc, const char* argv[] ) {
 }
 ```
 
-> 🤖: Behind the scenes, CMake is a build system generator. It can output Makefiles, Visual Studio Solutions, Xcode project files, etc. Some IDE's like Visual Studio open `CMakeLists.txt` directly. I will describe using `cmake` on the command line in this guide, but there are other ways to use it.
+> 🤖: Behind the scenes, CMake is a build system generator. It can output Makefiles, Visual Studio Solutions, Xcode project files, etc. Some IDE's like Visual Studio [open `CMakeLists.txt` directly](https://learn.microsoft.com/en-us/cpp/build/cmake-projects-in-visual-studio). I will describe using `cmake` on the command line in this guide, but there are other ways to use it.
 
 To compile this on the command line, we first tell CMake to process the `CMakeLists.txt`. On the command line, navigate into this folder and run `cmake -B build`. You have to re-run this command anytime you make changes to your `CMakeLists.txt`. The `.` points CMake to the current directory and the `build` tells CMake to place the compiler's output (programs, libraries, dependencies) into a directory named `build`.
 
@@ -1574,3 +1574,4 @@ You don't need anything else. You might want:
 * 2024-08-25: Added a warning about the ECS checkpoint being moved this year.
 * 2024-08-27: CMake updates
 * 2024-08-27: Added git archive command to checkpoint 1.
+* 2024-08-27: Updated Windows cmake instructions.
