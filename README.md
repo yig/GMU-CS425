@@ -114,7 +114,7 @@ Now you should initialize your git repository and make a first commit.
 
 ### Checkpoint 1 Upload
 
-**You have reached the first checkpoint.** Upload your code. Delete or move aside your `build` subdirectory and then zip your entire directory. You can do this with a git command: `git archive --format=zip --prefix=checkpoint1/ main > ../checkpoint1.zip`. Your directly tree should look like:
+**You have reached the first checkpoint.** Upload your code. Delete or move aside your `build` subdirectory and then zip your entire directory. You can do this with a git command: `git archive -o ../checkpoint1.zip --prefix=checkpoint1/ main`. Your directly tree should look like:
 
 ```
 .git/
@@ -1582,3 +1582,4 @@ You don't need anything else. You might want:
 * 2024-08-27: Updated Windows cmake instructions.
 * 2024-08-27: Mention `-G Ninja` for cmake.
 * 2024-08-28: Cleaned up some cmake discussion.
+* 2024-08-28: Updated git archive command.
