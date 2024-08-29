@@ -82,7 +82,7 @@ Hello, World!
 
 * The command `cmake -B build-dir` is equivalent to `cd build-dir` and then running `cmake ..`.
 * The command `cmake --build build-dir` is equivalent to `cd build-dir` and then `make`. (`make run_helloworld` runs the custom target we created.)
-* Use `ccmake -B build` to choose compile-time options. (Note the extra `c`.) One useful option is `CMAKE_BUILD_TYPE`. You can choose `Release` (optimized code generation), `Debug` (unoptimized code with debug information) or `RelWithDebInfo` (optimized code with debug information; may be hard to debug since compilers move code around when optimizing). You can pass options on the command line with `-D`, as in `cmake -B build-dir -DCMAKE_BUILD_TYPE=Debug`.
+* Use `ccmake -B build-dir` to choose compile-time options. (Note the extra `c`.) One useful option is `CMAKE_BUILD_TYPE`. You can choose `Release` (optimized code generation), `Debug` (unoptimized code with debug information) or `RelWithDebInfo` (optimized code with debug information; may be hard to debug since compilers move code around when optimizing). You can pass options on the command line with `-D`, as in `cmake -B build-dir -DCMAKE_BUILD_TYPE=Debug`.
 * You can ask `cmake` to generate a Visual Studio Solution or an Xcode file. With those, you can open the project in your IDE and use its visual debugger. For example, adding `-G Xcode` (as in `cmake -B build-xcode -G Xcode`) will generate a file that can be opened with the Xcode IDE on macOS. Running `cmake --help` will print your available generators in place of `Xcode`.
 * `cmake -B build -G Ninja` will use the [Ninja build system](https://ninja-build.org), which is faster than the default one. You'll need to install it. (On macOS, `brew install ninja`.)
 * There are a few flags cmake -DCMAKE_BUILD_TYPE=Debug .. to specify compilation with debug information for use with a debugger.
@@ -1587,3 +1587,4 @@ You don't need anything else. You might want:
 * 2024-08-28: Updated git archive command.
 * 2024-08-28: Fixed link to `globals.h` example (again).
 * 2024-08-28: Mention that git archive won't include .git.
+* 2024-08-29: `ccmake` example uses the same directory name.
