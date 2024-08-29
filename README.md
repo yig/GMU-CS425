@@ -125,6 +125,8 @@ demo/
     helloworld.cpp
 ```
 
+(If you used `git archive`, the `.git/` directory won't be there.)
+
 ## Starting your engine
 
 It's time to start designing and building your game engine. We will work in the following order:
@@ -1584,3 +1586,4 @@ You don't need anything else. You might want:
 * 2024-08-28: Cleaned up some cmake discussion.
 * 2024-08-28: Updated git archive command.
 * 2024-08-28: Fixed link to `globals.h` example (again).
+* 2024-08-28: Mention that git archive won't include .git.
