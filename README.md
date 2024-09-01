@@ -269,12 +269,12 @@ glfwInit();
 glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 // Create the window.
 GLFWwindow* window = glfwCreateWindow( window_width, window_height, window_name, window_fullscreen ? glfwGetPrimaryMonitor() : 0, 0 );
-glfwSetWindowAspectRatio( window, window_width, window_height );
 if( !window )
 {
     std::cerr << "Failed to create a window." << std::endl;
     glfwTerminate();
 }
+glfwSetWindowAspectRatio( window, window_width, window_height );
 ```
 
 This code expects a few parameters: the `window_width` and `window_height`, a name for the window (`window_name`), and a boolean to specify whether the window should be fullscreen (`window_fullscreen`). You can hard-code some reasonable values or you can find a way to take parameters. You might store the parameters in a configuration `struct` in the `Engine`. The user can set them directly or pass it in to your engine's startup method. Your graphics manager's shutdown only needs to call `glfwTerminate();`.
@@ -1588,3 +1588,4 @@ You don't need anything else. You might want:
 * 2024-08-28: Fixed link to `globals.h` example (again).
 * 2024-08-28: Mention that git archive won't include .git.
 * 2024-08-29: `ccmake` example uses the same directory name.
+* 2024-09-01: `glfwSetWindowAspectRatio()` called after error check for window creation.
