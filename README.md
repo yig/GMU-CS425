@@ -88,6 +88,7 @@ Hello, World!
 * There are a few flags cmake -DCMAKE_BUILD_TYPE=Debug .. to specify compilation with debug information for use with a debugger.
 cmake -DCMAKE_BUILD_TYPE=Release .. to specify compilation of an optimized build. Your code will run much faster.
 cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo .. to specify compilation of an optimized build with debug information. Your code will run much faster, but you will still sort of be able to debug it (compilers move code around when optimizing).
+* Adding `set( CMAKE_EXPORT_COMPILE_COMMANDS ON )` to your `CMakeLists.txt` will export the information needed for editors that use the `clangd` language server and for tools like `clang-tidy`. This can also be done by adding `-D CMAKE_EXPORT_COMPILE_COMMANDS=1` to the command line when you run `cmake -B ...`.
 
 
 ## Setting up version control
@@ -1589,3 +1590,4 @@ You don't need anything else. You might want:
 * 2024-08-28: Mention that git archive won't include .git.
 * 2024-08-29: `ccmake` example uses the same directory name.
 * 2024-09-01: `glfwSetWindowAspectRatio()` called after error check for window creation.
+* 2024-09-01: Mention `CMAKE_EXPORT_COMPILE_COMMANDS` under `Some useful CMake commands`.
