@@ -45,6 +45,7 @@ add_executable( constructor_reference demo/constructor_reference.cpp )
 add_executable( pimpl pimpl/house.cpp pimpl/main.cpp )
 add_executable( globals globals/globals.cpp globals/globals_main.cpp )
 add_executable( entity_get demo/entity_get.cpp )
+add_executable( template_add demo/template_add.cpp )
 
 ## How to create and use a library
 add_library( disco STATIC disco/ballroom.cpp )

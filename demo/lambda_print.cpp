@@ -1,4 +1,5 @@
 #include <iostream>
+#include <functional>
 
 void PrintSomething( std::function<std::string(void)> f ) {
     std::cout << f() << std::endl;
