@@ -1,8 +1,11 @@
-# Xmake
-/build
+# Xmake/CMake
+/build*
 /.xmake
 
 # macOS
 .DS_Store
+
 # Windows
 Thumbs.db
+
+.vscode
