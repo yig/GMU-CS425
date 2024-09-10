@@ -419,12 +419,12 @@ When our graphics manager starts up, it will initialize the WebGPU API, compile 
 First things first. Let's add WebGPU to our `CMakeLists.txt`. In your list of packages, add:
 
 ```
+## Can change `wgpu` to `dawn`
 set(WEBGPU_BACKEND "wgpu" CACHE STRING "WebGPU backend (wgpu or dawn)")
 FetchContent_Declare(
   webgpu
-  GIT_REPOSITORY https://github.com/eliemichel/WebGPU-distribution
-  ## Can change `wgpu` to `dawn`
-  GIT_TAG        ${WEBGPU_BACKEND}
+  GIT_REPOSITORY https://github.com/yig/WebGPU-distribution
+  GIT_TAG        main
   GIT_SHALLOW TRUE
   GIT_PROGRESS TRUE
 )
@@ -1598,3 +1598,4 @@ You don't need anything else. You might want:
 * 2024-09-07: Mentioned "Game Programming Patterns" game loop article.
 * 2024-09-10: Link to webgpu_raii tag that matches what WebGPU-Distribution serves.
 * 2024-09-10: Link to callback examples.
+* 2024-09-10: Forked WebGPU-Distribution so we don't get surprise breaking changes.
