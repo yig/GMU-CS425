@@ -502,7 +502,7 @@ wgpuDeviceSetUncapturedErrorCallback(
 WGPUQueue queue = wgpuDeviceGetQueue( device );
 ```
 
-You should make these all instance variables so your graphics manager's shutdown can call `wgpuInstanceRelease()`, `wgpuSurfaceRelease()`, `wgpuAdapterRelease()`, `wgpuDeviceRelease()`, and `wgpuQueueRelease()` in reverse initialization order, too. (Nice [RAII](https://en.cppreference.com/w/cpp/language/raii) C++ wrappers for WebGPU are in development [1](https://source.chromium.org/chromium/chromium/src/+/main:out/Debug/gen/third_party/dawn/include/dawn/webgpu_cpp.h) [2](https://eliemichel.github.io/LearnWebGPU/advanced-techniques/raii.html). In fact, I made a simple one for you: [`webgpu_raii`](https://github.com/yig/webgpu_raii/). With RAII, the release functions will be called automatically when the variables go out of scope. That means it's enough to declare them as instance variables in the right order.)
+You should make these all instance variables so your graphics manager's shutdown can call `wgpuInstanceRelease()`, `wgpuSurfaceRelease()`, `wgpuAdapterRelease()`, `wgpuDeviceRelease()`, and `wgpuQueueRelease()` in reverse initialization order, too. (Nice [RAII](https://en.cppreference.com/w/cpp/language/raii) C++ wrappers for WebGPU are in development [1](https://source.chromium.org/chromium/chromium/src/+/main:out/Debug/gen/third_party/dawn/include/dawn/webgpu_cpp.h) [2](https://eliemichel.github.io/LearnWebGPU/advanced-techniques/raii.html). In fact, I made a simple one for you: [`webgpu_raii`](https://github.com/yig/webgpu_raii/tree/2023-11). With RAII, the release functions will be called automatically when the variables go out of scope. That means it's enough to declare them as instance variables in the right order.)
 
 For the remainder of this checkpoint, I will describe all the pieces of a simple way to draw sprites with a modern graphics pipeline. It's not the only way to do it, but it suffices for our purposes. Once you get the hang of WebGPU, you are welcome to try a different approach or enhance my approach.
 
@@ -540,7 +540,7 @@ Tell the `queue` to copy the data by writing into the GPU buffer `vertex_buffer`
 wgpuQueueWriteBuffer( queue, vertex_buffer, 0, vertices, sizeof(vertices) );
 ```
 
-The GPU now has a copy of `vertices`, so we are fine letting its memory become automatically de-allocated when the enclosing scope of our graphics manager's startup function terminates. You can make `vertex_buffer` an instance variable and `wgpuBufferRelease()` it during shutdown (or use RAII via [`webgpu_raii`](https://github.com/yig/webgpu_raii/)).
+The GPU now has a copy of `vertices`, so we are fine letting its memory become automatically de-allocated when the enclosing scope of our graphics manager's startup function terminates. You can make `vertex_buffer` an instance variable and `wgpuBufferRelease()` it during shutdown (or use RAII via [`webgpu_raii`](https://github.com/yig/webgpu_raii/tree/2023-11)).
 
 The approach I will describe is called instanced rendering. Each instance of drawing the rectangle will get a different translation and scale (and possibly rotation!). You can use the following struct for that data.
 
@@ -646,11 +646,11 @@ WGPUBuffer uniform_buffer = wgpuDeviceCreateBuffer( device, to_ptr( WGPUBufferDe
     }) );
 ```
 
-You can make `uniform_buffer` an instance variable and `wgpuBufferRelease()` it during shutdown (or use RAII via [`webgpu_raii`](https://github.com/yig/webgpu_raii/)).
+You can make `uniform_buffer` an instance variable and `wgpuBufferRelease()` it during shutdown (or use RAII via [`webgpu_raii`](https://github.com/yig/webgpu_raii/tree/2023-11)).
 
 Next the shader declares a `sampler` called `texSampler`. The sampler is what we use to reduce aliasing artifacts when reading data from our textures. Without it, all we can do is "nearest neighbor" interpolation. (If you prefer nearest neighbor interpolation, you can delete the sampler and replace the fragment shader line with `let color = textureLoad( texData, vec2i( in.texcoords * vec2f(textureDimensions(texData)) ), 0 ).rgba;`.)
 
-You'll also want to create a sampler at some point during startup (and release it with `wgpuSamplerRelease()` during shutdown or use [`webgpu_raii`](https://github.com/yig/webgpu_raii/)):
+You'll also want to create a sampler at some point during startup (and release it with `wgpuSamplerRelease()` during shutdown or use [`webgpu_raii`](https://github.com/yig/webgpu_raii/tree/2023-11)):
 
 ```c++
 WGPUSampler sampler = wgpuDeviceCreateSampler( device, to_ptr( WGPUSamplerDescriptor{
@@ -785,7 +785,7 @@ WGPURenderPipeline pipeline = wgpuDeviceCreateRenderPipeline( device, to_ptr( WG
     } ) );
 ```
 
-We now have a graphics pipeline capable of drawing sprites. You can release the `shader_module` with `wgpuShaderModuleRelease()` (or use [`webgpu_raii`](https://github.com/yig/webgpu_raii/)).
+We now have a graphics pipeline capable of drawing sprites. You can release the `shader_module` with `wgpuShaderModuleRelease()` (or use [`webgpu_raii`](https://github.com/yig/webgpu_raii/tree/2023-11)).
 
 ### Loading data
 
@@ -796,9 +796,9 @@ bool LoadTexture( const string& name, const string& path );
 ```
 
 (On Windows, don't call it `LoadImage()`. That name is [trampled upon](https://stackoverflow.com/questions/2321713/how-do-i-avoid-name-collision-with-macros-defined-in-windows-header-files).)
-This lets our engine's users load an image from a `path` and then refer it by a convenient `name`. Don't forget to resolve `path` with your resource manager. Let's use an [`std::unordered_map< string, USEFUL STRUCT >`](https://en.cppreference.com/w/cpp/container/unordered_map) as our name-to-image map. (With a map like that called `m`—call yours something better—we can write `m[ name ].property = value;`. That's it! An `std::unordered_map` will instantiate the `USEFUL STRUCT` if it doesn't already exist when looking up the value for a key and return a reference. (If you'd like to know in advance, you can use `m.count( name ) == 0` to check if `m` already has something by that name. In C++20, that shortens to `m.contains( name )`.) You can remove an element via `m.erase( name );`.) You will want it to be an instance variable. `USEFUL STRUCT` should be a little struct you declare to hold the data we want to store about the image. You will want it to have fields for the image's native width and height, so you can compute its natural aspect ratio. You will also want a `WGPUTexture` field to keep the texture you create when loading. (You can also create a `WGPUBindGroup` field and store it in this struct. Creating the bind group is described later under [Drawing a Sprite](#drawing-a-sprite), but can just as well be done in this function.) If you use RAII via [`webgpu_raii`](https://github.com/yig/webgpu_raii/), then it's enough to store `WGPUTextureRef` (and `WGPUBindGroupRef`) and the resources will be released automatically.
+This lets our engine's users load an image from a `path` and then refer it by a convenient `name`. Don't forget to resolve `path` with your resource manager. Let's use an [`std::unordered_map< string, USEFUL STRUCT >`](https://en.cppreference.com/w/cpp/container/unordered_map) as our name-to-image map. (With a map like that called `m`—call yours something better—we can write `m[ name ].property = value;`. That's it! An `std::unordered_map` will instantiate the `USEFUL STRUCT` if it doesn't already exist when looking up the value for a key and return a reference. (If you'd like to know in advance, you can use `m.count( name ) == 0` to check if `m` already has something by that name. In C++20, that shortens to `m.contains( name )`.) You can remove an element via `m.erase( name );`.) You will want it to be an instance variable. `USEFUL STRUCT` should be a little struct you declare to hold the data we want to store about the image. You will want it to have fields for the image's native width and height, so you can compute its natural aspect ratio. You will also want a `WGPUTexture` field to keep the texture you create when loading. (You can also create a `WGPUBindGroup` field and store it in this struct. Creating the bind group is described later under [Drawing a Sprite](#drawing-a-sprite), but can just as well be done in this function.) If you use RAII via [`webgpu_raii`](https://github.com/yig/webgpu_raii/tree/2023-11), then it's enough to store `WGPUTextureRef` (and `WGPUBindGroupRef`) and the resources will be released automatically.
 
-> You may be tempted to make `USEFUL STRUCT`'s destructor call `wgpuTextureDestroy()` and `wgpuTextureRelease()` provided that the `WGPUTexture` field is not `nullptr` (and `WGPUBindGroupRelease()` if the `WGPUBindGroup` field is not `nullptr`). That way, the map would properly free GPU resources as needed when re-assigning a value to a key, when calling `.erase()` or `.clear()`, or when the map itself goes out of scope. However, this is dangerous unless handled correctly. That's because `WGPUTexture` and `WGPUBindGroup` are actually pointers. If you copy a `USEFUL STRUCT`, such as by creating a temporary one and assigning it, you'll have copied the pointers. Now two `USEFUL STRUCT`s are storing the same pointers, and both will release it, which means it may get released too early or released twice. You can prevent this by [deleting the copy constructor and assignment operator](https://stackoverflow.com/questions/33776697/deleting-copy-constructors-and-copy-assignment-operators-which-of-them-are-esse/33776856#33776856) `USEFUL STRUCT(const USEFUL STRUCT&) = delete; USEFUL STRUCT& operator=(const USEFUL STRUCT&) = delete;`. You could also lean in to the reference counting by defining them and calling `wgpuTextureReference()` (and `wgpuBindGroupReference()`); in that case, don't call `wgpuTextureDestroy()`, since you can't be certain someone else isn't still holding a valid reference. Or just use [`webgpu_raii`](https://github.com/yig/webgpu_raii/).
+> You may be tempted to make `USEFUL STRUCT`'s destructor call `wgpuTextureDestroy()` and `wgpuTextureRelease()` provided that the `WGPUTexture` field is not `nullptr` (and `WGPUBindGroupRelease()` if the `WGPUBindGroup` field is not `nullptr`). That way, the map would properly free GPU resources as needed when re-assigning a value to a key, when calling `.erase()` or `.clear()`, or when the map itself goes out of scope. However, this is dangerous unless handled correctly. That's because `WGPUTexture` and `WGPUBindGroup` are actually pointers. If you copy a `USEFUL STRUCT`, such as by creating a temporary one and assigning it, you'll have copied the pointers. Now two `USEFUL STRUCT`s are storing the same pointers, and both will release it, which means it may get released too early or released twice. You can prevent this by [deleting the copy constructor and assignment operator](https://stackoverflow.com/questions/33776697/deleting-copy-constructors-and-copy-assignment-operators-which-of-them-are-esse/33776856#33776856) `USEFUL STRUCT(const USEFUL STRUCT&) = delete; USEFUL STRUCT& operator=(const USEFUL STRUCT&) = delete;`. You could also lean in to the reference counting by defining them and calling `wgpuTextureReference()` (and `wgpuBindGroupReference()`); in that case, don't call `wgpuTextureDestroy()`, since you can't be certain someone else isn't still holding a valid reference. Or just use [`webgpu_raii`](https://github.com/yig/webgpu_raii/tree/2023-11).
 
 For actually reading images from disk and decoding them into CPU memory, we'll use the wonderful `std_image` image loader. The documentation is [the header](https://github.com/nothings/stb/blob/master/stb_image.h). Add it to your `CMakeLists.txt` with
 
@@ -1003,7 +1003,7 @@ WGPUBindGroup bind_group = wgpuDeviceCreateBindGroup( device, to_ptr( WGPUBindGr
 wgpuBindGroupLayoutRelease( layout );
 ```
 
-(If you are using [`webgpu_raii`](https://github.com/yig/webgpu_raii/), you can write `.layout = ref(wgpuRenderPipelineGetBindGroupLayout( pipeline, 0 ))` instead of `auto layout = ...` and `wgpuBindGroupLayoutRelease(layout)`.)
+(If you are using [`webgpu_raii`](https://github.com/yig/webgpu_raii/tree/2023-11), you can write `.layout = ref(wgpuRenderPipelineGetBindGroupLayout( pipeline, 0 ))` instead of `auto layout = ...` and `wgpuBindGroupLayoutRelease(layout)`.)
 
 Next, attach it:
 
@@ -1011,13 +1011,13 @@ Next, attach it:
 wgpuRenderPassEncoderSetBindGroup( render_pass, 0, bind_group, 0, nullptr );
 ```
 
-*N.B.* Don't release a bind group you set until after `wgpuRenderPassEncoderEnd()`. (This is due to an issue that will be fixed in a future version of `wgpu-native`.) This may force you to awkwardly store bind groups you create as you iterate over sprites in a list. Even better, create the bind group when you load the texture and store it persistently in your name-to-image map.
+*N.B.* Don't release a bind group you set until after `wgpuRenderPassEncoderEnd()`. (This is due to an issue that was recently fixed in `wgpu-native`, but hasn't yet made it through to [WebGPU-distribution](https://github.com/eliemichel/WebGPU-distribution).) This may force you to awkwardly store bind groups you create as you iterate over sprites in a list. Even better, create the bind group when you load the texture and store it persistently in your name-to-image map.
 
 Now you are ready for the call to `wgpuRenderPassEncoderDraw()`.
 
 ### Cleaning up
 
-At the end of draw, after `wgpuQueueSubmit()`, it's safe to release any resources we created in the function. (This is another place where a C++ [RAII](https://en.cppreference.com/w/cpp/language/raii) wrapper like [`webgpu_raii`](https://github.com/yig/webgpu_raii/) will improve our lives.) This definitely includes the swap chain's texture view (`wgpuTextureViewRelease()`), the command encoder (`wgpuCommandEncoderRelease()`), and the render pass encoder (`wgpuRenderPassEncoderRelease()`). This can also include instance data buffer (see above), per-sprite bind groups (`wgpuBindGroupRelease()`), texture views (`wgpuTextureViewRelease()`), and the result of the call to `wgpuRenderPipelineGetBindGroupLayout()` (via `wgpuBindGroupLayoutRelease()`), unless you find a way to keep them around from frame to frame. The bind groups and texture views are unique per image, so you could create them once when loading an image.
+At the end of draw, after `wgpuQueueSubmit()`, it's safe to release any resources we created in the function. (This is another place where a C++ [RAII](https://en.cppreference.com/w/cpp/language/raii) wrapper like [`webgpu_raii`](https://github.com/yig/webgpu_raii/tree/2023-11) will improve our lives.) This definitely includes the swap chain's texture view (`wgpuTextureViewRelease()`), the command encoder (`wgpuCommandEncoderRelease()`), and the render pass encoder (`wgpuRenderPassEncoderRelease()`). This can also include instance data buffer (see above), per-sprite bind groups (`wgpuBindGroupRelease()`), texture views (`wgpuTextureViewRelease()`), and the result of the call to `wgpuRenderPipelineGetBindGroupLayout()` (via `wgpuBindGroupLayoutRelease()`), unless you find a way to keep them around from frame to frame. The bind groups and texture views are unique per image, so you could create them once when loading an image.
 
 ### Extensions
 
@@ -1594,3 +1594,4 @@ You don't need anything else. You might want:
 * 2024-09-01: `glfwSetWindowAspectRatio()` called after error check for window creation.
 * 2024-09-01: Mention `CMAKE_EXPORT_COMPILE_COMMANDS` under `Some useful CMake commands`.
 * 2024-09-07: Mentioned "Game Programming Patterns" game loop article.
+* 2024-09-10: Link to webgpu_raii tag that matches what WebGPU-Distribution serves.
