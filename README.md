@@ -328,6 +328,8 @@ engine.RunGameLoop( [&]() {
     } );
 ```
 
+You can see example callbacks in the demo directory of this repository, [without parameters](demo/callbacks.cpp) and [with](demo/callbacks_with_parameters.cpp).
+
 Modify your `helloworld` function to pass a callback when running your engine's main loop. The callback should print or log a message when at least one key of your choosing is pressed.
 
 You may have noticed that there's no way to quit your program (without asking your operating system to terminate it, e.g., `^C`). Quitting is easy; you just break out of the main loop. The `RunGameLoop()` function will then return. You can do that in response to a key press like escape or Q. If you want to check if someone clicked the window's close box, call the GLFW function `glfwWindowShouldClose(window)`. You can set this programmatically with `glfwSetWindowShouldClose( window, true );`. You can design your own way to encapsulate those. It could be something like `GraphicsManager::ShouldQuit()` and `GraphicsManager::SetShouldQuit(true)` methods.
@@ -1595,3 +1597,4 @@ You don't need anything else. You might want:
 * 2024-09-01: Mention `CMAKE_EXPORT_COMPILE_COMMANDS` under `Some useful CMake commands`.
 * 2024-09-07: Mentioned "Game Programming Patterns" game loop article.
 * 2024-09-10: Link to webgpu_raii tag that matches what WebGPU-Distribution serves.
+* 2024-09-10: Link to callback examples.
