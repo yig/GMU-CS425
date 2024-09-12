@@ -221,7 +221,21 @@ This is just pseudocode. Alternatively, your engine's `RunGameLoop()` could call
 
 You will also need to consider how the managers can access each other. Eventually, we will have even more managers. For this next checkpoint, you don't need to create an input manager. Fortunately, if the managers can access the engine, they can access each other. One possibility is to make an engine global variable. In C++17, you can declare it right in the engine header as an [inline variable](https://stackoverflow.com/a/47502744). For example, if your class were named `Foo`, you could declare `inline Foo gFoo`, where the `g` prefix is [Hungarian notation](https://en.wikipedia.org/wiki/Hungarian_notation).) See [here](globals/globals.h) for an example. If you are strongly allergic to global variables, the engine can instead pass a reference (or pointer) to itself to all the managers so that they can access each other. (References can never be stored uninitialized. If your managers will store a reference to the `Engine`, `Engine`'s constructor will have to pass `*this` to the constructors of all the managers in an [initializer list](https://en.cppreference.com/w/cpp/language/constructor), as in `Engine() : graphics( *this ) {}`. The managers in turn will need an initializer list to initialize their `Engine&`, as in `GraphicsManager( Engine& e ) : engine( e ) {}`. You can see an example in [here](demo/constructor_reference.cpp). If you want to wait to pass the `Engine&` until a startup method, you will have to use the "pimpl pattern" (see [here](https://www.fluentcpp.com/2017/09/22/make-pimpl-using-unique_ptr/) or [here](pimpl/house.h)). It's easier to store an `Engine*`, but then the compiler won't raise an error if you forget to set it.)
 
-Managing the time step means making sure that your game loop runs 60 times per second. The code inside the loop should take less than 1/60 of a second, so your engine needs to sleep until the next iteration ([tick](https://gamedev.stackexchange.com/questions/81608/what-is-a-tick-in-the-context-of-game-development)) should start. You can manage the timestep using C++'s [`std::this_thread::sleep_for()`](https://en.cppreference.com/w/cpp/thread/sleep_for) and passing it a C++ [`std::chrono::duration<>`](https://en.cppreference.com/w/cpp/chrono/duration). You can get a double-valued timer by calling [`glfwGetTime()`](https://www.glfw.org/docs/3.0/group__time.html) (which you can subtract and create a `std::chrono::duration<double>` from). See below for how to include `GLFW`. You don't need GLFW to get the current time. You can instead use the C++ standard library directly by subtracting two [`std::chrono::time_point`](https://en.cppreference.com/w/cpp/chrono/time_point)s, which you can get via [`std::chrono::steady_clock::now()`](https://en.cppreference.com/w/cpp/chrono/steady_clock/now). For example, `const auto t1 = std::chrono::steady_clock::now()` stores the current time in a variable `t1`. For example, you can create a 0.1 second duration via `const auto one_tenth_of_a_second = std::chrono::duration<real>( 1./10. )`. You will need to `#include <thread>` and `#include <chrono>` to access the C++ standard library's functionality. You can see an example [here](demo/chrono_sleep_for.cpp). As another alternative, you could use [`sokol_time`](https://github.com/floooh/sokol/blob/master/sokol_time.h). You can `add_requires("sokol")` and `add_packages("sokol")` to access this header.
+Managing the time step means making sure that your game loop runs 60 times per second. The code inside the loop should take less than 1/60 of a second, so your engine needs to sleep until the next iteration ([tick](https://gamedev.stackexchange.com/questions/81608/what-is-a-tick-in-the-context-of-game-development)) should start. You can manage the timestep using C++'s [`std::this_thread::sleep_for()`](https://en.cppreference.com/w/cpp/thread/sleep_for) and passing it a C++ [`std::chrono::duration<>`](https://en.cppreference.com/w/cpp/chrono/duration). You can get a double-valued timer by calling [`glfwGetTime()`](https://www.glfw.org/docs/3.0/group__time.html) (which you can subtract and create a `std::chrono::duration<double>` from). See below for how to include `GLFW`. You don't need GLFW to get the current time. You can instead use the C++ standard library directly by subtracting two [`std::chrono::time_point`](https://en.cppreference.com/w/cpp/chrono/time_point)s, which you can get via [`std::chrono::steady_clock::now()`](https://en.cppreference.com/w/cpp/chrono/steady_clock/now). For example, `const auto t1 = std::chrono::steady_clock::now()` stores the current time in a variable `t1`. For example, you can create a 0.1 second duration via `const auto one_tenth_of_a_second = std::chrono::duration<real>( 1./10. )`. You will need to `#include <thread>` and `#include <chrono>` to access the C++ standard library's functionality. You can see an example [here](demo/chrono_sleep_for.cpp). As another alternative, you could use [`sokol_time`](https://github.com/floooh/sokol/blob/master/sokol_time.h). You can
+```
+FetchContent_Declare(
+  sokol
+  GIT_REPOSITORY https://github.com/floooh/sokol
+  GIT_TAG        master
+  GIT_SHALLOW TRUE
+  GIT_PROGRESS TRUE
+)
+FetchContent_MakeAvailable( sokol )
+## sokol doesn't have a `CMakeLists.txt`. Let's declare a header-only library with an include path.
+add_library( sokol INTERFACE )
+target_include_directories( sokol INTERFACE ${sokol_SOURCE_DIR} )
+```
+to download the headers and add `sokol` to your `target_link_libraries()` to access the header.
 
 See [Game Programming Patterns](https://gameprogrammingpatterns.com/game-loop.html) or [Fix Your Timestep](https://gafferongames.com/post/fix_your_timestep/) for more advanced approaches to managing time steps in loops.
 
@@ -562,7 +576,14 @@ struct InstanceData {
 That `vec3` and `vec2` vector types comes from the [glm](https://github.com/g-truc/glm) library, which was originally created to be a C++ implementation of the vector math in OpenGL's shading language GLSL. To use it, insert
 
 ```
-add_requires("glm")
+FetchContent_Declare(
+    glm
+    GIT_REPOSITORY https://github.com/g-truc/glm.git
+    GIT_TAG 1.0.1
+    GIT_SHALLOW TRUE
+    GIT_PROGRESS TRUE
+    )
+FetchContent_MakeAvailable( glm )
 ```
 
 near where you add your packages in `CMakeLists.txt` and `glm::glm` inside `target_link_libraries( illengine )`. Then we can `#include "glm/glm.hpp"` and use its namespace in our `.cpp` file (`using namespace glm`). You might want to make this a public package and `typedef glm::vec2 vec2;` in your `Types.h` (and possibly also `glm::vec3` and `glm::vec4`). Then your engine's users will have access to a full-featured 2D vector type for specifying positions and velocities (and possibly a 3D or 4D vector type for specifying colors).
@@ -1607,3 +1628,4 @@ You don't need anything else. You might want:
 * 2024-09-12: Removed two accidental remaining mentions of swap chains.
 * 2024-09-12: Added diagram of WebGPU usage.
 * 2024-09-12: Moved Soloud `MA_NO_RUNTIME_LINKING` into `if(APPLE)`
+* 2024-09-12: Updated overlooked xmake add_requires to CMake-style.
