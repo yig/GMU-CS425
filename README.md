@@ -453,7 +453,7 @@ The first `to_ptr()` function legally returns a pointer to a temporary. The seco
 
 ### Startup
 
-Our goal when starting up our graphics manager is to initialize `WebGPU` (by creating a `WGPUInstance`, `WGPUSurface`, `WGPUAdapter`, `WGPUDevice`, and `WGPUQueue`, [oh my](https://staging.cohostcdn.org/attachment/45fea200-d670-4fab-9788-6462930f8eba/wgpu1-2.0.png)) and prepare structures we will use when drawing: vertex and uniform (global) data (`WGPUBuffer`s) and the pipeline (`WGPURenderPipeline`). We'll store all these as instance variables. `WGPUInstance` is the WebGPU API itself, `WGPUSurface` is WebGPU's information about the window we want to draw into, `WGPUAdapter` is a GPU, `WGPUDevice` is a configured GPU ready to use, and `WGPUQueue` is queues commands to execute on the GPU.
+Our goal when starting up our graphics manager is to initialize `WebGPU` (by creating a `WGPUInstance`, `WGPUSurface`, `WGPUAdapter`, `WGPUDevice`, and `WGPUQueue`, [oh my](https://staging.cohostcdn.org/attachment/45fea200-d670-4fab-9788-6462930f8eba/wgpu1-2.0.png)) and prepare structures we will use when drawing: vertex and uniform (global) data (`WGPUBuffer`s) and the pipeline (`WGPURenderPipeline`). We'll store all these as instance variables. `WGPUInstance` is the WebGPU API itself, `WGPUSurface` is WebGPU's information about the window we want to draw into, `WGPUAdapter` is a GPU, `WGPUDevice` is a configured GPU ready to use, and `WGPUQueue` queues commands to execute on the GPU.
 
 To initialize WebGPU, we start by calling `WGPUInstance instance = wgpuCreateInstance( to_ptr( WGPUInstanceDescriptor{} ) )`. We must do this after setting up `GLFW` (in our graphics manager's startup function). The curly-braces are C++ for initialize all members to zero if they don't have constructors. (It's called [aggregate initialization](https://en.cppreference.com/w/cpp/language/aggregate_initialization); [designated initializers](https://www.cppstories.com/2021/designated-init-cpp20) are a special kind.) `WebGPU` uses zeros to mean default values, which are often what we want. `WebGPU` is a C API, so initializing structs to zero is our responsibility. We can also pass `nullptr` when a function parameter is marked "optional" (in the [spec](https://www.w3.org/TR/webgpu/)) or `WGPU_NULLABLE` (in [`webgpu.h`](https://github.com/webgpu-native/webgpu-headers/blob/main/webgpu.h)).  `wgpuCreateInstance()` will return null upon failure. You can check for that and print a message and call `glfwTerminate()`.
 
@@ -507,6 +507,10 @@ WGPUQueue queue = wgpuDeviceGetQueue( device );
 You should make these all instance variables so your graphics manager's shutdown can call `wgpuInstanceRelease()`, `wgpuSurfaceRelease()`, `wgpuAdapterRelease()`, `wgpuDeviceRelease()`, and `wgpuQueueRelease()` in reverse initialization order, too. (Nice [RAII](https://en.cppreference.com/w/cpp/language/raii) C++ wrappers for WebGPU are in development [1](https://source.chromium.org/chromium/chromium/src/+/main:out/Debug/gen/third_party/dawn/include/dawn/webgpu_cpp.h) [2](https://eliemichel.github.io/LearnWebGPU/advanced-techniques/raii.html). In fact, I made a simple one for you: [`webgpu_raii`](https://github.com/yig/webgpu_raii/tree/2023-11). With RAII, the release functions will be called automatically when the variables go out of scope. That means it's enough to declare them as instance variables in the right order.)
 
 For the remainder of this checkpoint, I will describe all the pieces of a simple way to draw sprites with a modern graphics pipeline. It's not the only way to do it, but it suffices for our purposes. Once you get the hang of WebGPU, you are welcome to try a different approach or enhance my approach.
+
+Here is a diagram of our WebGPU usage:
+
+![Diagram of our WebGPU usage](docs/WebGPU.svg)
 
 Before we describe our pipeline, let's describe the data we will use. We will draw every rectangle as a scaled and translated unit square. The vertex data we need for a unit square is:
 
@@ -1600,3 +1604,4 @@ You don't need anything else. You might want:
 * 2024-09-10: Link to callback examples.
 * 2024-09-10: Forked WebGPU-Distribution so we don't get surprise breaking changes.
 * 2024-09-12: Removed two accidental remaining mentions of swap chains.
+* 2024-09-12: Added diagram of WebGPU usage.

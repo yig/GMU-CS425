@@ -1,0 +1,1160 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1774" height="2662" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="0 0 1774 2662">
+  <defs>
+    <style>
+      .cls-1, .cls-2, .cls-3, .cls-4, .cls-5, .cls-6 {
+        fill: none;
+      }
+
+      .cls-7 {
+        font-family: Avenir-Heavy, Avenir;
+        font-weight: 800;
+      }
+
+      .cls-7, .cls-8 {
+        font-size: 58px;
+      }
+
+      .cls-9 {
+        fill: #f9f8e3;
+      }
+
+      .cls-10 {
+        fill: #f9e3e3;
+      }
+
+      .cls-11 {
+        clip-path: url(#clippath-17);
+      }
+
+      .cls-12 {
+        clip-path: url(#clippath-19);
+      }
+
+      .cls-13 {
+        clip-path: url(#clippath-11);
+      }
+
+      .cls-14 {
+        clip-path: url(#clippath-16);
+      }
+
+      .cls-15 {
+        clip-path: url(#clippath-18);
+      }
+
+      .cls-16 {
+        clip-path: url(#clippath-10);
+      }
+
+      .cls-17 {
+        clip-path: url(#clippath-15);
+      }
+
+      .cls-18 {
+        clip-path: url(#clippath-13);
+      }
+
+      .cls-19 {
+        clip-path: url(#clippath-14);
+      }
+
+      .cls-20 {
+        clip-path: url(#clippath-12);
+      }
+
+      .cls-21 {
+        clip-path: url(#clippath-61);
+      }
+
+      .cls-22 {
+        clip-path: url(#clippath-67);
+      }
+
+      .cls-23 {
+        clip-path: url(#clippath-68);
+      }
+
+      .cls-24 {
+        clip-path: url(#clippath-60);
+      }
+
+      .cls-25 {
+        clip-path: url(#clippath-65);
+      }
+
+      .cls-26 {
+        clip-path: url(#clippath-62);
+      }
+
+      .cls-27 {
+        clip-path: url(#clippath-64);
+      }
+
+      .cls-28 {
+        clip-path: url(#clippath-66);
+      }
+
+      .cls-29 {
+        clip-path: url(#clippath-63);
+      }
+
+      .cls-30 {
+        clip-path: url(#clippath-76);
+      }
+
+      .cls-31 {
+        clip-path: url(#clippath-78);
+      }
+
+      .cls-32 {
+        clip-path: url(#clippath-75);
+      }
+
+      .cls-33 {
+        clip-path: url(#clippath-79);
+      }
+
+      .cls-34 {
+        clip-path: url(#clippath-50);
+      }
+
+      .cls-35 {
+        clip-path: url(#clippath-55);
+      }
+
+      .cls-36 {
+        clip-path: url(#clippath-52);
+      }
+
+      .cls-37 {
+        clip-path: url(#clippath-57);
+      }
+
+      .cls-38 {
+        clip-path: url(#clippath-54);
+      }
+
+      .cls-39 {
+        clip-path: url(#clippath-56);
+      }
+
+      .cls-40 {
+        clip-path: url(#clippath-53);
+      }
+
+      .cls-41 {
+        clip-path: url(#clippath-70);
+      }
+
+      .cls-42 {
+        clip-path: url(#clippath-77);
+      }
+
+      .cls-43 {
+        clip-path: url(#clippath-74);
+      }
+
+      .cls-44 {
+        clip-path: url(#clippath-71);
+      }
+
+      .cls-45 {
+        clip-path: url(#clippath-73);
+      }
+
+      .cls-46 {
+        clip-path: url(#clippath-72);
+      }
+
+      .cls-47 {
+        clip-path: url(#clippath-51);
+      }
+
+      .cls-48 {
+        clip-path: url(#clippath-58);
+      }
+
+      .cls-49 {
+        clip-path: url(#clippath-59);
+      }
+
+      .cls-50 {
+        clip-path: url(#clippath-31);
+      }
+
+      .cls-51 {
+        clip-path: url(#clippath-32);
+      }
+
+      .cls-52 {
+        clip-path: url(#clippath-33);
+      }
+
+      .cls-53 {
+        clip-path: url(#clippath-34);
+      }
+
+      .cls-54 {
+        clip-path: url(#clippath-35);
+      }
+
+      .cls-55 {
+        clip-path: url(#clippath-39);
+      }
+
+      .cls-56 {
+        clip-path: url(#clippath-30);
+      }
+
+      .cls-57 {
+        clip-path: url(#clippath-36);
+      }
+
+      .cls-58 {
+        clip-path: url(#clippath-37);
+      }
+
+      .cls-59 {
+        clip-path: url(#clippath-38);
+      }
+
+      .cls-60 {
+        clip-path: url(#clippath-27);
+      }
+
+      .cls-61 {
+        clip-path: url(#clippath-29);
+      }
+
+      .cls-62 {
+        clip-path: url(#clippath-26);
+      }
+
+      .cls-63 {
+        clip-path: url(#clippath-28);
+      }
+
+      .cls-64 {
+        clip-path: url(#clippath-20);
+      }
+
+      .cls-65 {
+        clip-path: url(#clippath-21);
+      }
+
+      .cls-66 {
+        clip-path: url(#clippath-22);
+      }
+
+      .cls-67 {
+        clip-path: url(#clippath-23);
+      }
+
+      .cls-68 {
+        clip-path: url(#clippath-24);
+      }
+
+      .cls-69 {
+        clip-path: url(#clippath-25);
+      }
+
+      .cls-70 {
+        clip-path: url(#clippath-69);
+      }
+
+      .cls-71 {
+        clip-path: url(#clippath-41);
+      }
+
+      .cls-72 {
+        clip-path: url(#clippath-42);
+      }
+
+      .cls-73 {
+        clip-path: url(#clippath-43);
+      }
+
+      .cls-74 {
+        clip-path: url(#clippath-44);
+      }
+
+      .cls-75 {
+        clip-path: url(#clippath-45);
+      }
+
+      .cls-76 {
+        clip-path: url(#clippath-49);
+      }
+
+      .cls-77 {
+        clip-path: url(#clippath-40);
+      }
+
+      .cls-78 {
+        clip-path: url(#clippath-46);
+      }
+
+      .cls-79 {
+        clip-path: url(#clippath-47);
+      }
+
+      .cls-80 {
+        clip-path: url(#clippath-48);
+      }
+
+      .cls-81 {
+        clip-path: url(#clippath-90);
+      }
+
+      .cls-82 {
+        clip-path: url(#clippath-85);
+      }
+
+      .cls-83 {
+        clip-path: url(#clippath-86);
+      }
+
+      .cls-84 {
+        clip-path: url(#clippath-87);
+      }
+
+      .cls-85 {
+        clip-path: url(#clippath-80);
+      }
+
+      .cls-86 {
+        clip-path: url(#clippath-89);
+      }
+
+      .cls-87 {
+        clip-path: url(#clippath-81);
+      }
+
+      .cls-88 {
+        clip-path: url(#clippath-82);
+      }
+
+      .cls-89 {
+        clip-path: url(#clippath-83);
+      }
+
+      .cls-90 {
+        clip-path: url(#clippath-84);
+      }
+
+      .cls-91 {
+        clip-path: url(#clippath-88);
+      }
+
+      .cls-92 {
+        clip-path: url(#clippath-92);
+      }
+
+      .cls-93 {
+        clip-path: url(#clippath-91);
+      }
+
+      .cls-94 {
+        clip-path: url(#clippath-1);
+      }
+
+      .cls-95 {
+        clip-path: url(#clippath-3);
+      }
+
+      .cls-96 {
+        clip-path: url(#clippath-4);
+      }
+
+      .cls-97 {
+        clip-path: url(#clippath-2);
+      }
+
+      .cls-98 {
+        clip-path: url(#clippath-7);
+      }
+
+      .cls-99 {
+        clip-path: url(#clippath-6);
+      }
+
+      .cls-100 {
+        clip-path: url(#clippath-9);
+      }
+
+      .cls-101 {
+        clip-path: url(#clippath-8);
+      }
+
+      .cls-102 {
+        clip-path: url(#clippath-5);
+      }
+
+      .cls-103 {
+        letter-spacing: 0em;
+      }
+
+      .cls-2 {
+        stroke-dasharray: 10 10;
+      }
+
+      .cls-2, .cls-3, .cls-5, .cls-6 {
+        stroke: #000;
+      }
+
+      .cls-2, .cls-6 {
+        stroke-width: 5px;
+      }
+
+      .cls-3 {
+        stroke-dasharray: 10 10;
+        stroke-width: 5px;
+      }
+
+      .cls-104 {
+        fill: #fff;
+      }
+
+      .cls-105 {
+        letter-spacing: 0em;
+      }
+
+      .cls-106 {
+        fill: #e3f5f9;
+      }
+
+      .cls-107 {
+        fill: #eaecf9;
+      }
+
+      .cls-108 {
+        font-size: 36px;
+      }
+
+      .cls-108, .cls-8 {
+        font-family: Avenir-Book, Avenir;
+      }
+
+      .cls-109 {
+        letter-spacing: -.1em;
+      }
+
+      .cls-110 {
+        letter-spacing: 0em;
+      }
+
+      .cls-4 {
+        stroke: #85888d;
+        stroke-width: 2px;
+      }
+
+      .cls-111 {
+        letter-spacing: 0em;
+      }
+
+      .cls-112 {
+        letter-spacing: 0em;
+      }
+
+      .cls-113 {
+        fill: #e7f9e3;
+      }
+
+      .cls-114 {
+        letter-spacing: 0em;
+      }
+
+      .cls-115 {
+        fill: #c6cdf9;
+      }
+
+      .cls-116 {
+        letter-spacing: 0em;
+      }
+
+      .cls-117 {
+        letter-spacing: 0em;
+      }
+
+      .cls-118 {
+        clip-path: url(#clippath);
+      }
+
+      .cls-119 {
+        letter-spacing: 0em;
+      }
+
+      .cls-120 {
+        letter-spacing: 0em;
+      }
+    </style>
+    <clipPath id="clippath">
+      <rect class="cls-1" width="1774" height="2662"/>
+    </clipPath>
+    <clipPath id="clippath-1">
+      <rect class="cls-1" x="106.9" y="103.5" width="280.6" height="73.6"/>
+    </clipPath>
+    <clipPath id="clippath-2">
+      <rect class="cls-1" width="1774" height="2662"/>
+    </clipPath>
+    <clipPath id="clippath-3">
+      <rect class="cls-1" x="106.9" y="185.9" width="280.6" height="73.6"/>
+    </clipPath>
+    <clipPath id="clippath-4">
+      <rect class="cls-1" width="1774" height="2662"/>
+    </clipPath>
+    <clipPath id="clippath-5">
+      <rect class="cls-1" x="498.9" y="103.5" width="404.2" height="73.6"/>
+    </clipPath>
+    <clipPath id="clippath-6">
+      <rect class="cls-1" width="1774" height="2662"/>
+    </clipPath>
+    <clipPath id="clippath-7">
+      <rect class="cls-1" x="498.9" y="185.9" width="404.2" height="73.6"/>
+    </clipPath>
+    <clipPath id="clippath-8">
+      <rect class="cls-1" width="1774" height="2662"/>
+    </clipPath>
+    <clipPath id="clippath-9">
+      <rect class="cls-1" x="498.9" y="268.3" width="542.2" height="73.6"/>
+    </clipPath>
+    <clipPath id="clippath-10">
+      <rect class="cls-1" width="1774" height="2662"/>
+    </clipPath>
+    <clipPath id="clippath-11">
+      <rect class="cls-1" x="106.9" y="268.3" width="280.6" height="73.6"/>
+    </clipPath>
+    <clipPath id="clippath-12">
+      <rect class="cls-1" width="1774" height="2662"/>
+    </clipPath>
+    <clipPath id="clippath-13">
+      <rect class="cls-1" x="1204.8" y="350.7" width="280.6" height="73.6"/>
+    </clipPath>
+    <clipPath id="clippath-14">
+      <rect class="cls-1" width="1774" height="2662"/>
+    </clipPath>
+    <clipPath id="clippath-15">
+      <rect class="cls-1" x="498.9" y="350.7" width="542.2" height="73.6"/>
+    </clipPath>
+    <clipPath id="clippath-16">
+      <rect class="cls-1" width="1774" height="2662"/>
+    </clipPath>
+    <clipPath id="clippath-17">
+      <rect class="cls-1" x="1204.8" y="515.5" width="280.6" height="73.6"/>
+    </clipPath>
+    <clipPath id="clippath-18">
+      <rect class="cls-1" width="1774" height="2662"/>
+    </clipPath>
+    <clipPath id="clippath-19">
+      <rect class="cls-1" x="498.9" y="515.5" width="449.5" height="73.6"/>
+    </clipPath>
+    <clipPath id="clippath-20">
+      <rect class="cls-1" width="1774" height="2662"/>
+    </clipPath>
+    <clipPath id="clippath-21">
+      <rect class="cls-1" x="498.9" y="972.8" width="449.5" height="73.6"/>
+    </clipPath>
+    <clipPath id="clippath-22">
+      <rect class="cls-1" width="1774" height="2662"/>
+    </clipPath>
+    <clipPath id="clippath-23">
+      <rect class="cls-1" x="1204.8" y="972.8" width="479.5" height="73.6"/>
+    </clipPath>
+    <clipPath id="clippath-24">
+      <rect class="cls-1" width="1774" height="2662"/>
+    </clipPath>
+    <clipPath id="clippath-25">
+      <rect class="cls-1" x="498.9" y="1055.2" width="449.5" height="73.6"/>
+    </clipPath>
+    <clipPath id="clippath-26">
+      <rect class="cls-1" width="1774" height="2662"/>
+    </clipPath>
+    <clipPath id="clippath-27">
+      <rect class="cls-1" x="498.9" y="433.1" width="449.5" height="73.6"/>
+    </clipPath>
+    <clipPath id="clippath-28">
+      <rect class="cls-1" width="1774" height="2662"/>
+    </clipPath>
+    <clipPath id="clippath-29">
+      <rect class="cls-1" x="1204.8" y="734.6" width="382.1" height="73.6"/>
+    </clipPath>
+    <clipPath id="clippath-30">
+      <rect class="cls-1" width="1774" height="2662"/>
+    </clipPath>
+    <clipPath id="clippath-31">
+      <rect class="cls-1" x="498.9" y="734.6" width="599.1" height="73.6"/>
+    </clipPath>
+    <clipPath id="clippath-32">
+      <rect class="cls-1" width="1774" height="2662"/>
+    </clipPath>
+    <clipPath id="clippath-33">
+      <rect class="cls-1" x="1204.8" y="643.1" width="382.1" height="73.6"/>
+    </clipPath>
+    <clipPath id="clippath-34">
+      <rect class="cls-1" width="1774" height="2662"/>
+    </clipPath>
+    <clipPath id="clippath-35">
+      <rect class="cls-1" x="498.9" y="643.1" width="599.1" height="73.6"/>
+    </clipPath>
+    <clipPath id="clippath-36">
+      <rect class="cls-1" width="1774" height="2662"/>
+    </clipPath>
+    <clipPath id="clippath-37">
+      <rect class="cls-1" x="498.9" y="826" width="449.5" height="73.6"/>
+    </clipPath>
+    <clipPath id="clippath-38">
+      <rect class="cls-1" width="1774" height="2662"/>
+    </clipPath>
+    <clipPath id="clippath-39">
+      <rect class="cls-1" x="1204.8" y="826" width="479.5" height="73.6"/>
+    </clipPath>
+    <clipPath id="clippath-40">
+      <rect class="cls-1" width="1774" height="2662"/>
+    </clipPath>
+    <clipPath id="clippath-41">
+      <rect class="cls-1" x="430.6" y="1608.4" width="657.7" height="73.6"/>
+    </clipPath>
+    <clipPath id="clippath-42">
+      <rect class="cls-1" width="1774" height="2662"/>
+    </clipPath>
+    <clipPath id="clippath-43">
+      <rect class="cls-1" x="1204.8" y="1608.4" width="440.2" height="73.6"/>
+    </clipPath>
+    <clipPath id="clippath-44">
+      <rect class="cls-1" width="1774" height="2662"/>
+    </clipPath>
+    <clipPath id="clippath-45">
+      <rect class="cls-1" x="498.9" y="1137.7" width="473.7" height="73.6"/>
+    </clipPath>
+    <clipPath id="clippath-46">
+      <rect class="cls-1" width="1774" height="2662"/>
+    </clipPath>
+    <clipPath id="clippath-47">
+      <rect class="cls-1" x="1204.8" y="1137.7" width="253.5" height="73.6"/>
+    </clipPath>
+    <clipPath id="clippath-48">
+      <rect class="cls-1" width="1774" height="2662"/>
+    </clipPath>
+    <clipPath id="clippath-49">
+      <rect class="cls-1" x="498.9" y="1220.1" width="449.5" height="73.6"/>
+    </clipPath>
+    <clipPath id="clippath-50">
+      <rect class="cls-1" width="1774" height="2662"/>
+    </clipPath>
+    <clipPath id="clippath-51">
+      <rect class="cls-1" x="498.9" y="1377.9" width="449.5" height="73.6"/>
+    </clipPath>
+    <clipPath id="clippath-52">
+      <rect class="cls-1" width="1774" height="2662"/>
+    </clipPath>
+    <clipPath id="clippath-53">
+      <rect class="cls-1" x="1204.8" y="1377.9" width="496.6" height="73.6"/>
+    </clipPath>
+    <clipPath id="clippath-54">
+      <rect class="cls-1" width="1774" height="2662"/>
+    </clipPath>
+    <clipPath id="clippath-55">
+      <rect class="cls-1" x="430.6" y="1693" width="562" height="73.6"/>
+    </clipPath>
+    <clipPath id="clippath-56">
+      <rect class="cls-1" width="1774" height="2662"/>
+    </clipPath>
+    <clipPath id="clippath-57">
+      <rect class="cls-1" x="430.6" y="1778.2" width="449.5" height="73.6"/>
+    </clipPath>
+    <clipPath id="clippath-58">
+      <rect class="cls-1" width="1774" height="2662"/>
+    </clipPath>
+    <clipPath id="clippath-59">
+      <rect class="cls-1" x="1205.5" y="1693" width="371.3" height="73.6"/>
+    </clipPath>
+    <clipPath id="clippath-60">
+      <rect class="cls-1" width="1774" height="2662"/>
+    </clipPath>
+    <clipPath id="clippath-61">
+      <rect class="cls-1" x="1205.5" y="1778.2" width="329.8" height="73.6"/>
+    </clipPath>
+    <clipPath id="clippath-62">
+      <rect class="cls-1" width="1774" height="2662"/>
+    </clipPath>
+    <clipPath id="clippath-63">
+      <rect class="cls-1" x="430.6" y="1866.1" width="721.1" height="73.6"/>
+    </clipPath>
+    <clipPath id="clippath-64">
+      <rect class="cls-1" width="1774" height="2662"/>
+    </clipPath>
+    <clipPath id="clippath-65">
+      <rect class="cls-1" x="1205.5" y="1866.1" width="461.6" height="73.6"/>
+    </clipPath>
+    <clipPath id="clippath-66">
+      <rect class="cls-1" width="1774" height="2662"/>
+    </clipPath>
+    <clipPath id="clippath-67">
+      <rect class="cls-1" x="430.6" y="1948" width="641.3" height="73.6"/>
+    </clipPath>
+    <clipPath id="clippath-68">
+      <rect class="cls-1" width="1774" height="2662"/>
+    </clipPath>
+    <clipPath id="clippath-69">
+      <rect class="cls-1" x="430.6" y="2030.4" width="705.7" height="73.6"/>
+    </clipPath>
+    <clipPath id="clippath-70">
+      <rect class="cls-1" width="1774" height="2662"/>
+    </clipPath>
+    <clipPath id="clippath-71">
+      <rect class="cls-1" x="430.6" y="2117.9" width="449.5" height="73.6"/>
+    </clipPath>
+    <clipPath id="clippath-72">
+      <rect class="cls-1" width="1774" height="2662"/>
+    </clipPath>
+    <clipPath id="clippath-73">
+      <rect class="cls-1" x="498.9" y="1299.6" width="493.7" height="73.6"/>
+    </clipPath>
+    <clipPath id="clippath-74">
+      <rect class="cls-1" width="1774" height="2662"/>
+    </clipPath>
+    <clipPath id="clippath-75">
+      <rect class="cls-1" x="1204.8" y="1299.6" width="280.6" height="73.6"/>
+    </clipPath>
+    <clipPath id="clippath-76">
+      <rect class="cls-1" width="1774" height="2662"/>
+    </clipPath>
+    <clipPath id="clippath-77">
+      <rect class="cls-1" x="430.6" y="2203" width="538.4" height="73.6"/>
+    </clipPath>
+    <clipPath id="clippath-78">
+      <rect class="cls-1" width="1774" height="2662"/>
+    </clipPath>
+    <clipPath id="clippath-79">
+      <rect class="cls-1" x="430.6" y="2290.9" width="534.5" height="73.6"/>
+    </clipPath>
+    <clipPath id="clippath-80">
+      <rect class="cls-1" width="1774" height="2662"/>
+    </clipPath>
+    <clipPath id="clippath-81">
+      <rect class="cls-1" x="430.6" y="2372.8" width="538.4" height="73.6"/>
+    </clipPath>
+    <clipPath id="clippath-82">
+      <rect class="cls-1" width="1774" height="2662"/>
+    </clipPath>
+    <clipPath id="clippath-83">
+      <rect class="cls-1" x="430.6" y="2455.2" width="358" height="73.6"/>
+    </clipPath>
+    <clipPath id="clippath-84">
+      <rect class="cls-1" width="1774" height="2662"/>
+    </clipPath>
+    <clipPath id="clippath-85">
+      <rect class="cls-1" x="430.6" y="2542.7" width="373" height="73.6"/>
+    </clipPath>
+    <clipPath id="clippath-86">
+      <rect class="cls-1" width="1774" height="2662"/>
+    </clipPath>
+    <clipPath id="clippath-87">
+      <rect class="cls-1" x="1205.5" y="2373.3" width="404.2" height="73.6"/>
+    </clipPath>
+    <clipPath id="clippath-88">
+      <rect class="cls-1" width="1774" height="2662"/>
+    </clipPath>
+    <clipPath id="clippath-89">
+      <rect class="cls-1" x="498.9" y="1455.7" width="529" height="73.6"/>
+    </clipPath>
+    <clipPath id="clippath-90">
+      <rect class="cls-1" width="1774" height="2662"/>
+    </clipPath>
+    <clipPath id="clippath-91">
+      <rect class="cls-1" x="1204.8" y="1455.7" width="313.1" height="73.6"/>
+    </clipPath>
+    <clipPath id="clippath-92">
+      <rect class="cls-1" width="1774" height="2662"/>
+    </clipPath>
+  </defs>
+  <!-- Generator: Adobe Illustrator 28.7.1, SVG Export Plug-In . SVG Version: 1.2.0 Build 142)  -->
+  <g>
+    <g id="Layer_1">
+      <g class="cls-118">
+        <rect class="cls-104" width="1774" height="2662"/>
+        <rect class="cls-9" y="1583.3" width="1098.2" height="1056"/>
+        <rect class="cls-113" y="950.7" width="1098.2" height="600.7"/>
+        <rect class="cls-106" y="628.1" width="1098.2" height="294.5"/>
+        <rect class="cls-10" y="90.2" width="1098.2" height="509.7"/>
+        <text class="cls-7" transform="translate(116.7 63.4)"><tspan x="0" y="0">CPU</tspan></text>
+        <text class="cls-7" transform="translate(1135.2 328)"><tspan x="0" y="0">GPU</tspan></text>
+        <rect class="cls-115" x="112.6" y="108.2" width="269.3" height="64.1"/>
+        <rect class="cls-5" x="112.6" y="108.2" width="269.3" height="64.1"/>
+      </g>
+      <g class="cls-94">
+        <text class="cls-108" transform="translate(127.1 151.6)"><tspan x="0" y="0">WGPUInstance</tspan></text>
+      </g>
+      <g class="cls-97">
+        <rect class="cls-4" x="91.2" y="91.2" width="1006" height="2547"/>
+        <rect class="cls-4" x="1132.2" y="342.2" width="629" height="2296.1"/>
+        <rect class="cls-115" x="112.6" y="190.6" width="269.3" height="64.1"/>
+        <rect class="cls-5" x="112.6" y="190.6" width="269.3" height="64.1"/>
+      </g>
+      <g class="cls-95">
+        <text class="cls-108" transform="translate(134.2 234)"><tspan x="0" y="0">WGPUSurface</tspan></text>
+      </g>
+      <g class="cls-96">
+        <rect class="cls-107" x="504.6" y="108.2" width="392.9" height="64.1"/>
+        <rect class="cls-5" x="504.6" y="108.2" width="392.9" height="64.1"/>
+      </g>
+      <g class="cls-102">
+        <text class="cls-108" transform="translate(511.2 151.6)"><tspan x="0" y="0">wgpuC</tspan><tspan class="cls-111" x="115.3" y="0">r</tspan><tspan x="126.7" y="0">eateInstance()</tspan></text>
+      </g>
+      <g class="cls-99">
+        <rect class="cls-107" x="504.6" y="190.6" width="392.9" height="64.1"/>
+        <rect class="cls-5" x="504.6" y="190.6" width="392.9" height="64.1"/>
+      </g>
+      <g class="cls-98">
+        <text class="cls-108" transform="translate(511.2 234)"><tspan x="0" y="0">glfwGetWGPUSurface()</tspan></text>
+      </g>
+      <g class="cls-101">
+        <rect class="cls-107" x="504.6" y="273" width="530.9" height="64.1"/>
+        <rect class="cls-5" x="504.6" y="273" width="530.9" height="64.1"/>
+      </g>
+      <g class="cls-100">
+        <text class="cls-108" transform="translate(511.2 316.4)"><tspan x="0" y="0">wgpuInstanceRequestAdapter()</tspan></text>
+      </g>
+      <g class="cls-16">
+        <rect class="cls-115" x="112.6" y="273" width="269.3" height="64.1"/>
+        <rect class="cls-5" x="112.6" y="273" width="269.3" height="64.1"/>
+      </g>
+      <g class="cls-13">
+        <text class="cls-108" transform="translate(127.9 316.4)"><tspan x="0" y="0">WGPUAdapter</tspan></text>
+      </g>
+      <g class="cls-20">
+        <rect class="cls-115" x="1210.5" y="355.4" width="269.3" height="64.1"/>
+        <rect class="cls-5" x="1210.5" y="355.4" width="269.3" height="64.1"/>
+      </g>
+      <g class="cls-18">
+        <text class="cls-108" transform="translate(1236.4 398.8)"><tspan x="0" y="0">WGPUDevice</tspan></text>
+      </g>
+      <g class="cls-19">
+        <rect class="cls-107" x="504.6" y="355.4" width="530.9" height="64.1"/>
+        <rect class="cls-5" x="504.6" y="355.4" width="530.9" height="64.1"/>
+      </g>
+      <g class="cls-17">
+        <text class="cls-108" transform="translate(511.2 398.8)"><tspan x="0" y="0">wgpuAdapterRequestDevice()</tspan></text>
+      </g>
+      <g class="cls-14">
+        <rect class="cls-115" x="1210.5" y="520.2" width="269.3" height="64.1"/>
+        <rect class="cls-5" x="1210.5" y="520.2" width="269.3" height="64.1"/>
+      </g>
+      <g class="cls-11">
+        <text class="cls-108" transform="translate(1217.1 563.6)"><tspan x="0" y="0">WGPUQueue</tspan></text>
+      </g>
+      <g class="cls-15">
+        <rect class="cls-107" x="504.6" y="520.2" width="438.1" height="64.1"/>
+        <rect class="cls-5" x="504.6" y="520.2" width="438.1" height="64.1"/>
+      </g>
+      <g class="cls-12">
+        <text class="cls-108" transform="translate(511.2 563.6)"><tspan x="0" y="0">wgpuDeviceGetQueue()</tspan></text>
+      </g>
+      <g class="cls-64">
+        <rect class="cls-107" x="504.6" y="977.5" width="438.1" height="64.1"/>
+        <rect class="cls-5" x="504.6" y="977.5" width="438.1" height="64.1"/>
+      </g>
+      <g class="cls-65">
+        <text class="cls-108" transform="translate(511.2 1020.9)"><tspan x="0" y="0">wgpuDeviceC</tspan><tspan class="cls-111" x="225.4" y="0">r</tspan><tspan x="236.7" y="0">eateBu</tspan><tspan class="cls-112" x="350.1" y="0">f</tspan><tspan class="cls-103" x="360.1" y="0">fer()</tspan></text>
+      </g>
+      <g class="cls-66">
+        <rect class="cls-115" x="1210.5" y="977.5" width="468.1" height="64.1"/>
+        <rect class="cls-5" x="1210.5" y="977.5" width="468.1" height="64.1"/>
+      </g>
+      <g class="cls-67">
+        <text class="cls-108" transform="translate(1217.1 1020.9)"><tspan x="0" y="0">WGPUBu</tspan><tspan class="cls-111" x="150" y="0">f</tspan><tspan x="160.1" y="0">fer vertex_bu</tspan><tspan class="cls-112" x="371.4" y="0">f</tspan><tspan x="381.4" y="0">fer</tspan></text>
+      </g>
+      <g class="cls-68">
+        <rect class="cls-107" x="504.6" y="1059.9" width="438.1" height="64.1"/>
+        <rect class="cls-5" x="504.6" y="1059.9" width="438.1" height="64.1"/>
+      </g>
+      <g class="cls-69">
+        <text class="cls-108" transform="translate(511.2 1103.3)"><tspan x="0" y="0">wgpuQueue</tspan><tspan class="cls-112" x="200.1" y="0">W</tspan><tspan class="cls-103" x="233.5" y="0">riteBu</tspan><tspan class="cls-112" x="328.7" y="0">f</tspan><tspan class="cls-103" x="338.8" y="0">fer()</tspan></text>
+      </g>
+      <g class="cls-62">
+        <polyline class="cls-6" points="494.2 313.5 412.6 313.5 410.1 313.5"/>
+        <polygon points="412.6 303.3 392.2 313.5 412.6 323.7 412.6 303.3"/>
+        <polyline class="cls-6" points="494.2 222.7 412.6 222.7 410.1 222.7"/>
+        <polygon points="412.6 212.5 392.2 222.7 412.6 232.9 412.6 212.5"/>
+        <polyline class="cls-6" points="494.2 140.2 412.6 140.2 410.1 140.2"/>
+        <polygon points="412.6 130.1 392.2 140.2 412.6 150.4 412.6 130.1"/>
+        <polyline class="cls-6" points="1186.3 387.5 1183.8 387.5 1041.8 387.5"/>
+        <polygon points="1183.8 397.7 1204.2 387.5 1183.8 377.3 1183.8 397.7"/>
+        <polyline class="cls-6" points="967.5 552.3 1178.3 552.3 1180.8 552.3"/>
+        <polygon points="1178.3 562.5 1198.7 552.3 1178.3 542.1 1178.3 562.5"/>
+        <polyline class="cls-6" points="967.5 1009.5 1178.3 1009.5 1180.8 1009.5"/>
+        <polygon points="1178.3 1019.7 1198.7 1009.5 1178.3 999.3 1178.3 1019.7"/>
+        <polyline class="cls-3" points="967.5 1091.9 1179.7 1034.1 1182.1 1033.5"/>
+        <polygon points="1182.4 1044 1199.4 1028.8 1177.1 1024.3 1182.4 1044"/>
+        <rect class="cls-107" x="504.6" y="437.8" width="438.1" height="64.1"/>
+        <rect class="cls-5" x="504.6" y="437.8" width="438.1" height="64.1"/>
+      </g>
+      <g class="cls-60">
+        <text class="cls-108" transform="translate(511.2 481.2)"><tspan x="0" y="0">wgpuSurfaceConfigu</tspan><tspan class="cls-111" x="336.7" y="0">r</tspan><tspan x="348" y="0">e()</tspan></text>
+      </g>
+      <g class="cls-63">
+        <text class="cls-8" transform="translate(63.4 526.5) rotate(-90)"><tspan x="0" y="0">Generic Setup</tspan></text>
+        <text class="cls-8" transform="translate(63.4 878.9) rotate(-90)"><tspan x="0" y="0">Pipeline</tspan></text>
+        <rect class="cls-115" x="1210.5" y="739.3" width="370.8" height="64.1"/>
+        <rect class="cls-5" x="1210.5" y="739.3" width="370.8" height="64.1"/>
+      </g>
+      <g class="cls-61">
+        <text class="cls-108" transform="translate(1217.1 782.7)"><tspan x="0" y="0">WGPURenderPipeline</tspan></text>
+      </g>
+      <g class="cls-56">
+        <rect class="cls-107" x="504.6" y="739.3" width="587.7" height="64.1"/>
+        <rect class="cls-5" x="504.6" y="739.3" width="587.7" height="64.1"/>
+      </g>
+      <g class="cls-50">
+        <text class="cls-108" transform="translate(511.2 782.7)"><tspan x="0" y="0">wgpuDeviceC</tspan><tspan class="cls-111" x="225.4" y="0">r</tspan><tspan x="236.7" y="0">eateRenderPipeline()</tspan></text>
+      </g>
+      <g class="cls-51">
+        <polyline class="cls-6" points="1104.1 771.3 1178.3 771.3 1180.8 771.3"/>
+        <polygon points="1178.3 781.5 1198.7 771.3 1178.3 761.1 1178.3 781.5"/>
+        <rect class="cls-115" x="1210.5" y="647.8" width="370.8" height="64.1"/>
+        <rect class="cls-5" x="1210.5" y="647.8" width="370.8" height="64.1"/>
+      </g>
+      <g class="cls-52">
+        <text class="cls-108" transform="translate(1217.1 691.3)"><tspan x="0" y="0">WGPUShaderModule</tspan></text>
+      </g>
+      <g class="cls-53">
+        <rect class="cls-107" x="504.6" y="647.8" width="587.7" height="64.1"/>
+        <rect class="cls-5" x="504.6" y="647.8" width="587.7" height="64.1"/>
+      </g>
+      <g class="cls-54">
+        <text class="cls-108" transform="translate(511.2 691.3)"><tspan x="0" y="0">wgpuDeviceC</tspan><tspan class="cls-111" x="225.4" y="0">r</tspan><tspan x="236.7" y="0">eateShaderModule()</tspan></text>
+      </g>
+      <g class="cls-57">
+        <polyline class="cls-6" points="1104.1 679.9 1178.3 679.9 1180.8 679.9"/>
+        <polygon points="1178.3 690.1 1198.7 679.9 1178.3 669.7 1178.3 690.1"/>
+        <rect class="cls-107" x="504.6" y="830.7" width="438.1" height="64.1"/>
+        <rect class="cls-5" x="504.6" y="830.7" width="438.1" height="64.1"/>
+      </g>
+      <g class="cls-58">
+        <text class="cls-108" transform="translate(511.2 874.2)"><tspan x="0" y="0">wgpuDeviceC</tspan><tspan class="cls-111" x="225.4" y="0">r</tspan><tspan x="236.7" y="0">eateBu</tspan><tspan class="cls-112" x="350.1" y="0">f</tspan><tspan class="cls-103" x="360.1" y="0">fer()</tspan></text>
+      </g>
+      <g class="cls-59">
+        <rect class="cls-115" x="1210.5" y="830.7" width="468.1" height="64.1"/>
+        <rect class="cls-5" x="1210.5" y="830.7" width="468.1" height="64.1"/>
+      </g>
+      <g class="cls-55">
+        <text class="cls-108" transform="translate(1217.1 874.2)"><tspan x="0" y="0">WGPUBu</tspan><tspan class="cls-111" x="150" y="0">f</tspan><tspan x="160.1" y="0">fer unifo</tspan><tspan class="cls-117" x="293.4" y="0">r</tspan><tspan class="cls-105" x="306" y="0">m_bu</tspan><tspan class="cls-111" x="396.7" y="0">f</tspan><tspan x="406.7" y="0">fer</tspan></text>
+      </g>
+      <g class="cls-77">
+        <polyline class="cls-6" points="967.5 862.2 1178.3 862.2 1180.8 862.2"/>
+        <polygon points="1178.3 872.4 1198.7 862.2 1178.3 852 1178.3 872.4"/>
+        <rect class="cls-107" x="436.3" y="1613.1" width="646.3" height="64.1"/>
+        <rect class="cls-5" x="436.3" y="1613.1" width="646.3" height="64.1"/>
+      </g>
+      <g class="cls-71">
+        <text class="cls-108" transform="translate(442.9 1656.5)"><tspan x="0" y="0">wgpuDeviceC</tspan><tspan class="cls-111" x="225.4" y="0">r</tspan><tspan x="236.7" y="0">eateCommandEncoder()</tspan></text>
+      </g>
+      <g class="cls-72">
+        <rect class="cls-115" x="1210.5" y="1613.1" width="428.9" height="64.1"/>
+        <rect class="cls-5" x="1210.5" y="1613.1" width="428.9" height="64.1"/>
+      </g>
+      <g class="cls-73">
+        <text class="cls-108" transform="translate(1217.1 1656.5)"><tspan x="0" y="0">WGPUCommandEncoder</tspan></text>
+      </g>
+      <g class="cls-74">
+        <polyline class="cls-6" points="1094.4 1645.1 1178.3 1645.1 1180.8 1645.1"/>
+        <polygon points="1178.3 1655.3 1198.7 1645.1 1178.3 1634.9 1178.3 1655.3"/>
+        <text class="cls-8" transform="translate(63.4 1425.5) rotate(-90)"><tspan x="0" y="0">Loading Data</tspan></text>
+        <rect class="cls-107" x="504.6" y="1142.4" width="462.4" height="64.1"/>
+        <rect class="cls-5" x="504.6" y="1142.4" width="462.4" height="64.1"/>
+      </g>
+      <g class="cls-75">
+        <text class="cls-108" transform="translate(511.2 1185.8)"><tspan x="0" y="0">wgpuDeviceC</tspan><tspan class="cls-111" x="225.4" y="0">r</tspan><tspan x="236.7" y="0">eate</tspan><tspan class="cls-109" x="307.4" y="0">T</tspan><tspan class="cls-103" x="324.1" y="0">extu</tspan><tspan class="cls-112" x="393.4" y="0">r</tspan><tspan class="cls-103" x="404.8" y="0">e()</tspan></text>
+      </g>
+      <g class="cls-78">
+        <rect class="cls-115" x="1210.5" y="1142.4" width="242.1" height="64.1"/>
+        <rect class="cls-5" x="1210.5" y="1142.4" width="242.1" height="64.1"/>
+      </g>
+      <g class="cls-79">
+        <text class="cls-108" transform="translate(1217.1 1185.8)"><tspan x="0" y="0">WGPU</tspan><tspan class="cls-109" x="107.4" y="0">T</tspan><tspan x="124.1" y="0">extu</tspan><tspan class="cls-111" x="193.4" y="0">r</tspan><tspan x="204.7" y="0">e</tspan></text>
+      </g>
+      <g class="cls-80">
+        <rect class="cls-107" x="504.6" y="1224.8" width="438.1" height="64.1"/>
+        <rect class="cls-5" x="504.6" y="1224.8" width="438.1" height="64.1"/>
+      </g>
+      <g class="cls-76">
+        <text class="cls-108" transform="translate(511.2 1268.2)"><tspan x="0" y="0">wgpuQueue</tspan><tspan class="cls-112" x="200.1" y="0">W</tspan><tspan class="cls-103" x="233.5" y="0">rite</tspan><tspan class="cls-109" x="286" y="0">T</tspan><tspan class="cls-103" x="302.7" y="0">extu</tspan><tspan class="cls-112" x="372.1" y="0">r</tspan><tspan class="cls-103" x="383.4" y="0">e()</tspan></text>
+      </g>
+      <g class="cls-34">
+        <polyline class="cls-6" points="978.8 1174.4 1178.3 1174.4 1180.8 1174.4"/>
+        <polygon points="1178.3 1184.6 1198.7 1174.4 1178.3 1164.2 1178.3 1184.6"/>
+        <text class="cls-8" transform="translate(63.4 2178.4) rotate(-90)"><tspan x="0" y="0">Draw</tspan></text>
+        <rect class="cls-107" x="504.6" y="1382.6" width="438.1" height="64.1"/>
+        <rect class="cls-5" x="504.6" y="1382.6" width="438.1" height="64.1"/>
+      </g>
+      <g class="cls-47">
+        <text class="cls-108" transform="translate(511.2 1426.1)"><tspan x="0" y="0">wgpuDeviceC</tspan><tspan class="cls-111" x="225.4" y="0">r</tspan><tspan x="236.7" y="0">eateBu</tspan><tspan class="cls-112" x="350.1" y="0">f</tspan><tspan class="cls-103" x="360.1" y="0">fer()</tspan></text>
+      </g>
+      <g class="cls-36">
+        <rect class="cls-115" x="1210.5" y="1382.6" width="485.3" height="64.1"/>
+        <rect class="cls-5" x="1210.5" y="1382.6" width="485.3" height="64.1"/>
+      </g>
+      <g class="cls-40">
+        <text class="cls-108" transform="translate(1217.1 1426.1)"><tspan x="0" y="0">WGPUBu</tspan><tspan class="cls-111" x="150" y="0">f</tspan><tspan x="160.1" y="0">fer instance_bu</tspan><tspan class="cls-112" x="404.7" y="0">f</tspan><tspan x="414.8" y="0">fer</tspan></text>
+      </g>
+      <g class="cls-38">
+        <polyline class="cls-6" points="967.5 1414.7 1178.3 1414.7 1180.8 1414.7"/>
+        <polygon points="1178.3 1424.9 1198.7 1414.7 1178.3 1404.5 1178.3 1424.9"/>
+        <rect class="cls-107" x="436.3" y="1697.7" width="550.6" height="64.1"/>
+        <rect class="cls-5" x="436.3" y="1697.7" width="550.6" height="64.1"/>
+      </g>
+      <g class="cls-35">
+        <text class="cls-108" transform="translate(442.9 1741.2)"><tspan x="0" y="0">wgpuSurfaceGetCur</tspan><tspan class="cls-111" x="326" y="0">r</tspan><tspan x="337.3" y="0">ent</tspan><tspan class="cls-109" x="389.3" y="0">T</tspan><tspan x="406" y="0">extu</tspan><tspan class="cls-111" x="475.3" y="0">r</tspan><tspan x="486.7" y="0">e()</tspan></text>
+      </g>
+      <g class="cls-39">
+        <rect class="cls-107" x="436.3" y="1782.9" width="438.1" height="64.1"/>
+        <rect class="cls-5" x="436.3" y="1782.9" width="438.1" height="64.1"/>
+      </g>
+      <g class="cls-37">
+        <text class="cls-108" transform="translate(442.9 1826.3)"><tspan x="0" y="0">wgpu</tspan><tspan class="cls-109" x="90" y="0">T</tspan><tspan x="106.7" y="0">extu</tspan><tspan class="cls-112" x="176" y="0">r</tspan><tspan class="cls-103" x="187.4" y="0">eC</tspan><tspan class="cls-111" x="232.7" y="0">r</tspan><tspan x="244.1" y="0">eate</tspan><tspan class="cls-120" x="314.7" y="0">V</tspan><tspan x="337" y="0">iew()</tspan></text>
+      </g>
+      <g class="cls-48">
+        <rect class="cls-115" x="1211.2" y="1697.7" width="359.9" height="64.1"/>
+        <rect class="cls-5" x="1211.2" y="1697.7" width="359.9" height="64.1"/>
+      </g>
+      <g class="cls-49">
+        <text class="cls-108" transform="translate(1217.8 1741.2)"><tspan x="0" y="0">WGPUSurface</tspan><tspan class="cls-109" x="226" y="0">T</tspan><tspan x="242.7" y="0">extu</tspan><tspan class="cls-111" x="312.1" y="0">r</tspan><tspan x="323.4" y="0">e</tspan></text>
+      </g>
+      <g class="cls-24">
+        <polyline class="cls-3" points="964.5 1259.3 1176.7 1201.5 1179.1 1200.9"/>
+        <polygon points="1179.4 1211.4 1196.4 1196.2 1174 1191.7 1179.4 1211.4"/>
+        <polyline class="cls-6" points="1009.5 1729.8 1178.3 1729.8 1180.8 1729.8"/>
+        <polygon points="1178.3 1740 1198.7 1729.8 1178.3 1719.6 1178.3 1740"/>
+        <polyline class="cls-6" points="886.9 1817.1 1178.3 1817.1 1180.8 1817.1"/>
+        <polygon points="1178.3 1827.3 1198.7 1817.1 1178.3 1806.9 1178.3 1827.3"/>
+        <rect class="cls-115" x="1211.2" y="1782.9" width="318.5" height="64.1"/>
+        <rect class="cls-5" x="1211.2" y="1782.9" width="318.5" height="64.1"/>
+      </g>
+      <g class="cls-21">
+        <text class="cls-108" transform="translate(1217.8 1826.3)"><tspan x="0" y="0">WGPU</tspan><tspan class="cls-109" x="107.4" y="0">T</tspan><tspan x="124.1" y="0">extu</tspan><tspan class="cls-111" x="193.4" y="0">r</tspan><tspan x="204.7" y="0">e</tspan><tspan class="cls-119" x="224.7" y="0">V</tspan><tspan x="247" y="0">iew</tspan></text>
+      </g>
+      <g class="cls-26">
+        <rect class="cls-107" x="436.3" y="1870.7" width="709.8" height="64.1"/>
+        <rect class="cls-5" x="436.3" y="1870.7" width="709.8" height="64.1"/>
+      </g>
+      <g class="cls-29">
+        <text class="cls-108" transform="translate(442.9 1914.2)"><tspan x="0" y="0">wgpuCommandEncoderBeginRenderPass()</tspan></text>
+      </g>
+      <g class="cls-27">
+        <rect class="cls-115" x="1211.2" y="1870.7" width="450.3" height="64.1"/>
+        <rect class="cls-5" x="1211.2" y="1870.7" width="450.3" height="64.1"/>
+      </g>
+      <g class="cls-25">
+        <text class="cls-108" transform="translate(1217.8 1914.2)"><tspan x="0" y="0">WGPURenderPassEncoder</tspan></text>
+      </g>
+      <g class="cls-28">
+        <polyline class="cls-6" points="1160.8 1902.8 1176 1902.8 1178.5 1902.8"/>
+        <polygon points="1176 1913 1196.4 1902.8 1176 1892.6 1176 1913"/>
+        <rect class="cls-107" x="436.3" y="1952.7" width="630" height="64.1"/>
+        <rect class="cls-5" x="436.3" y="1952.7" width="630" height="64.1"/>
+      </g>
+      <g class="cls-22">
+        <text class="cls-108" transform="translate(442.9 1996.2)"><tspan x="0" y="0">wgpuRenderPassEncoderSetPipeline()</tspan></text>
+      </g>
+      <g class="cls-23">
+        <rect class="cls-107" x="436.3" y="2035.1" width="694.4" height="64.1"/>
+        <rect class="cls-5" x="436.3" y="2035.1" width="694.4" height="64.1"/>
+      </g>
+      <g class="cls-70">
+        <text class="cls-108" transform="translate(442.9 2078.6)"><tspan x="0" y="0">wgpuRenderPassEncoderSet</tspan><tspan class="cls-114" x="461.4" y="0">V</tspan><tspan class="cls-103" x="481.4" y="0">ertexBu</tspan><tspan class="cls-112" x="605.4" y="0">f</tspan><tspan x="615.4" y="0">fer()</tspan></text>
+      </g>
+      <g class="cls-41">
+        <rect class="cls-107" x="436.3" y="2122.5" width="438.1" height="64.1"/>
+        <rect class="cls-5" x="436.3" y="2122.5" width="438.1" height="64.1"/>
+      </g>
+      <g class="cls-44">
+        <text class="cls-108" transform="translate(442.9 2166)"><tspan x="0" y="0">wgpuQueue</tspan><tspan class="cls-112" x="200.1" y="0">W</tspan><tspan class="cls-103" x="233.5" y="0">riteBu</tspan><tspan class="cls-112" x="328.7" y="0">f</tspan><tspan class="cls-103" x="338.8" y="0">fer()</tspan></text>
+      </g>
+      <g class="cls-46">
+        <text class="cls-108" transform="translate(1209.8 2166.5)"><tspan x="0" y="0">{unifo</tspan><tspan class="cls-116" x="90" y="0">r</tspan><tspan x="102.6" y="0">m_bu</tspan><tspan class="cls-111" x="193.3" y="0">f</tspan><tspan x="203.4" y="0">fe</tspan><tspan class="cls-110" x="234" y="0">r</tspan><tspan class="cls-105" x="242.7" y="0">, instance_bu</tspan><tspan class="cls-111" x="454.7" y="0">f</tspan><tspan x="464.8" y="0">fer}</tspan></text>
+        <rect class="cls-107" x="504.6" y="1304.2" width="482.3" height="64.1"/>
+        <rect class="cls-5" x="504.6" y="1304.2" width="482.3" height="64.1"/>
+      </g>
+      <g class="cls-45">
+        <text class="cls-108" transform="translate(511.2 1347.7)"><tspan x="0" y="0">wgpuDeviceC</tspan><tspan class="cls-111" x="225.4" y="0">r</tspan><tspan x="236.7" y="0">eateSampler()</tspan></text>
+      </g>
+      <g class="cls-43">
+        <rect class="cls-115" x="1210.5" y="1304.2" width="269.3" height="64.1"/>
+        <rect class="cls-5" x="1210.5" y="1304.2" width="269.3" height="64.1"/>
+      </g>
+      <g class="cls-32">
+        <text class="cls-108" transform="translate(1217.1 1347.7)"><tspan x="0" y="0">WGPUSampler</tspan></text>
+      </g>
+      <g class="cls-30">
+        <polyline class="cls-6" points="999.2 1336.3 1178.3 1336.3 1180.8 1336.3"/>
+        <polygon points="1178.3 1346.5 1198.7 1336.3 1178.3 1326.1 1178.3 1346.5"/>
+        <text class="cls-108" transform="translate(1209.8 2079.1)"><tspan x="0" y="0">{vertex_bu</tspan><tspan class="cls-111" x="168" y="0">f</tspan><tspan x="178.1" y="0">fe</tspan><tspan class="cls-110" x="208.7" y="0">r</tspan><tspan x="217.4" y="0">, instance_bu</tspan><tspan class="cls-112" x="429.4" y="0">f</tspan><tspan x="439.5" y="0">fer}</tspan></text>
+        <rect class="cls-107" x="436.3" y="2207.7" width="527" height="64.1"/>
+        <rect class="cls-5" x="436.3" y="2207.7" width="527" height="64.1"/>
+      </g>
+      <g class="cls-42">
+        <text class="cls-108" transform="translate(442.9 2251.2)"><tspan x="0" y="0">wgpuRenderPassEncoderDraw()</tspan></text>
+      </g>
+      <g class="cls-31">
+        <rect class="cls-107" x="436.3" y="2295.5" width="523.2" height="64.1"/>
+        <rect class="cls-5" x="436.3" y="2295.5" width="523.2" height="64.1"/>
+      </g>
+      <g class="cls-33">
+        <text class="cls-108" transform="translate(442.9 2339)"><tspan x="0" y="0">wgpuRenderPassEncoderEnd()</tspan></text>
+      </g>
+      <g class="cls-85">
+        <rect class="cls-107" x="436.3" y="2377.5" width="527" height="64.1"/>
+        <rect class="cls-5" x="436.3" y="2377.5" width="527" height="64.1"/>
+      </g>
+      <g class="cls-87">
+        <text class="cls-108" transform="translate(442.9 2421)"><tspan x="0" y="0">wgpuCommandEncoderFinish()</tspan></text>
+      </g>
+      <g class="cls-88">
+        <rect class="cls-107" x="436.3" y="2459.9" width="346.7" height="64.1"/>
+        <rect class="cls-5" x="436.3" y="2459.9" width="346.7" height="64.1"/>
+      </g>
+      <g class="cls-89">
+        <text class="cls-108" transform="translate(442.9 2503.4)"><tspan x="0" y="0">wgpuQueueSubmit()</tspan></text>
+      </g>
+      <g class="cls-90">
+        <rect class="cls-107" x="436.3" y="2547.3" width="361.7" height="64.1"/>
+        <rect class="cls-5" x="436.3" y="2547.3" width="361.7" height="64.1"/>
+      </g>
+      <g class="cls-82">
+        <text class="cls-108" transform="translate(442.9 2590.8)"><tspan x="0" y="0">wgpuSurfaceP</tspan><tspan class="cls-111" x="229.4" y="0">r</tspan><tspan x="240.7" y="0">esent()</tspan></text>
+      </g>
+      <g class="cls-83">
+        <rect class="cls-115" x="1211.2" y="2377.9" width="392.9" height="64.1"/>
+        <rect class="cls-5" x="1211.2" y="2377.9" width="392.9" height="64.1"/>
+      </g>
+      <g class="cls-84">
+        <text class="cls-108" transform="translate(1217.8 2421.4)"><tspan x="0" y="0">WGPUCommandBu</tspan><tspan class="cls-112" x="318.8" y="0">f</tspan><tspan class="cls-103" x="328.8" y="0">fer</tspan></text>
+      </g>
+      <g class="cls-91">
+        <polyline class="cls-6" points="978.8 2410 1178.3 2410 1180.8 2410"/>
+        <polygon points="1178.3 2420.2 1198.7 2410 1178.3 2399.8 1178.3 2420.2"/>
+        <rect class="cls-107" x="504.6" y="1460.4" width="517.7" height="64.1"/>
+        <rect class="cls-5" x="504.6" y="1460.4" width="517.7" height="64.1"/>
+      </g>
+      <g class="cls-86">
+        <text class="cls-108" transform="translate(511.2 1503.8)"><tspan x="0" y="0">wgpuDeviceC</tspan><tspan class="cls-111" x="225.4" y="0">r</tspan><tspan x="236.7" y="0">eateBindG</tspan><tspan class="cls-111" x="408.7" y="0">r</tspan><tspan x="420.1" y="0">oup()</tspan></text>
+      </g>
+      <g class="cls-81">
+        <rect class="cls-115" x="1210.5" y="1460.4" width="301.8" height="64.1"/>
+        <rect class="cls-5" x="1210.5" y="1460.4" width="301.8" height="64.1"/>
+      </g>
+      <g class="cls-93">
+        <text class="cls-108" transform="translate(1217.1 1503.8)"><tspan x="0" y="0">WGPUBindG</tspan><tspan class="cls-112" x="208.7" y="0">r</tspan><tspan x="220" y="0">oup</tspan></text>
+      </g>
+      <g class="cls-92">
+        <polyline class="cls-6" points="1034.1 1492.4 1178.3 1492.4 1180.8 1492.4"/>
+        <polygon points="1178.3 1502.6 1198.7 1492.4 1178.3 1482.2 1178.3 1502.6"/>
+        <polyline class="cls-2" points="1146.6 2067.2 1178.3 2067.2 1180.8 2067.2"/>
+        <polygon points="1178.3 2077.4 1198.7 2067.2 1178.3 2057 1178.3 2077.4"/>
+        <polyline class="cls-2" points="896 2154.6 1178.3 2154.6 1180.8 2154.6"/>
+        <polygon points="1178.3 2164.8 1198.7 2154.6 1178.3 2144.4 1178.3 2164.8"/>
+      </g>
+    </g>
+  </g>
+</svg>
