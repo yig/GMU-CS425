@@ -917,7 +917,7 @@ When it's time to draw a set of sprites:
         wgpuQueueSubmit( queue, 1, &command );
         ```
     3. Present the new frame with: `wgpuSurfacePresent( surface );`
-    4. Cleanup anything you created in the loop (such as the instance data buffer, the swap chain's texture view, the command encoder, per-sprite bind groups, etc).
+    4. Cleanup anything you created in the loop (such as the instance data buffer, the surface's texture view, the command encoder, per-sprite bind groups, etc).
 
 Steps 7–10 need a bit more elaboration.
 
@@ -1019,7 +1019,7 @@ Now you are ready for the call to `wgpuRenderPassEncoderDraw()`.
 
 ### Cleaning up
 
-At the end of draw, after `wgpuQueueSubmit()`, it's safe to release any resources we created in the function. (This is another place where a C++ [RAII](https://en.cppreference.com/w/cpp/language/raii) wrapper like [`webgpu_raii`](https://github.com/yig/webgpu_raii/tree/2023-11) will improve our lives.) This definitely includes the swap chain's texture view (`wgpuTextureViewRelease()`), the command encoder (`wgpuCommandEncoderRelease()`), and the render pass encoder (`wgpuRenderPassEncoderRelease()`). This can also include instance data buffer (see above), per-sprite bind groups (`wgpuBindGroupRelease()`), texture views (`wgpuTextureViewRelease()`), and the result of the call to `wgpuRenderPipelineGetBindGroupLayout()` (via `wgpuBindGroupLayoutRelease()`), unless you find a way to keep them around from frame to frame. The bind groups and texture views are unique per image, so you could create them once when loading an image.
+At the end of draw, after `wgpuQueueSubmit()`, it's safe to release any resources we created in the function. (This is another place where a C++ [RAII](https://en.cppreference.com/w/cpp/language/raii) wrapper like [`webgpu_raii`](https://github.com/yig/webgpu_raii/tree/2023-11) will improve our lives.) This definitely includes the surface's texture view (`wgpuTextureViewRelease()`), the command encoder (`wgpuCommandEncoderRelease()`), and the render pass encoder (`wgpuRenderPassEncoderRelease()`). This can also include instance data buffer (see above), per-sprite bind groups (`wgpuBindGroupRelease()`), texture views (`wgpuTextureViewRelease()`), and the result of the call to `wgpuRenderPipelineGetBindGroupLayout()` (via `wgpuBindGroupLayoutRelease()`), unless you find a way to keep them around from frame to frame. The bind groups and texture views are unique per image, so you could create them once when loading an image.
 
 ### Extensions
 
@@ -1599,3 +1599,4 @@ You don't need anything else. You might want:
 * 2024-09-10: Link to webgpu_raii tag that matches what WebGPU-Distribution serves.
 * 2024-09-10: Link to callback examples.
 * 2024-09-10: Forked WebGPU-Distribution so we don't get surprise breaking changes.
+* 2024-09-12: Removed two accidental remaining mentions of swap chains.
