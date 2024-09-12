@@ -373,12 +373,13 @@ FetchContent_MakeAvailable( soloud )
 ## SoLoud doesn't have its own `CMakeLists.txt`, so let's declare a library directly from its sources.
 file(GLOB soloud_sources "${soloud_SOURCE_DIR}/src/audiosource/*/*.c*" "${soloud_SOURCE_DIR}/src/c_api/*.c*" "${soloud_SOURCE_DIR}/src/core/*.c*" "${soloud_SOURCE_DIR}/src/filter/*.c*" "${soloud_SOURCE_DIR}/src/backend/miniaudio/soloud_miniaudio.cpp")
 add_library(soloud ${soloud_sources})
-target_compile_definitions(soloud PRIVATE WITH_MINIAUDIO MA_NO_RUNTIME_LINKING)
+target_compile_definitions(soloud PRIVATE WITH_MINIAUDIO)
 target_include_directories(soloud PUBLIC "${soloud_SOURCE_DIR}/include")
 if(APPLE)
     find_library(AudioUnit_LIBRARY AudioUnit)
     find_library(CoreAudio_LIBRARY CoreAudio)
     target_link_libraries(soloud INTERFACE ${AudioUnit_LIBRARY} ${CoreAudio_LIBRARY})
+    target_compile_definitions(soloud PRIVATE MA_NO_RUNTIME_LINKING)
 endif()
 ```
 
@@ -1605,3 +1606,4 @@ You don't need anything else. You might want:
 * 2024-09-10: Forked WebGPU-Distribution so we don't get surprise breaking changes.
 * 2024-09-12: Removed two accidental remaining mentions of swap chains.
 * 2024-09-12: Added diagram of WebGPU usage.
+* 2024-09-12: Moved Soloud `MA_NO_RUNTIME_LINKING` into `if(APPLE)`
