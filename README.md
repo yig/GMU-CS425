@@ -266,10 +266,10 @@ FetchContent_MakeAvailable( glfw3 )
 After `target_include_directories( illengine PUBLIC src )`, add it as a dependency:
 
 ```
-target_link_libraries( illengine PRIVATE glfw )
+target_link_libraries( illengine PUBLIC glfw )
 ```
 
-In your graphics manager C++ file, you will need to include the GLFW headers. You can do this in the implementation file only (the `.cpp` file). Users of your engine don't need to know that it uses GLFW to create a window. The engine is abstracting this detail! (If you include the GLFW headers in one of your `.h` files, you would need to change `PUBLIC` to `PRIVATE`.)
+In your graphics manager C++ file, you will need to include the GLFW headers. You can do this in the implementation file only (the `.cpp` file). Ideally, users of your engine don't need to know that it uses GLFW to create a window. The engine should abstract this detail. (In practice, it can be a little tricky to only include the GLFW headers from your `.cpp` files. If you manage to keep it our of your `.h` files, change the `PUBLIC` to `PRIVATE` in `target_link_libraries()`.)
 
 Since we are using `WebGPU` as our GPU API, we don't want GLFW to include any OpenGL headers directly for us. This is how to do it:
 
@@ -1629,3 +1629,4 @@ You don't need anything else. You might want:
 * 2024-09-12: Added diagram of WebGPU usage.
 * 2024-09-12: Moved Soloud `MA_NO_RUNTIME_LINKING` into `if(APPLE)`
 * 2024-09-12: Updated overlooked xmake add_requires to CMake-style.
+* 2024-09-13: By default, recommend PUBLIC linking against glfw.
