@@ -457,7 +457,7 @@ FetchContent_MakeAvailable( glfw3webgpu )
 
 Add `webgpu` and `glfw3webgpu` to your list of libraries in `target_link_libraries( illengine )`. Also add `target_copy_webgpu_binaries( helloworld )`, which some platforms need.
 
-Include the `<webgpu/webgpu.h>` header file in your graphics manager `.cpp` file and the `<glfw3webgpu.h>` header which allows us to use it with `GLFW`. One more thing; the [widely-supported](https://en.cppreference.com/w/cpp/compiler_support) [designated initializers](https://www.cppstories.com/2021/designated-init-cpp20) part of the C++20 standard lets us write much nicer looking WebGPU code. Change `set_languages("cxx17")` to `set_languages("cxx20")` to turn it on. We're going to be passing pointers to temporary `struct`s and arrays of `struct`s to WebGPU a lot. C allows this, but C++ needs a couple of workarounds. Add these two lines near the top of your graphics manager `.cpp`:
+Include the `<webgpu/webgpu.h>` header file in your graphics manager `.cpp` file and the `<glfw3webgpu.h>` header which allows us to use it with `GLFW`. One more thing; the [widely-supported](https://en.cppreference.com/w/cpp/compiler_support) [designated initializers](https://www.cppstories.com/2021/designated-init-cpp20) part of the C++20 standard lets us write much nicer looking WebGPU code. We're going to be passing pointers to temporary `struct`s and arrays of `struct`s to WebGPU a lot. C allows this, but C++ needs a couple of workarounds. Add these two lines near the top of your graphics manager `.cpp`:
 
 ```c++
 template< typename T > constexpr const T* to_ptr( const T& val ) { return &val; }
@@ -1631,3 +1631,4 @@ You don't need anything else. You might want:
 * 2024-09-12: Updated overlooked xmake add_requires to CMake-style.
 * 2024-09-13: By default, recommend PUBLIC linking against glfw.
 * 2024-09-16: Added `target_copy_webgpu_binaries( helloworld )`, which some platforms need.
+* 2024-09-17: Removed vestigial xmake command.
