@@ -72,6 +72,9 @@ if( USE_SOLOUD )
         target_link_libraries(soloud INTERFACE ${AudioUnit_LIBRARY} ${CoreAudio_LIBRARY})
         target_compile_definitions(soloud PRIVATE MA_NO_RUNTIME_LINKING)
     endif()
+    if(WINDOWS)
+        target_compile_definitions( soloud PRIVATE MA_NO_JACK )
+    endif()
 endif()
 
 FetchContent_Declare(

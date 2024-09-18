@@ -239,6 +239,23 @@ to download the headers and add `sokol` to your `target_link_libraries()` to acc
 
 See [Game Programming Patterns](https://gameprogrammingpatterns.com/game-loop.html) or [Fix Your Timestep](https://gafferongames.com/post/fix_your_timestep/) for more advanced approaches to managing time steps in loops.
 
+**N.B.** Some Windows users have found that `std::this_thread::sleep_for()` sleeps too long. To increase the resolution, the following might work. In your engine's startup method:
+```c++
+#if _WIN32
+timeBeginPeriod(1);
+#endif
+```
+
+You will need to include the relevant header:
+```c++
+#if _WIN32
+#include <Windows.h>
+#endif
+```
+
+In your `CMakeLists.txt`: `if( WIN32 ) target_link_libraries( target_name PRIVATE winmm ) endif()`
+
+
 ## The `GraphicsManager`
 
 At this point, all we want from the graphics manager is to create a window. We will use [GLFW](https://www.glfw.org/) for this. It's an extremely lightweight graphics and input handling library. We will use CMake's decentralized package management to install it. Add the following near the top of your `CMakeLists.txt` (just below the `project()` line):
@@ -394,6 +411,9 @@ if(APPLE)
     find_library(CoreAudio_LIBRARY CoreAudio)
     target_link_libraries(soloud INTERFACE ${AudioUnit_LIBRARY} ${CoreAudio_LIBRARY})
     target_compile_definitions(soloud PRIVATE MA_NO_RUNTIME_LINKING)
+endif()
+if(WIN32)
+    target_compile_definitions( soloud PRIVATE MA_NO_JACK )
 endif()
 ```
 
@@ -1632,3 +1652,4 @@ You don't need anything else. You might want:
 * 2024-09-13: By default, recommend PUBLIC linking against glfw.
 * 2024-09-16: Added `target_copy_webgpu_binaries( helloworld )`, which some platforms need.
 * 2024-09-17: Removed vestigial xmake command.
+* 2024-09-18: Added some Windows workarounds (sleep resolution and soloud compilation).
