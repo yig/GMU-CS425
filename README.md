@@ -260,7 +260,10 @@ timeEndPeriod(1);
 #endif
 ```
 
-In your `CMakeLists.txt`: `if( WIN32 ) target_link_libraries( target_name PRIVATE winmm ) endif()`
+In your `CMakeLists.txt`:
+```
+if( WIN32 ) target_link_libraries( target_name PRIVATE winmm ) endif()
+```
 
 
 ## The `GraphicsManager`
@@ -1661,3 +1664,4 @@ You don't need anything else. You might want:
 * 2024-09-17: Removed vestigial xmake command.
 * 2024-09-18: Added some Windows workarounds (sleep resolution and soloud compilation).
 * 2024-09-19: Mentioned timeEndPeriod() on Windows.
+* 2024-09-19: Windows time library instructions for CMakeLists pulled out into a code block for visibility.
