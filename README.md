@@ -253,6 +253,13 @@ You will need to include the relevant header:
 #endif
 ```
 
+You should also be a good citizen and restore the resolution in your engine's shutdown method:
+```c++
+#if _WIN32
+timeEndPeriod(1);
+#endif
+```
+
 In your `CMakeLists.txt`: `if( WIN32 ) target_link_libraries( target_name PRIVATE winmm ) endif()`
 
 
@@ -1653,3 +1660,4 @@ You don't need anything else. You might want:
 * 2024-09-16: Added `target_copy_webgpu_binaries( helloworld )`, which some platforms need.
 * 2024-09-17: Removed vestigial xmake command.
 * 2024-09-18: Added some Windows workarounds (sleep resolution and soloud compilation).
+* 2024-09-19: Mentioned timeEndPeriod() on Windows.
