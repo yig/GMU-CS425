@@ -505,7 +505,7 @@ To initialize WebGPU, we start by calling `WGPUInstance instance = wgpuCreateIns
 Next we need to initialize the rest of the sequence (`WGPUSurface`, `WGPUAdapter`, `WGPUDevice`, `WGPUQueue`). The code is fairly boilerplate. Requesting an adapter and a device requires a callback function, perhaps because JavaScript is asynchronous. We don't have `await` in C++, so the code looks a bit uglier:
 
 ```c++
-WGPUSurface surface = glfwGetWGPUSurface( instance, window );
+WGPUSurface surface = glfwCreateWindowWGPUSurface( instance, window );
 
 WGPUAdapter adapter = nullptr;
 wgpuInstanceRequestAdapter(
@@ -1665,3 +1665,4 @@ You don't need anything else. You might want:
 * 2024-09-18: Added some Windows workarounds (sleep resolution and soloud compilation).
 * 2024-09-19: Mentioned timeEndPeriod() on Windows.
 * 2024-09-19: Windows time library instructions for CMakeLists pulled out into a code block for visibility.
+* 2024-09-24: Changed `glfwGetWGPUSurface()` to `glfwCreateWindowWGPUSurface()`.
