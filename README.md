@@ -1204,8 +1204,6 @@ You can load a script with `lua.load_file( path );`, which returns an object of 
 
 You should provide a way for users to run a script they've loaded. You could simply give them access to the `sol::load_result` by returning a reference to it. If you expose enough of your engine's functionality to Lua, the C++ code your users will need to write could be limited to loading a setup script and running it.
 
-**TODO MENTION THE DEBUGGER**
-
 You should expose your **input manager** functionality to Lua. For example, your key down function could be exposed as simply as `lua.set_function( "KeyIsDown", [&]( const int keycode ) { return input.KeyIsDown( keycode ); } );`. You can expose your keycodes via [`lua.new_enum`](https://sol2.readthedocs.io/en/latest/api/table.html?highlight=new_enum#new-enum):
 ```c++
 lua.new_enum( "KEYBOARD",
@@ -1216,6 +1214,8 @@ lua.new_enum( "KEYBOARD",
 Then a Lua script can call `KeyIsDown( KEYBOARD.SPACE )` as needed. You should also expose a function to quit your game.
 
 You should expose your **sound manager**'s ability to play a sound (optional).
+
+You should expose your managers' asset loading capabilities (loading images, scripts, and optionally sounds). This will allow users to write all of their setup code in Lua.
 
 Users of your engine should have a way to access the `sol::state lua` so they can make C++ structs and functions available to use and call from Lua. You can register `struct`s like `Sprite` with `sol` by using the [`new_usertype` function](https://sol2.readthedocs.io/en/latest/tutorial/cxx-in-lua.html). For example, you can expose a `struct Person { string name; int age; };` via:
 ```c++
@@ -1249,16 +1249,14 @@ You can make a C++ function callable from Lua using `lua.set_function()`. This w
 
 If you wish, you can organize the functionality you expose to Lua with [something like namespaces](https://sol2.readthedocs.io/en/latest/tutorial/all-the-things.html?highlight=get_or_create#namespacing).
 
-### Extensions
-
-* Expose more of your engine's functionality. For example, if you want your users to be able to write all of their setup code in Lua, you should expose asset loading functionality.
+There is [an excellent Lua debugger](https://github.com/slembcke/debugger.lua) that comes as a single file that you can load and use.
 
 ### Checkpoint 5 Upload
 
 **You have reached the fifth checkpoint.** Upload your code. Delete or move aside your `build` subdirectory and then zip your entire directory. For this checkpoint:
 
 * Your engine should have a script manager that lets users run Lua scripts on demand.
-* Your engine should expose to Lua scripts the ability to query input state, quit the game, manipulate sprites, and (optionally) play sounds.
+* Your engine should expose to Lua scripts the ability to query input state, quit the game, manipulate sprites, load assets, and (optionally) play sounds.
 
 ## Game Objects (Entity Component System)
 
@@ -1681,3 +1679,4 @@ You don't need anything else. You might want:
 * 2024-09-24: Changed `glfwGetWGPUSurface()` to `glfwCreateWindowWGPUSurface()`.
 * 2024-10-02: Scripting checkpoint is ready.
 * 2024-10-02: Updated sol2 repos to fix llvm 18 regression.
+* 2024-10-02: Asset loading is mandatory for script manager. Also mentioned Lua debugger.
