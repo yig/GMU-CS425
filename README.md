@@ -406,7 +406,7 @@ It's easier (much less code) to play sounds than draw graphics to the screen, so
 FetchContent_Declare(
   soloud
   GIT_REPOSITORY https://github.com/jarikomppa/soloud
-  GIT_TAG        master
+  GIT_TAG        master # tested with: e82fd32c1f62183922f08c14c814a02b58db1873
   GIT_SHALLOW TRUE
   GIT_PROGRESS TRUE
 )
@@ -478,7 +478,7 @@ FetchContent_MakeAvailable( webgpu )
 FetchContent_Declare(
   glfw3webgpu
   GIT_REPOSITORY https://github.com/eliemichel/glfw3webgpu
-  GIT_TAG        main
+  GIT_TAG        main # tested with 798c55686d1d4479a49de392916c01f7be5d2c1a
   GIT_SHALLOW TRUE
   GIT_PROGRESS TRUE
 )
@@ -864,7 +864,7 @@ For actually reading images from disk and decoding them into CPU memory, we'll u
 FetchContent_Declare(
   stb
   GIT_REPOSITORY https://github.com/nothings/stb/
-  GIT_TAG        master
+  GIT_TAG        master # tested with f75e8d1cad7d90d72ef7a4661f1b994ef78b4e31
   GIT_SHALLOW TRUE
   GIT_PROGRESS TRUE
 )
@@ -1141,16 +1141,145 @@ Some computers have multiple GPUs, like a laptop with a discrete and integrated 
 * Your engine should have a graphics manager that lets users draw images to the screen.
 * Your `demo/helloworld.cpp` should load one or more images during startup and draw one or more sprites inside the main loop.
 
+
+## Scripting
+
+At this point, you have a working game engine. It can draw graphics, process input, and (optionally) play sounds. Someone could use your engine to make a game! They would startup your engine, setup their game (load assets and create a list of sprites), and then tell the engine to run the main loop, passing a callback for updating the game every frame. In the next checkpoint (not this one), you will add a proper notion of entities via an Entity Component System. First, we will add scripting support to our engines. This will also allow users to write much or all of the game logic in a scripting language without recompiling. This will also make it easy to implement an Entity Component System.
+
+[Lua](https://www.lua.org/) is a popular choice. To quote from the [about](https://www.lua.org/about.html) page:
+
+> Lua is a powerful, efficient, lightweight, embeddable scripting language. It supports procedural programming, object-oriented programming, functional programming, data-driven programming, and data description.
+
+> Lua combines simple procedural syntax with powerful data description constructs based on associative arrays and extensible semantics. Lua is dynamically typed, runs by interpreting bytecode with a register-based virtual machine, and has automatic memory management with incremental garbage collection, making it ideal for configuration, scripting, and rapid prototyping.
+
+Official documentation for the Lua programming language is its [reference manual](https://www.lua.org/manual/). There is also an official book, *Programming in Lua*. The [first edition](https://www.lua.org/pil/contents.html) is freely available online. I found the [Wikipedia page](https://en.wikipedia.org/wiki/Lua_(programming_language) and [these](https://devhints.io/lua) [two](https://cheatsheets.one/tech/lua) cheat sheets to be useful. Lua famously has only one data structure called a [table](https://www.lua.org/pil/2.5.html); it is a combination array and hash table.
+
+To embed Lua in our engines, we will use the [`sol`](https://sol2.readthedocs.io/en/latest/) C++ binding library. (You will sometimes see it referred to as `sol2` and `sol3`.) `sol` makes it as easy as possible to interface C++ code with Lua code and vice versa. (It really is as easy as possible! The [developer](https://thephd.dev/) is involved in the C++ (and C) language standards.) You'll be able to declare Lua functions that are written in C++ and expose C++ types to Lua (for use in Lua scripts). You'll be able to call Lua code from C++ (for executing the scripts). The `sol` documentation has a lot of examples. Look over [the tutorial](https://sol2.readthedocs.io/en/latest/tutorial/tutorial-top.html) to get a feel for how to use it. (If you are using the `gcc` compiler, and it gets very slow during this checkpoint, try switching to release mode. `gcc` has a [known bug](https://stackoverflow.com/questions/33443626/gcc-compilation-very-slow-large-file/33456247#33456247).)
+
+You will have a lot of architectural freedom in this checkpoint. Should the scripting manager startup first, and then other managers (sound, input) make calls to the scripting manager to expose their functionality to Lua? Or should the scripting manager startup last and take on the task of exposing the other managers' functionality itself? You are free to make these architectural choices (and discuss them with each other). I will describe scripting functionality that our engines must support. I will also give examples of how to use the `sol` library.
+
+First things first. Let's add `lua` and `sol` to our `CMakeLists.txt` with
+
+```
+FetchContent_Declare(
+    lua
+    GIT_REPOSITORY https://github.com/walterschell/Lua
+    GIT_TAG v5.4.5
+    GIT_SHALLOW TRUE
+    GIT_PROGRESS TRUE
+    )
+set(LUA_ENABLE_TESTING OFF CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable( lua )
+
+FetchContent_Declare(
+    sol2
+    GIT_REPOSITORY https://github.com/ThePhD/sol2
+    GIT_TAG v3.3.1
+    GIT_SHALLOW TRUE
+    GIT_PROGRESS TRUE
+    )
+FetchContent_MakeAvailable( sol2 )
+```
+
+near the top and, inside `target_link_libraries( illengine ... )`, add `sol2` and `lua_static`. We will want to add the `sol2` package publicly so that users can make their game's data structures accessible from inside Lua. Next let's make a script manager. The script manager should include the `sol` header.
+
+```c++
+#define SOL_ALL_SAFETIES_ON 1
+#include <sol/sol.hpp>
+```
+
+The entirety of the Lua environment is contained in a single class called `sol::state`. Your script manager must store an instance of this class. For the purposes of this document, let's assume it's declared as `sol::state lua`. When your script manager starts up, I recommend telling `lua` to load some convenient built-in libraries:
+```c++
+lua.open_libraries(sol::lib::base, sol::lib::math, sol::lib::table);
+```
+This makes these standard libraries ([manual](https://www.lua.org/manual/5.4/manual.html#6), [book](https://www.lua.org/pil/contents.html#P3)) available to scripts. For debugging, I like to make the math random seed always the same. You can do that with `lua.script("math.randomseed(0)");`. You just executed your first Lua code! It's that easy to call Lua from C++.
+
+The script manager should provide a way to load scripts from files with something like:
+```c++
+bool LoadScript( const string& name, const string& path );
+```
+You can load a script with `lua.load_file( path );`, which returns an object of type `sol::load_result`. You can use an `unordered_map` from names to `sol::load_result`. The `sol::load_result` type can be called like a function. Any parameters will be passed to the Lua script. See [this tutorial example](https://sol2.readthedocs.io/en/latest/tutorial/all-the-things.html#passing-arguments-to-scripts) or the small example [here](demo/lua_parameters.cpp).
+
+> 🕵️: If you create a `sol::load_result`, as in `sol::load_result s = lua.load_file( path );`, and then later try to copy it into your map by assigning it with `=`, you will get a very confusing error about `operator=` having been deleted. This is because it's a heavy-weight object that the author doesn't want you to copy. The solution is to *move* rather than *copy* it into the map, as in `m[ name ] = std::move( s );`. After the move, `s` will no longer contain the loaded script. Alternatively, you could directly load the script into the map, as in `m[ name ] = lua.load_file( path );`.
+
+You should provide a way for users to run a script they've loaded. You could simply give them access to the `sol::load_result` by returning a reference to it. If you expose enough of your engine's functionality to Lua, the C++ code your users will need to write could be limited to loading a setup script and running it.
+
+**TODO MENTION THE DEBUGGER**
+
+You should expose your **input manager** functionality to Lua. For example, your key down function could be exposed as simply as `lua.set_function( "KeyIsDown", [&]( const int keycode ) { return input.KeyIsDown( keycode ); } );`. You can expose your keycodes via [`lua.new_enum`](https://sol2.readthedocs.io/en/latest/api/table.html?highlight=new_enum#new-enum):
+```c++
+lua.new_enum( "KEYBOARD",
+    "SPACE", KEY_SPACE,
+    ...
+    );
+```
+Then a Lua script can call `KeyIsDown( KEYBOARD.SPACE )` as needed. You should also expose a function to quit your game.
+
+You should expose your **sound manager**'s ability to play a sound (optional).
+
+Users of your engine should have a way to access the `sol::state lua` so they can make C++ structs and functions available to use and call from Lua. You can register `struct`s like `Sprite` with `sol` by using the [`new_usertype` function](https://sol2.readthedocs.io/en/latest/tutorial/cxx-in-lua.html). For example, you can expose a `struct Person { string name; int age; };` via:
+```c++
+lua.new_usertype<Person>("Person",
+    sol::constructors<Person()>(), 
+    "name", &Person::name,
+    "age", &Person::age
+    );
+```
+You can access the `.name` and `.age` members of a `Person` in Lua. You can create a new `Person` inside a Lua script via `Person.new()`.
+
+You may wish to expose your `vec2` and `vec3` types. Here is a fancy/gnarly version that exposes their different constructors and also the `+`, `-`, and `*` functionality that lets us multiply a `vec3` by a scalar or add or subtract two `vec3`s:
+```c++
+lua.new_usertype<glm::vec3>("vec3",
+    sol::constructors<glm::vec3(), glm::vec3(float), glm::vec3(float, float, float)>(),
+    "x", &glm::vec3::x,
+    "y", &glm::vec3::y,
+    "z", &glm::vec3::z,
+    // optional and fancy: operator overloading. see: https://github.com/ThePhD/sol2/issues/547
+    sol::meta_function::addition, sol::overload( [](const glm::vec3& v1, const glm::vec3& v2) -> glm::vec3 { return v1+v2; } ),
+    sol::meta_function::subtraction, sol::overload( [](const glm::vec3& v1, const glm::vec3& v2) -> glm::vec3 { return v1-v2; } ),
+    sol::meta_function::multiplication, sol::overload(
+        [](const glm::vec3& v1, const glm::vec3& v2) -> glm::vec3 { return v1*v2; },
+        [](const glm::vec3& v1, float f) -> glm::vec3 { return v1*f; },
+        [](float f, const glm::vec3& v1) -> glm::vec3 { return f*v1; }
+    )
+);
+```
+
+You can make a C++ function callable from Lua using `lua.set_function()`. This works well with C++ lambdas, so that you could do something like `lua.set_function( "PlaySound", []( const std::string& name ) { global_engine.foo.PlaySound(name); } );`
+
+If you wish, you can organize the functionality you expose to Lua with [something like namespaces](https://sol2.readthedocs.io/en/latest/tutorial/all-the-things.html?highlight=get_or_create#namespacing).
+
+### Extensions
+
+* Expose more of your engine's functionality. For example, if you want your users to be able to write all of their setup code in Lua, you should expose asset loading functionality.
+
+### Checkpoint 5 Upload
+
+**You have reached the fifth checkpoint.** Upload your code. Delete or move aside your `build` subdirectory and then zip your entire directory. For this checkpoint:
+
+* Your engine should have a script manager that lets users run Lua scripts on demand.
+* Your engine should expose to Lua scripts the ability to query input state, quit the game, manipulate sprites, and (optionally) play sounds.
+
 ## Game Objects (Entity Component System)
 
-**Warning: Don't work on this checkpoint yet. I am considering making scripting first this year, and then implementing the ECS in Lua.**
+**Warning: Don't work on this checkpoint yet. I will update this section with an ECS implemention in Lua.**
 
-Your engine is now capable of drawing graphics, reading input, and (optionally) playing sounds. It's time to add a notion of game objects. This will allow users of your engine to populate their games with objects and update them in response to user input and the passage of time (such as physics). This will also give your graphics manager something to draw every frame. Rather than creating a game object base class that all user classes derive from, we will implement a modern game architecture design called [Entity Component System (ECS)](https://github.com/SanderMertens/ecs-faq). The key idea is to separate data (Components) from game Entities (integers IDs) and algorithms (Systems). This has several advantages:
+It's time to add a notion of game objects. This will provide users of your engine a coherent way to populate their games with objects and update them in response to user input and the passage of time (such as physics). Your graphics manager will draw game objects every frame. Rather than creating a game object base class that all user classes derive from, we will implement a modern game architecture design called [Entity Component System (ECS)](https://github.com/SanderMertens/ecs-faq). The key idea is to separate data (Components) from game Entities (integers IDs) and algorithms (Systems). This has several advantages:
 
 1. You avoid awkward OOP hierarchies (do drawable objects subclass physics body objects or vice versa).
 2. When a game's requirements change, you don't have to refactor your OOP classes.
 3. It makes efficient use of our computing hardware (data locality and opportunities for parallelism).
 4. It's easy to save and load your entities and components to and from a file, and to inspect or edit them with a GUI.
+
+---
+
+**TODO MOVE THIS TO ECS** The script manager should also declare a `Script` struct with a `name` field as a component for your entity component system. The script manager should have an update method to be called every frame that uses your entity component system to iterate over each entity with a `Script` component and run the script with the entity as the parameter. That way, any script beginning `local entity = ...` will run on that entity. (You really type the `...`. See the examples above.) You will want to decide if these scripts run before or after the user's C++ callback, whether you want an additional C++ callback so that one runs before and one after, or whether the user's C++ callback is responsible for calling an update method of the script manager.
+
+**TODO MOVE SOME OF THIS TO ECS** You should expose your **entity component systems**'s functionality for creating an entity, destroying an entity, and getting built-in components. Exposing the functions to create and destroy entities is straightforward. However, you can't directly expose your ECS's templated get-a-component function. You will have to expose a different getter for each component. For example, expose a `"GetSprite"` Lua function that returns your ECS's `Get<Sprite>(e)` by reference (or by pointer). `sol` will make the struct available to Lua by reference. (If you are using a C++ lambda to wrap your `Get<Sprite>(e)`, you'll need to explicitly specify its return value to be a reference, as in `[&]( EntityID e ) -> Sprite& { return ecs.Get<Sprite>(e); }` or else return a pointer.) This means that Lua scripts will be able to directly modify the struct members, as in `GetPosition(e).x = 10`. (The only things `sol` doesn't pass by reference are primitive Lua type like an integer, float, or string.)
+
+**TODO MOVE SOME OF THIS TO ECS** Users of your engine should have a way to access the `sol::state lua` so they can call `lua.new_usertype()` for their own structs and `lua.set_function()` to expose their own functions. That way users can expose their component structs, `Get<Component>()` functions, and even `ForEach<Components...>()` for specific sets of components. (`sol` seamlessly supports Lua functions as callbacks in C++.) Alternatively, if users don't expose their own components, Lua scripts would only be able to call the functions involving the engine's built-in components (to create, destroy, and access components the engine will look for). In that case, a script could manage additional entity properties on its own via Lua's convenient [table data structure](https://www.lua.org/pil/2.5.html).
+
+---
 
 ### Components
 
@@ -1355,131 +1484,15 @@ If your ECS is global (or lives inside a global variable), you can make your `En
 * A more efficient sparse set that stores its component data in a single, dense, contiguous chunk of memory with no gaps. `unordered_map` doesn't actually do that.
 * Support for [range-based for loops](https://stackoverflow.com/questions/8164567/how-to-make-my-custom-type-to-work-with-range-based-for-loops).
 
-### Checkpoint 5 Upload
-
-**You have reached the fifth checkpoint.** Upload your code. Delete or move aside your `build` subdirectory and then zip your entire directory. For this checkpoint:
-
-* Your engine should have an entity component system that lets users create entities, attach and remove components to and from them, and run algorithms over the components.
-* Your graphics manager's draw method should iterate over your ECS entities rather than taking a parameter.
-* Your `demo/helloworld.cpp` should create entities with a `Sprite` component. You can re-use the `Sprite` class you made for the previous checkpoint as the component.
-
-## Scripting
-
-At this point, you have a working game engine. Someone can use your engine to make a game! They would startup your engine, setup their game (create entities and so on), and then tell the engine to run the main loop, passing a callback for updating the game every frame. Even more fun? Adding scripting support to your engine, so users can write much or all of the game logic in a scripting language without recompiling.
-
-[Lua](https://www.lua.org/) is a popular choice. To quote from the [about](https://www.lua.org/about.html) page:
-
-> Lua is a powerful, efficient, lightweight, embeddable scripting language. It supports procedural programming, object-oriented programming, functional programming, data-driven programming, and data description.
-
-> Lua combines simple procedural syntax with powerful data description constructs based on associative arrays and extensible semantics. Lua is dynamically typed, runs by interpreting bytecode with a register-based virtual machine, and has automatic memory management with incremental garbage collection, making it ideal for configuration, scripting, and rapid prototyping.
-
-Official documentation for the Lua programming language is its [reference manual](https://www.lua.org/manual/). There is also an official book, *Programming in Lua*. The [first edition](https://www.lua.org/pil/contents.html) is freely available online.
-
-To embed Lua in our engines, we will use the [`sol`](https://sol2.readthedocs.io/en/latest/) C++ binding library. (You will sometimes see it referred to as `sol2` and `sol3`.) `sol` makes it as easy as possible to interface C++ code with Lua code and vice versa. (It really is as easy as possible! The [developer](https://thephd.dev/) is involved in the C++ (and C) language standards.) You'll be able to declare Lua functions that are written in C++ and expose C++ types to Lua (for use in Lua scripts). You'll be able to call Lua code from C++ (for executing the scripts). The `sol` documentation has a lot of examples. Look over [the tutorial](https://sol2.readthedocs.io/en/latest/tutorial/tutorial-top.html) to get a feel for how to use it. (If you are using the `gcc` compiler, and it gets very slow during this checkpoint, try switching to release mode. `gcc` has a [known bug](https://stackoverflow.com/questions/33443626/gcc-compilation-very-slow-large-file/33456247#33456247).)
-
-You will have a lot of architectural freedom in this checkpoint. Should the scripting manager startup first, and then other managers (sound, input, ECS) make calls to the scripting manager to expose their functionality to Lua? Or should the scripting manager startup last and take on the task of exposing the other managers' functionality itself? You are free to make these architectural choices (and discuss them with each other). I will describe scripting functionality that our engines must support. I will also give examples of how to use the `sol` library.
-
-First things first. Let's add `lua` and `sol` to our `CMakeLists.txt` with
-
-```
-FetchContent_Declare(
-    lua
-    GIT_REPOSITORY https://github.com/walterschell/Lua
-    GIT_TAG v5.4.5
-    GIT_SHALLOW TRUE
-    GIT_PROGRESS TRUE
-    )
-set(LUA_ENABLE_TESTING OFF CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable( lua )
-
-FetchContent_Declare(
-    sol2
-    GIT_REPOSITORY https://github.com/ThePhD/sol2
-    GIT_TAG v3.3.1
-    GIT_SHALLOW TRUE
-    GIT_PROGRESS TRUE
-    )
-FetchContent_MakeAvailable( sol2 )
-```
-
-near the top and, inside `target_link_libraries( illengine ... )`, add `sol2` and `lua_static`. We will want to add the `sol2` package publicly so that users can make their game's data structures accessible from inside Lua. Next let's make a script manager. The script manager should include the `sol` header.
-
-```c++
-#define SOL_ALL_SAFETIES_ON 1
-#include <sol/sol.hpp>
-```
-
-The entirety of the Lua environment is contained in a single class called `sol::state`. Your script manager must store an instance of this class. For the purposes of this document, let's assume it's declared as `sol::state lua`. When your script manager starts up, I recommend telling `lua` to load some convenient built-in libraries:
-```c++
-lua.open_libraries(sol::lib::base, sol::lib::math, sol::lib::table);
-```
-This makes these standard libraries ([manual](https://www.lua.org/manual/5.4/manual.html#6), [book](https://www.lua.org/pil/contents.html#P3)) available to scripts. For debugging, I like to make the math random seed always the same. You can do that with `lua.script("math.randomseed(0)");`. You just executed your first Lua code! It's that easy to call Lua from C++.
-
-The script manager should provide a way to load scripts from files with something like:
-```c++
-bool LoadScript( const string& name, const string& path );
-```
-You can load a script with `lua.load_file( path );`, which returns an object of type `sol::load_result`. You can use an `unordered_map` from names to `sol::load_result`. The `sol::load_result` type can be called like a function. Any parameters will be passed to the Lua script. See [this tutorial example](https://sol2.readthedocs.io/en/latest/tutorial/all-the-things.html#passing-arguments-to-scripts) or the small example [here](demo/lua_parameters.cpp).
-
-> 🕵️: If you create a `sol::load_result`, as in `sol::load_result s = lua.load_file( path );`, and then later try to copy it into your map by assigning it with `=`, you will get a very confusing error about `operator=` having been deleted. This is because it's a heavy-weight object that the author doesn't want you to copy. The solution is to *move* rather than *copy* it into the map, as in `m[ name ] = std::move( s );`. After the move, `s` will no longer contain the loaded script. Alternatively, you could directly load the script into the map, as in `m[ name ] = lua.load_file( path );`.
-
-You should provide a way for users to run a script they've loaded. You could simply give them access to the `sol::load_result` by returning a reference to it. If you expose enough of your engine's functionality to Lua, the C++ code your users will need to write could be limited to loading a setup script and running it.
-
-The script manager should also declare a `Script` struct with a `name` field as a component for your entity component system. The script manager should have an update method to be called every frame that uses your entity component system to iterate over each entity with a `Script` component and run the script with the entity as the parameter. That way, any script beginning `local entity = ...` will run on that entity. (You really type the `...`. See the examples above.) You will want to decide if these scripts run before or after the user's C++ callback, whether you want an additional C++ callback so that one runs before and one after, or whether the user's C++ callback is responsible for calling an update method of the script manager.
-
-You should expose your **input manager** functionality to Lua. For example, your key down function could be exposed as simply as `lua.set_function( "KeyIsDown", [&]( const int keycode ) { return input.KeyIsDown( keycode ); } );`. You can expose your keycodes via [`lua.new_enum`](https://sol2.readthedocs.io/en/latest/api/table.html?highlight=new_enum#new-enum):
-```c++
-lua.new_enum( "KEYBOARD",
-    "SPACE", KEY_SPACE,
-    ...
-    );
-```
-Then a Lua script can call `KeyIsDown( KEYBOARD.SPACE )` as needed. You should also expose a function to quit your game.
-
-You should expose your **sound manager**'s ability to play a sound (optional).
-
-You should expose your **entity component systems**'s functionality for creating an entity, destroying an entity, and getting built-in components. Exposing the functions to create and destroy entities is straightforward. However, you can't directly expose your ECS's templated get-a-component function. You will have to expose a different getter for each component. For example, expose a `"GetSprite"` Lua function that returns your ECS's `Get<Sprite>(e)` by reference (or by pointer). `sol` will make the struct available to Lua by reference. (If you are using a C++ lambda to wrap your `Get<Sprite>(e)`, you'll need to explicitly specify its return value to be a reference, as in `[&]( EntityID e ) -> Sprite& { return ecs.Get<Sprite>(e); }` or else return a pointer.) This means that Lua scripts will be able to directly modify the struct members, as in `GetPosition(e).x = 10`. (The only things `sol` doesn't pass by reference are primitive Lua type like an integer, float, or string.) You will need to register `struct`s like `Sprite` and our hypothetical `Position` with `sol`. To do that, use the [`new_usertype` function](https://sol2.readthedocs.io/en/latest/tutorial/cxx-in-lua.html). For example, you can expose a `struct Person { string name; int age; };` via:
-```c++
-lua.new_usertype<Person>("Person",
-    sol::constructors<Person()>(), 
-    "name", &Person::name,
-    "age", &Person::age
-    );
-```
-You can access the `.name` and `.age` members of a `Person` in Lua. You can create a new `Person` inside a Lua script via `Person.new()`.
-
-You may wish to expose your `vec2` and `vec3` types. Here is a fancy/gnarly version that exposes their different constructors and also the `+`, `-`, and `*` functionality that lets us multiply a `vec3` by a scalar or add or subtract two `vec3`s:
-```c++
-lua.new_usertype<glm::vec3>("vec3",
-    sol::constructors<glm::vec3(), glm::vec3(float), glm::vec3(float, float, float)>(),
-    "x", &glm::vec3::x,
-    "y", &glm::vec3::y,
-    "z", &glm::vec3::z,
-    // optional and fancy: operator overloading. see: https://github.com/ThePhD/sol2/issues/547
-    sol::meta_function::addition, sol::overload( [](const glm::vec3& v1, const glm::vec3& v2) -> glm::vec3 { return v1+v2; } ),
-    sol::meta_function::subtraction, sol::overload( [](const glm::vec3& v1, const glm::vec3& v2) -> glm::vec3 { return v1-v2; } ),
-    sol::meta_function::multiplication, sol::overload(
-        [](const glm::vec3& v1, const glm::vec3& v2) -> glm::vec3 { return v1*v2; },
-        [](const glm::vec3& v1, float f) -> glm::vec3 { return v1*f; },
-        [](float f, const glm::vec3& v1) -> glm::vec3 { return f*v1; }
-    )
-);
-```
-
-Users should have a way to access the `sol::state lua` so they can call `lua.new_usertype()` for their own structs and `lua.set_function()` to expose their own functions. That way users can expose their component structs, `Get<Component>()` functions, and even `ForEach<Components...>()` for specific sets of components. (`sol` seamlessly supports Lua functions as callbacks in C++.) Alternatively, if users don't expose their own components, Lua scripts would only be able to call the functions involving the engine's built-in components (to create, destroy, and access components the engine will look for). In that case, a script could manage additional entity properties on its own via Lua's convenient [table data structure](https://www.lua.org/pil/2.5.html).
-
-If you wish, you can organize the functionality you expose to Lua with [something like namespaces](https://sol2.readthedocs.io/en/latest/tutorial/all-the-things.html?highlight=get_or_create#namespacing).
-
-### Extensions
-
-* Expose more of your engine's functionality. For example, if you want your users to be able to write all of their setup code in Lua, you should expose asset loading functionality.
-
 ### Checkpoint 6 Upload
 
 **You have reached the sixth checkpoint.** Upload your code. Delete or move aside your `build` subdirectory and then zip your entire directory. For this checkpoint:
 
-* Your engine should have a script manager that lets users run Lua scripts on demand and lets users attach a `Script` component to entities that will be run automatically in the game loop.
-* Your engine should expose to Lua scripts the ability to query input state, quit the game, manipulate sprites, and (optionally) play sounds.
+* Your engine should have an entity component system that lets users create entities, attach and remove components to and from them, and run algorithms over the components.
+* Your graphics manager's draw method should iterate over your ECS entities rather than taking a parameter.
+* You should let users attach a script component to entities that will be run automatically in the game loop.
+* Your `demo/helloworld.cpp` should create entities with a `Sprite` component. You can re-use the `Sprite` class you made in a previous checkpoint as the component.
+
 
 ## What's Next?
 
@@ -1666,3 +1679,4 @@ You don't need anything else. You might want:
 * 2024-09-19: Mentioned timeEndPeriod() on Windows.
 * 2024-09-19: Windows time library instructions for CMakeLists pulled out into a code block for visibility.
 * 2024-09-24: Changed `glfwGetWGPUSurface()` to `glfwCreateWindowWGPUSurface()`.
+* 2024-10-02: Scripting checkpoint is ready.
