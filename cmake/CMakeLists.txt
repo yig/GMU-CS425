@@ -33,11 +33,12 @@ FetchContent_Declare(
     )
 FetchContent_MakeAvailable( glm )
 
+## Can change `wgpu` to `dawn`
+set(WEBGPU_BACKEND "wgpu" CACHE STRING "WebGPU backend (wgpu or dawn)")
 FetchContent_Declare(
   webgpu
-  GIT_REPOSITORY https://github.com/eliemichel/WebGPU-distribution
-  ## Can change `wgpu` to `dawn`
-  GIT_TAG        ${WEBGPU_BACKEND}
+  GIT_REPOSITORY https://github.com/yig/WebGPU-distribution
+  GIT_TAG        main
   GIT_SHALLOW TRUE
   GIT_PROGRESS TRUE
 )
@@ -110,8 +111,8 @@ FetchContent_MakeAvailable( lua )
 
 FetchContent_Declare(
     sol2
-    GIT_REPOSITORY https://github.com/ThePhD/sol2
-    GIT_TAG v3.3.1
+    GIT_REPOSITORY https://github.com/yig/sol2
+    GIT_TAG develop
     GIT_SHALLOW TRUE
     GIT_PROGRESS TRUE
     )

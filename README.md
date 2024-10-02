@@ -1173,8 +1173,8 @@ FetchContent_MakeAvailable( lua )
 
 FetchContent_Declare(
     sol2
-    GIT_REPOSITORY https://github.com/ThePhD/sol2
-    GIT_TAG v3.3.1
+    GIT_REPOSITORY https://github.com/yig/sol2
+    GIT_TAG develop
     GIT_SHALLOW TRUE
     GIT_PROGRESS TRUE
     )
@@ -1680,3 +1680,4 @@ You don't need anything else. You might want:
 * 2024-09-19: Windows time library instructions for CMakeLists pulled out into a code block for visibility.
 * 2024-09-24: Changed `glfwGetWGPUSurface()` to `glfwCreateWindowWGPUSurface()`.
 * 2024-10-02: Scripting checkpoint is ready.
+* 2024-10-02: Updated sol2 repos to fix llvm 18 regression.
