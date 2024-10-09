@@ -1198,11 +1198,9 @@ The script manager should provide a way to load scripts from files with somethin
 ```c++
 bool LoadScript( const string& name, const string& path );
 ```
-You can load a script with `lua.load_file( path );`, which returns an object of type `sol::load_result`. You can use an `unordered_map` from names to `sol::load_result`. The `sol::load_result` type can be called like a function. Any parameters will be passed to the Lua script. See [this tutorial example](https://sol2.readthedocs.io/en/latest/tutorial/all-the-things.html#passing-arguments-to-scripts) or the small example [here](demo/lua_parameters.cpp).
+You can load a script with `lua.load_file( path );`, which returns an object of type `sol::load_result`. After you check if it is `.valid()`, you can store it (assign it to) a variable of type `protected_function`. You can create an `unordered_map` from a name to a `sol::protected_function`. (Don't put a `sol::load_result` in your map; it can become invalid in certain circumstances.) The `sol::protected_function` type can be called like a C++ function. Any parameters will be passed to the Lua script. See [this tutorial example](https://sol2.readthedocs.io/en/latest/tutorial/all-the-things.html#passing-arguments-to-scripts) or the small example [here](demo/lua_parameters.cpp).
 
-> 🕵️: If you create a `sol::load_result`, as in `sol::load_result s = lua.load_file( path );`, and then later try to copy it into your map by assigning it with `=`, you will get a very confusing error about `operator=` having been deleted. This is because it's a heavy-weight object that the author doesn't want you to copy. The solution is to *move* rather than *copy* it into the map, as in `m[ name ] = std::move( s );`. After the move, `s` will no longer contain the loaded script. Alternatively, you could directly load the script into the map, as in `m[ name ] = lua.load_file( path );`.
-
-You should provide a way for users to run a script they've loaded. You could simply give them access to the `sol::load_result` by returning a reference to it. If you expose enough of your engine's functionality to Lua, the C++ code your users will need to write could be limited to loading a setup script and running it.
+You should provide a way for users to run a script they've loaded. You could simply give them access to the `sol::protected_function` by returning a reference to it. If you expose enough of your engine's functionality to Lua, the C++ code your users will need to write could be limited to loading a setup script and running it.
 
 You should expose your **input manager** functionality to Lua. For example, your key down function could be exposed as simply as `lua.set_function( "KeyIsDown", [&]( const int keycode ) { return input.KeyIsDown( keycode ); } );`. You can expose your keycodes via [`lua.new_enum`](https://sol2.readthedocs.io/en/latest/api/table.html?highlight=new_enum#new-enum):
 ```c++
@@ -1681,3 +1679,4 @@ You don't need anything else. You might want:
 * 2024-10-02: Updated sol2 repos to fix llvm 18 regression.
 * 2024-10-02: Asset loading is mandatory for script manager. Also mentioned Lua debugger.
 * 2024-10-08: More information about using `debugger.lua`.
+* 2024-10-09: Scripting: don't store `sol::load_result`. Store `sol::protected_function`.
