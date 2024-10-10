@@ -1258,8 +1258,6 @@ There is [an excellent Lua debugger](https://github.com/slembcke/debugger.lua) t
 
 ## Game Objects (Entity Component System)
 
-**Warning: Don't work on this checkpoint yet. I will update this section with an ECS implemention in Lua.**
-
 It's time to add a notion of game objects. This will provide users of your engine a coherent way to populate their games with objects and update them in response to user input and the passage of time (such as physics). Your graphics manager will draw game objects every frame. Rather than creating a game object base class that all user classes derive from, we will implement a modern game architecture design called [Entity Component System (ECS)](https://github.com/SanderMertens/ecs-faq). The key idea is to separate data (Components) from game Entities (integers IDs) and algorithms (Systems). This has several advantages:
 
 1. You avoid awkward OOP hierarchies (do drawable objects subclass physics body objects or vice versa).
@@ -1671,3 +1669,4 @@ You don't need anything else. You might want:
 * 2024-10-09: Scripting: don't store `sol::load_result`. Store `sol::protected_function`.
 * 2024-10-10: ECS rewritten for a Lua implementation.
 * 2024-10-10: Provided explicit less-magic ECS.GetComponents().
+* 2024-10-10: Deleted ECS unfinished warning.
