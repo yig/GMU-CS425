@@ -1267,15 +1267,7 @@ It's time to add a notion of game objects. This will provide users of your engin
 3. It makes efficient use of our computing hardware (data locality and opportunities for parallelism).
 4. It's easy to save and load your entities and components to and from a file, and to inspect or edit them with a GUI.
 
----
-
-**TODO MOVE THIS TO ECS** The script manager should also declare a `Script` struct with a `name` field as a component for your entity component system. The script manager should have an update method to be called every frame that uses your entity component system to iterate over each entity with a `Script` component and run the script with the entity as the parameter. That way, any script beginning `local entity = ...` will run on that entity. (You really type the `...`. See the examples above.) You will want to decide if these scripts run before or after the user's C++ callback, whether you want an additional C++ callback so that one runs before and one after, or whether the user's C++ callback is responsible for calling an update method of the script manager.
-
-**TODO MOVE SOME OF THIS TO ECS** You should expose your **entity component systems**'s functionality for creating an entity, destroying an entity, and getting built-in components. Exposing the functions to create and destroy entities is straightforward. However, you can't directly expose your ECS's templated get-a-component function. You will have to expose a different getter for each component. For example, expose a `"GetSprite"` Lua function that returns your ECS's `Get<Sprite>(e)` by reference (or by pointer). `sol` will make the struct available to Lua by reference. (If you are using a C++ lambda to wrap your `Get<Sprite>(e)`, you'll need to explicitly specify its return value to be a reference, as in `[&]( EntityID e ) -> Sprite& { return ecs.Get<Sprite>(e); }` or else return a pointer.) This means that Lua scripts will be able to directly modify the struct members, as in `GetPosition(e).x = 10`. (The only things `sol` doesn't pass by reference are primitive Lua type like an integer, float, or string.)
-
-**TODO MOVE SOME OF THIS TO ECS** Users of your engine should have a way to access the `sol::state lua` so they can call `lua.new_usertype()` for their own structs and `lua.set_function()` to expose their own functions. That way users can expose their component structs, `Get<Component>()` functions, and even `ForEach<Components...>()` for specific sets of components. (`sol` seamlessly supports Lua functions as callbacks in C++.) Alternatively, if users don't expose their own components, Lua scripts would only be able to call the functions involving the engine's built-in components (to create, destroy, and access components the engine will look for). In that case, a script could manage additional entity properties on its own via Lua's convenient [table data structure](https://www.lua.org/pil/2.5.html).
-
----
+> 🕰️ In previous versions of this guide, I described a simple ECS implementation in C++. Now I describe a simpler implementation in Lua. If you'd like to implement your ECS in C++, you can read the description in the 2023 branch of this repository. The C++ implementation relies on difficult-to-understand template ~~magic~~ metaprogramming. The Lua implementation is simpler because Lua is a simpler language.
 
 ### Components
 
@@ -1290,174 +1282,163 @@ struct Health { real percent; };
 struct Script { string name; };
 ```
 
-An ECS stores components together in memory. This data locality leads to good cache efficiency.
-(If you make components that are simply subclasses of other types, you may need to define a constructor that takes the superclass as a parameter. For example, if your `Position` is simply a subclass of `vec2`, you may want to define a constructor that takes a `vec2`, as in `Position( const vec2& v ) : vec2( v ) {}`. If you do that, tell the compiler that you still want the default constructor, too: `Position() = default;`)
+Users of your engine can access the `sol::state lua` to call `lua.new_usertype()` for C++ component structs. Alternatively, Lua's [table](https://www.lua.org/pil/2.5.html) data structure is flexible enough to serve as any kind of Component. Since tables are dynamic, there is nothing to declare.
+
+A good ECS stores components together in memory. (Our Lua ECS probably won't.) This data locality leads to good cache efficiency.
+
+(If you make C++ components that are simply subclasses of other types, you may need to define a constructor that takes the superclass as a parameter. For example, if your `Position` is simply a subclass of `vec2`, you may want to define a constructor that takes a `vec2`, as in `Position( const vec2& v ) : vec2( v ) {}`. If you do that, tell the compiler that you still want the default constructor, too: `Position() = default;`)
 
 ### Entities
 
-Every entity in the game—what the user would have made an object for if using object oriented programming—will be identified with a unique ID (an integer). Users of your ECS will be able to create an entity by asking the ECS for an unused unique ID. (Some implementations require the programmer to declare all components associated with an entity when creating the entity. Others, including the implementation described below, allow users to dynamically add Components to an entity. Users don't need to "register" their components in advance.) For example:
+Every entity in the game—what the user would have made an object for if using object oriented programming—will be identified with a unique ID (an integer). Users of your ECS will be able to create an entity by asking the ECS for an unused unique ID. (Some implementations require the programmer to declare all components associated with an entity when creating the entity. Others, including the implementation described below, allow users to dynamically add Components to an entity. Users don't need to "register" their components in advance.) This could look like the following in Lua:
+
+```lua
+ECS.Components.position[ entity ] = { x = 10, y = 20 }
+ECS.Components.position[ entity ].x = 12
+ECS.Components.health[ entity ] = 100
+```
+
+or in C++:
 
 ```c++
-ECS.Get<Position>( entity ) = Position{0,0};
-ECS.Get<Position>( entity ).x += 10;
-ECS.Get<Health>( entity ) = Health{100};
+ECS["Components"]["position"][entity] = Position{0,0};
+ECS["Components"]["position"][entity]["x"] = 12
+ECS["Components"]["health"][entity] = 100
 ```
 
 ### Systems
 
-Systems are the algorithms. They iterate over all entities with a given set of components. For example, here is a physics system that iterates over entities with `Position` and `Velocity`:
+Systems are the algorithms. They iterate over all entities with a given set of components. For example, here is a physics system that iterates over entities with `Position` and `Velocity` and steps forward in time by `dt`. In Lua:
+
+```lua
+ECS.ForEach( {"position", "velocity"}, function( e )
+    p = ECS.Components.position[e]
+    v = ECS.Components.velocity[e]
+    p.x = p.x + v.x * dt
+    p.y = p.y + v.y * dt
+end )
+```
+
+In C++:
 
 ```c++
-ECS.ForEach<Position,Velocity>( [&]( EntityID e, Position& p, Velocity& v ) {
+ECS["ForEach"]( sol::as_table( std::vector<std::string>{ "position", "velocity" } ), [&]( EntityID e ) {
+    vec2& p = ECS["Components"]["position"][e];
+    vec2& v = ECS["Components"]["velocity"][e];
     p.x += v.x * dt;
     p.y += v.y * dt;
 } );
 ```
 
-This code tells the ECS to execute the callback function `[&]( EntityID e, Position& p, Velocity& v ) { p.x += v.x * dt; p.y += v.y * dt; }` for each entity with the components. Since the for each function is in one place, it would be trivial to parallelize it on multiple threads. This callback function is a lambda (local function) that has access to all the variables in the enclosing scope by reference (because of the `[&]`). The body of the lambda (`{ ... }`) gets executed as if it had been in the body of a for loop like this:
+(`sol` seamlessly supports passing C++ functions as callbacks to Lua and vice versa.)
+
+This code tells the ECS to execute the callback function `[&]( EntityID e ) { ... p.x += v.x * dt; p.y += v.y * dt; }` for each entity with the two components. Since the for each function is in one place, it would be trivial to parallelize it on multiple threads. This callback function is a lambda (local function) that has access to all the variables in the enclosing scope by reference (because of the `[&]`). The body of the lambda (`{ ... }`) gets executed as if it had been in the body of a for loop like this:
 ```c++
-for( EntityID e, Position& p, Velocity& v : ECS.EntitiesWithComponents<Position,Velocity> ) {
+for( EntityID e : ECS.EntitiesWithComponents( "position", "velocity" ) ) {
+    vec2& p = ECS["Components"]["position"][e];
+    vec2& v = ECS["Components"]["velocity"][e];
     p.x += v.x * dt;
     p.y += v.y * dt;
 }
 ```
 
-In this checkpoint, modify your graphics manager's draw method to iterate over all entities with a `Sprite` (or a `Sprite` and a `Position`, depending on what you put in your `Sprite` component) and draw them. Do this instead of iterating over a vector of `Sprite`s passed as a parameter, which is what you did for checkpoint 5. In the next checkpoint, your script manager will iterate over all entities with a `Script` component and run the named script. In general, your managers should declare the components (`struct`s) that they will iterate over in their headers (or in `Types.h`).
+In this checkpoint, modify your graphics manager's draw method to iterate over all entities with a `Sprite` (or a `Sprite` and a `Position`, depending on what you put in your `Sprite` component) and draw them. Do this instead of iterating over a vector of `Sprite`s passed as a parameter, which is what you did for checkpoint 5.
+
+Your script manager should have a `Script` component with a `name` field as a component for your entity component system. The script manager should have an update method to be called every frame that uses your entity component system to iterate over each entity with a `Script` component and run the script with the entity as the parameter. That way, any script beginning `local entity = ...` will run on that entity. (You really type the `...`. See the examples above.) You will want to decide if these scripts run before or after the user's C++ callback, whether you want an additional C++ callback so that one runs before and one after, or whether the user's C++ callback is responsible for calling an update method of the script manager.
+
+Unless you are using Lua tables for all your components, your managers should declare the components (`struct`s) that they will iterate over in their headers (or in `Types.h`).
+
 
 ### Requirements
 
-The basic functionality you must implement is a class for your entity component system that has at least the following functionality:
+Your entity component system must support at least the following basic functionality:
 
-* A method to **create** a new entity (returning its entity ID) or to return an unused entity ID: `EntityID Create();` or `EntityID UnusedEntity();`. It is fine if your `Create()` requires the user to specify all components for the entity.
-* A method to **destroy** an entity, removing all of its components: `void Destroy( EntityID e );`
-* A method to **get** a given component for an entity. By returning a reference `&`, callers can also set the component: `template< typename T > T& Get( EntityID e );`
+* A method to **create** a new entity (returning its entity ID) or to return an unused entity ID. It is fine if your method requires the user to specify all components for the entity.
+* A method to **destroy** an entity, removing all of its components.
+* A method to **get** a given component for an entity. By returning the component by reference, callers can also set the component.
 * A method to **drop** a given component from an entity.
-* A method to iterate over all entities with a given set of entities and call a callback function once **for each** entity: `template< typename... EntitiesThatHaveTheseComponents > void ForEach( callback );`
+* A method to iterate over all entities with a given set of components and call a callback function once **for each** entity.
 
 ### Implementation Possibility
 
-You are free to implement your ECS any way you like so long as it implements the above methods. It makes for a fun and challenging puzzle. (You could think about it in a C way with pools of memory that you cast to the appropriate type.) Here is a sketch for a sparse set implementation of an ECS. You are free to use it. I am leaving the implementation of `Create()` or `UnusedEntity()` as an exercise for you to solve on your own. This implementation makes heavy use of templated functions. There will only be a `.h` file for this implementation. Templated functions have to be defined—not just declared—in header (`.h`) files. This is because the compiler uses the template to generate code customized for the types used when it is called.
+You are free to implement your ECS any way you like so long as it implements the above methods. It makes for a fun and challenging puzzle. (You could think about it in a C way with pools of memory that you cast to the appropriate type.) Here is a sketch for a [table](https://www.lua.org/pil/2.5.html)-based implementation of an ECS in Lua. You are free to use it.
 
-First, we need to define the `EntityID` type:
+We will create a Lua script that sets up an `ECS` table. We can start with an empty table:
 
-```c++
-typedef long EntityID;
+```lua
+ECS = {}
 ```
 
-We could have used a `uint64_t` or `int64_t` instead of a `long` by including `<cstdint>`.
+`ECS` only needs to store two things: the next entity ID to return when someone calls create and a table of components. Lua, like JavaScript, converts `table.key` into `table["key"]`, so we can write things like:
 
-We need a sparse set to store each component. The simplest (but not best performing) option is `std::unordered_map< EntityID, T >`, where `T` is the type of the component. We will have many such maps, one per type. We need some way for users to access a component with type `T` for a given `EntityID`:
-
-```c++
-template< typename T >
-T& Get( EntityID entity ) {
-    return GetAppropriateSparseSet<T>()[ entity ];
-}
+```lua
+ECS._nextEntityID = 1
+ECS.Components = {}
 ```
 
-This declares a function `Get()` that takes an `EntityID` parameter. The function is templated on a type `T`, which means the compiler will generate code for it for each type `T` that anyone calls it with. By returning a reference (`T&`), the caller can do:
-```c++
-Get<Position>(entity).x // Get access to the position's x component.
-Get<Position>(entity) = p; // Set the component given another Position p.
-```
-This also has the side effect that `Get<Position>(entity)` will add that component to an entity if it didn't exist.
+We can declare functions directly inside tables:
 
-How will we store all of these sparse sets? In other words, how does `GetAppropriateSparseSet<T>()` work? We need a container for the components. The challenge is that we, the engine makers, can’t know what types of components game makers will create. C++ is statically typed. We can't directly create a vector or map of heterogeneous types, such as `{ SparseSet<Position>, SparseSet<Health> }`. (Templated types are different types.) As a solution, we can create a `SparseSetHolder` parent class that each `SparseSet<T>` inherits from, and store those. The `SparseSetHolder` superclass has methods we can call without knowing the component type held by the subclass:
-```c++
-class SparseSetHolder {
-public:
-    // A virtual destructor, since subclasses need their destructors to run to free memory.
-    virtual ~SparseSetHolder() = default;
-    virtual bool Has( EntityID ) const = 0;
-    virtual void Drop( EntityID ) = 0;
-};
-// Subclasses are templated on the component type they hold.
-template< typename T > class SparseSet : public SparseSetHolder {
-public:
-    std::unordered_map< EntityID, T > data;
-    bool Has( EntityID e ) const override { return data.count( e ) > 0; };
-    void Drop( EntityID e ) override { data.erase( e ); };
-};
+```lua
+function ECS.CreateEntity()
+    -- Your code goes here
+end
 ```
 
-Our ECS can store a map of pointers to the superclasses:
+Lua lets us override the behavior of a table when someone accesses a key that doesn't exist. We can use this for `ECS.Components` to create an empty sub-table the first time a type of component is accessed. There are a [variety of built-in methods](https://www.lua.org/manual/5.3/manual.html#2.4) Lua lets us override. The function Lua calls when a key is missing is called `__index()`. It takes two parameters, the table in question and the missing key. The syntax to re-define the built-in `__index()` is:
 
-```c++
-std::unordered_map< ComponentIndex, std::unique_ptr< SparseSetHolder > > m_components;
+```lua
+setmetatable( ECS.Components, { __index = function( table, key )
+    table[key] = {}
+    return table[key]
+    end } )
 ```
 
-(We use an `std::unique_ptr` so we don't have to worry about memory leaks. Be sure to `#include <memory>`.)
+This lets us do things like:
 
-> 💣 Gotcha: If you try to make a copy of a `unique_ptr`, such as by returning a copy of the entire ECS or passing your entity component system class by value, you will get an obtuse error message. This is a good thing, since it prevents you from accidentally copying the entire registry of components. You almost certainly want to return or pass by reference instead.
-
-What is a `ComponentIndex`? C++ provides a special type called `std::type_index` that we can use in maps. We'll use that via a `typedef`:
-
-```c++
-typedef std::type_index ComponentIndex;
+Set component `position` for entity `e` to `foo`:
+```lua
+ECS.Components.position[e] = { x = 10, y = 20 }
 ```
 
-When we need one for a type `T`, we can call `std::type_index(typeid(T))`. Don't forget to `#include <typeindex>`.
-
-> 🎩🪄 (If you want to avoid the C++ compiler magic that powers `std::type_index(typeid(T))`, there is another way to get a unique, deterministic integer for a type. It makes clever use of a pair of functions with static variables inside to always returns the same index for the same type:
-> ```c++
-> typedef int ComponentIndex;
-> template<typename T> ComponentIndex GetComponentIndex() {
->     static ComponentIndex index = GetNextIndex(); // Only calls GetNextIndex() the first time this function is called.
->     return index;
-> }
-> ComponentIndex GetNextIndex() {
->     static ComponentIndex index = -1; // Returns the sequence 0, 1, 2, … every time this is called.
->     index += 1;
->     return index;
-> }
-> ```
-> It's shorter and simpler to just use `std::type_index`. (If you allow the user to create multiple instances of your ECS (multiple worlds), be aware that `GetComponentIndex()` values are global across all instances. So if ECS one has Position components and ECS two doesn't, there will be a gap in ECS two's `m_components` vector.))
-
-Now that we are ready to write `GetAppropriateSparseSet<T>()`. It's a templated function that returns a reference to the `unordered_map` inside the `SparseSetHolder`:
-```c++
-template< typename T >
-std::unordered_map< EntityID, T >&
-GetAppropriateSparseSet() {
-    // Get the index for T's SparseSet
-    const ComponentIndex index = std::type_index(typeid(T));
-    // Create the actual sparse set if needed.
-    if( m_components[ index ] == nullptr ) m_components[index] = std::make_unique< SparseSet<T> >();
-    // It's safe to cast the SparseSetHolder to its subclass and return the std::unordered_map< EntityID, T > inside.
-    return static_cast< SparseSet<T>& >( *m_components[ index ] ).data;
-}
+Get component `position` for entity `e`:
+```lua
+foo = ECS.Components.position[e]
 ```
 
-Now we can write the rest of our user-facing (public) functions:
-```c++
-// Drop a component from an entity.
-template< typename T >
-void Drop( EntityID e ) {
-    GetAppropriateSparseSet<T>().erase( e );
-}
-
-// Destroy the entity by removing all components.
-void Destroy( EntityID e ) {
-    for( const auto& [index, comps] : m_components ) { comps->Drop( e ); }
-}
+Drop a component from an entity by setting it to nil:
+```lua
+ECS.Components.position[e] = nil
 ```
 
-The `ForEach()` function can be used like: `ForEach<Position,Velocity,Health>( callback )`. It takes multiple templated types. The idea behind this implementation is to find the container for the first component. That gives us candidate `EntityID`s. You will iterate over those `EntityID`s and call the callback for entities that have all the other components. Here is the outline of that function for you to fill in:
+We only need two more functions to have a working ECS: a way to destroy an entity, and a way to iterate over all entities given a set of components and call a callback function for each one.
 
-```c++
-typedef std::function<void( EntityID )> ForEachCallback;
-template<typename EntitiesThatHaveThisComponent, typename... AndAlsoTheseComponents>
-void ForEach( const ForEachCallback& callback ) {
-    // Get a vector of ComponentIndex we can use with `m_components[ index ]->Has( entity )`.
-    std::vector<ComponentIndex> also{ std::type_index(typeid(AndAlsoTheseComponents))... };
-    // Iterate over entities in the first container.
-    // If the entity has all components in `also`, call `callback( entity )`.
-    // ... your code goes here ...
-}
+Here is a function to destroy an entity by removing all its components.
+Note the syntax for iterating over the keys and values of a table.
+You delete a key from a table by setting it to `nil`.
+```lua
+function ECS.DestroyEntity( e )
+    for key, value in pairs( ECS.Components ) do
+        value[e] = nil
+    end
+end
 ```
 
-That's it! (It's also possible to write this function without the `std::vector` inside by using [some C++17 features](https://stackoverflow.com/questions/71726669/c-17-what-is-the-difference-between-a-fold-expression-and-if-constexpr-when-us) and a recursive helper function.)
+The only function left is `ForEach()`. We will write one that you can call like: `ForEach( {"position", "velocity", "health"}, callback )`. The idea behind this implementation is to find the table containing the first component. That gives us candidate entities. You will iterate over those entities and call the callback for entities that have all the other components. Here is the outline of that function for you to fill in:
 
-Note that this `ForEach()` function doesn't pass the components by reference to the callback. Use `Get<Component>(entity)` in the callback. For example, you could replace a for loop over an `std::vector<Sprite> sprites`:
+```lua
+function ECS.ForEach( components, callback )
+    -- Iterate over entities in the container for `components[1]`.
+    -- If the entity has all components in `components` call `callback( entity )`.
+
+    -- Your code goes here
+end
+```
+
+> 💣 Lua uses 1-indexing when you use a table like an array. To iterate over a table `arr` and print its elements stored with numerical keys, you would write `for i = 1, #arr.all do print( arr[i] ) end`
+
+To use your Lua ECS from C++, you can write `sol::object ECS = lua["ECS"];` and then access its functionality the way we wrote it above.
+
+For example, you could replace a for loop over an `std::vector<Sprite> sprites`:
 ```c++
 for( Sprite& sprite : sprites ) {
     // inside the loop
@@ -1465,20 +1446,17 @@ for( Sprite& sprite : sprites ) {
 ```
 with
 ```c++
-ECS.ForEach<Sprite>( [&]( EntityID entity ) {
-    Sprite& sprite = ECS.Get<Sprite>(entity);
+ECS["ForEach"]( sol::as_table( std::vector<std::string>{ "Sprite" } ), [&]( int entity ) {
+    Sprite& sprite = ECS["Components"]["Sprite"][entity];
     // inside the loop
 } );
 ```
 
-If your ECS is global (or lives inside a global variable), you can make your `EntityID` type support component access directly, as in `entity.Get<Sprite>()`. See [here](demo/entity_get.cpp) for an example.
-
 ### Extensions
 
 * `ForEach` whose inner for loop iterates over the smallest sparse set among all the given components.
-* A `ParallelForEach` that uses a thread pool.
-* A more efficient sparse set that stores its component data in a single, dense, contiguous chunk of memory with no gaps. `unordered_map` doesn't actually do that.
-* Support for [range-based for loops](https://stackoverflow.com/questions/8164567/how-to-make-my-custom-type-to-work-with-range-based-for-loops).
+* More query types for `ForEach` beyond "all the given components". You could support a "not" set and iterate over entities that have all of the "all" components and none of the "not" components.
+* A C++ wrapper class that makes it a little more natural to call ECS functions from C++. When you write the function to get the component for an entity, you may want to create it automatically if it doesn't exist. To check if it doesn't exist, use `sol::optional<T> result = lua["ECS"]["Components"][component][entity];` followed by `if( result == sol::nullopt ) { /* It doesn't exist. */ }`.
 
 ### Checkpoint 6 Upload
 
@@ -1680,3 +1658,4 @@ You don't need anything else. You might want:
 * 2024-10-02: Asset loading is mandatory for script manager. Also mentioned Lua debugger.
 * 2024-10-08: More information about using `debugger.lua`.
 * 2024-10-09: Scripting: don't store `sol::load_result`. Store `sol::protected_function`.
+* 2024-10-10: ECS rewritten for a Lua implementation.
