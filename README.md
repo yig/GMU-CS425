@@ -1369,7 +1369,7 @@ We will create a Lua script that sets up an `ECS` table. We can start with an em
 ECS = {}
 ```
 
-`ECS` only needs to store two things: the next entity ID to return when someone calls create and a table of components. Lua, like JavaScript, converts `table.key` into `table["key"]`, so we can write things like:
+`ECS` only needs to store two things: the next entity ID to return when someone calls create and a table of components. Lua, [like JavaScript](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Property_accessors), converts the syntax `table.key` into `table["key"]`, so we can write things like:
 
 ```lua
 ECS._nextEntityID = 1
@@ -1395,20 +1395,31 @@ setmetatable( ECS.Components, { __index = function( table, key )
 
 This lets us do things like:
 
-Set component `position` for entity `e` to `foo`:
-```lua
-ECS.Components.position[e] = { x = 10, y = 20 }
-```
+* Set component `position` for entity `e` to `foo`:
+    ```lua
+    ECS.Components.position[e] = { x = 10, y = 20 }
+    ```
 
-Get component `position` for entity `e`:
-```lua
-foo = ECS.Components.position[e]
-```
+* Get component `position` for entity `e`:
+    ```lua
+    foo = ECS.Components.position[e]
+    ```
 
-Drop a component from an entity by setting it to nil:
+* Drop a component from an entity by setting it to nil:
+    ```lua
+    ECS.Components.position[e] = nil
+    ```
+
+> 🤔 If `setmetatable()` is too obscure for your taste, you can instead write an explicit accessor:
 ```lua
-ECS.Components.position[e] = nil
+function ECS.GetComponents( name )
+    if ECS.Components[name] == nil then
+        ECS.Components[name] = {}
+    end
+    return ECS.Components[name]
+end
 ```
+> The above example would become `ECS.GetComponents("position")[e] = { x = 10, y = 20 }`.
 
 We only need two more functions to have a working ECS: a way to destroy an entity, and a way to iterate over all entities given a set of components and call a callback function for each one.
 
@@ -1659,3 +1670,4 @@ You don't need anything else. You might want:
 * 2024-10-08: More information about using `debugger.lua`.
 * 2024-10-09: Scripting: don't store `sol::load_result`. Store `sol::protected_function`.
 * 2024-10-10: ECS rewritten for a Lua implementation.
+* 2024-10-10: Provided explicit less-magic ECS.GetComponents().
