@@ -1247,7 +1247,7 @@ You can make a C++ function callable from Lua using `lua.set_function()`. This w
 
 If you wish, you can organize the functionality you expose to Lua with [something like namespaces](https://sol2.readthedocs.io/en/latest/tutorial/all-the-things.html?highlight=get_or_create#namespacing).
 
-There is [an excellent Lua debugger](https://github.com/slembcke/debugger.lua) that comes as a single file that you can load and use. To use it, first tell Lua to load the library it depends on: `lua.open_libraries(sol::lib::os, sol::lib::string, sol::lib::io, sol::lib::debug);`. Then you can load the debugger via `lua.require_file( "dbg", resource manager resolved path to debugger.lua );`. Whenever you want to set a breakpoint, simply call `dbg()` in your Lua code. **Note:** There must be a line of code following `dbg()`; that's the line it breaks on.
+There is [an excellent Lua debugger](https://github.com/slembcke/debugger.lua) that comes as a single file that you can load and use. To use it, first tell Lua to load the libraries it depends on: `lua.open_libraries(sol::lib::os, sol::lib::string, sol::lib::io, sol::lib::debug);`. Then you can load the debugger via `lua.require_file( "dbg", resource manager resolved path to debugger.lua );`. Whenever you want to set a breakpoint, simply call `dbg()` in your Lua code. **Note:** There must be a line of code following `dbg()`; that's the line it breaks on.
 
 ### Checkpoint 5 Upload
 
