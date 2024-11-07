@@ -329,7 +329,7 @@ Finally, this is a good time to mention that I recommend a proper logging librar
 FetchContent_Declare(
     spdlog
     GIT_REPOSITORY https://github.com/gabime/spdlog/
-    GIT_TAG v1.x
+    GIT_TAG v1.14.1
     GIT_SHALLOW TRUE
     GIT_PROGRESS TRUE
     )
@@ -1670,3 +1670,4 @@ You don't need anything else. You might want:
 * 2024-10-10: ECS rewritten for a Lua implementation.
 * 2024-10-10: Provided explicit less-magic ECS.GetComponents().
 * 2024-10-10: Deleted ECS unfinished warning.
+* 2024-11-07: Pin spdlog version to prevent a windows error
