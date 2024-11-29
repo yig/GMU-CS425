@@ -237,7 +237,7 @@ target_include_directories( sokol INTERFACE ${sokol_SOURCE_DIR} )
 ```
 to download the headers and add `sokol` to your `target_link_libraries()` to access the header.
 
-See [Game Programming Patterns](https://gameprogrammingpatterns.com/game-loop.html) or [Fix Your Timestep](https://gafferongames.com/post/fix_your_timestep/) for more advanced approaches to managing time steps in loops.
+See [Game Programming Patterns](https://gameprogrammingpatterns.com/game-loop.html) or [Fix Your Timestep](https://gafferongames.com/post/fix_your_timestep/) or [How to make your game run at 60fps](https://medium.com/@tglaiel/how-to-make-your-game-run-at-60fps-24c61210fe75) for more advanced approaches to managing time steps in loops.
 
 **N.B.** Some Windows users have found that `std::this_thread::sleep_for()` sleeps too long. To increase the resolution, the following might work. In your engine's startup method:
 ```c++
@@ -1673,3 +1673,4 @@ You don't need anything else. You might want:
 * 2024-11-07: Pin spdlog version to prevent a windows error
 * 2024-11-20: Instruction links to set the working directory from Xcode and Visual Studio.
 * 2024-11-20: Mentioned setting the resource manager path root as a command line parameter.
+* 2024-11-28: Linked to "How to make your game run at 60fps" for a more advanced game loop discussion.
