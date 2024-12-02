@@ -2,6 +2,50 @@
 
 In this class you will make your own game engine from scratch.
 
+## Table of Contents
+- [IllEngine](#illengine)
+  - [Table of Contents](#table-of-contents)
+  - [Platform setup](#platform-setup)
+  - [Making a project](#making-a-project)
+  - [Some useful CMake commands:](#some-useful-cmake-commands)
+  - [Setting up version control](#setting-up-version-control)
+    - [Checkpoint 1 Upload](#checkpoint-1-upload)
+  - [Starting your engine](#starting-your-engine)
+    - [Digression on C++ Software Design](#digression-on-c-software-design)
+    - [Back to the Engine: Declaring Common Types](#back-to-the-engine-declaring-common-types)
+  - [What is the Engine?](#what-is-the-engine)
+  - [The `GraphicsManager`](#the-graphicsmanager)
+    - [Checkpoint 2 Upload](#checkpoint-2-upload)
+  - [Detecting input](#detecting-input)
+    - [Checkpoint 3 Upload](#checkpoint-3-upload)
+  - [Resources and the Resource Manager](#resources-and-the-resource-manager)
+    - [Extensions](#extensions)
+  - [Sound Manager (optional, bonus)](#sound-manager-optional-bonus)
+  - [Graphics](#graphics)
+    - [Startup](#startup)
+    - [Loading data](#loading-data)
+    - [Drawing](#drawing)
+    - [Making the `Uniforms` struct](#making-the-uniforms-struct)
+    - [Sorting the sprites](#sorting-the-sprites)
+    - [Drawing a sprite](#drawing-a-sprite)
+    - [Cleaning up](#cleaning-up)
+    - [Extensions](#extensions-1)
+    - [Gotchas](#gotchas)
+    - [Checkpoint 4 Upload](#checkpoint-4-upload)
+  - [Scripting](#scripting)
+    - [Checkpoint 5 Upload](#checkpoint-5-upload)
+  - [Game Objects (Entity Component System)](#game-objects-entity-component-system)
+    - [Components](#components)
+    - [Entities](#entities)
+    - [Systems](#systems)
+    - [Requirements](#requirements)
+    - [Implementation Possibility](#implementation-possibility)
+    - [Extensions](#extensions-2)
+    - [Checkpoint 6 Upload](#checkpoint-6-upload)
+  - [What's Next?](#whats-next)
+  - [ChangeLog](#changelog)
+
+
 ## Platform setup
 
 The first thing we need is a compiler and build system. In this class, we will use [CMake](https://cmake.org/) as our build system. CMake is a popular, cross-platform build system. [Modern CMake](https://cliutils.gitlab.io/modern-cmake/) is actually pretty nice and worth learning. (We'll avoid the older, gross bits as much as possible.)
@@ -1674,3 +1718,5 @@ You don't need anything else. You might want:
 * 2024-11-20: Instruction links to set the working directory from Xcode and Visual Studio.
 * 2024-11-20: Mentioned setting the resource manager path root as a command line parameter.
 * 2024-11-28: Linked to "How to make your game run at 60fps" for a more advanced game loop discussion.
+* 2024-12-02: Added table of contents.
+* 
