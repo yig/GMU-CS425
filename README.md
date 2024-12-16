@@ -283,6 +283,8 @@ to download the headers and add `sokol` to your `target_link_libraries()` to acc
 
 See [Game Programming Patterns](https://gameprogrammingpatterns.com/game-loop.html) or [Fix Your Timestep](https://gafferongames.com/post/fix_your_timestep/) or [How to make your game run at 60fps](https://medium.com/@tglaiel/how-to-make-your-game-run-at-60fps-24c61210fe75) for more advanced approaches to managing time steps in loops.
 
+> 🖥️: (The following will make sense after implementing [graphics](#graphics).) The default `WGPUPresentMode` (specified in the `WGPUSurfaceConfiguration` parameter to `wgpuSurfaceConfigure`) is FIFO, which means that calls to `wgpuSurfacePresent()` wait for the next display refresh ("vsync"). If your display refresh rate is 60 hertz, it's already doing the wait you want. If it's 120 hertz, then the cost of spinning is 50%. It's not uncommon to just draw in your loop and update() if enough time has passed (one of the accumulator-style game loops). In other words, relying on `wgpuSurfacePresent()` as a combined wait-and-draw function.
+
 **N.B.** Some Windows users have found that `std::this_thread::sleep_for()` sleeps too long. To increase the resolution, the following might work. In your engine's startup method:
 ```c++
 #if _WIN32
@@ -290,7 +292,7 @@ timeBeginPeriod(1);
 #endif
 ```
 
-You will need to include the relevant header:
+You will need to include the relevant header (some people report success including `timeapi.h` instead of `Windows.h`):
 ```c++
 #if _WIN32
 #include <Windows.h>
@@ -306,7 +308,9 @@ timeEndPeriod(1);
 
 In your `CMakeLists.txt`:
 ```
-if( WIN32 ) target_link_libraries( target_name PRIVATE winmm ) endif()
+if( WIN32 )
+    target_link_libraries( illengine PRIVATE winmm )
+endif()
 ```
 
 
@@ -1719,4 +1723,4 @@ You don't need anything else. You might want:
 * 2024-11-20: Mentioned setting the resource manager path root as a command line parameter.
 * 2024-11-28: Linked to "How to make your game run at 60fps" for a more advanced game loop discussion.
 * 2024-12-02: Added table of contents.
-* 
+* 2024-12-16: Added comment about vsync and timeapi.h
