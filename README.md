@@ -1252,10 +1252,10 @@ You should provide a way for users to run a script they've loaded. You could sim
 
 You should expose your **input manager** functionality to Lua. For example, your key down function could be exposed as simply as `lua.set_function( "KeyIsDown", [&]( const int keycode ) { return input.KeyIsDown( keycode ); } );`. You can expose your keycodes via [`lua.new_enum`](https://sol2.readthedocs.io/en/latest/api/table.html?highlight=new_enum#new-enum):
 ```c++
-lua.new_enum( "KEYBOARD",
-    "SPACE", KEY_SPACE,
+lua.new_enum<int>( "KEYBOARD", {
+    { "SPACE", KEY_SPACE },
     ...
-    );
+    } );
 ```
 Then a Lua script can call `KeyIsDown( KEYBOARD.SPACE )` as needed. You should also expose a function to quit your game.
 
@@ -1724,3 +1724,4 @@ You don't need anything else. You might want:
 * 2024-11-28: Linked to "How to make your game run at 60fps" for a more advanced game loop discussion.
 * 2024-12-02: Added table of contents.
 * 2024-12-16: Added comment about vsync and timeapi.h
+* 2025-01-03: Script manager `new_enum` uses the more-efficient-to-compile variant.
