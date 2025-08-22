@@ -274,7 +274,7 @@ FetchContent_Declare(
   GIT_PROGRESS TRUE
 )
 FetchContent_MakeAvailable( sokol )
-## sokol doesn't have a `CMakeLists.txt`. Let's declare a header-only library with an include path.
+## sokol doesn't have a `CMakeLists.txt`. Declare a header-only library as an include path.
 add_library( sokol INTERFACE )
 target_include_directories( sokol INTERFACE ${sokol_SOURCE_DIR} )
 ```
@@ -376,7 +376,7 @@ Finally, this is a good time to mention that I recommend a proper logging librar
 FetchContent_Declare(
     spdlog
     GIT_REPOSITORY https://github.com/gabime/spdlog/
-    GIT_TAG v1.14.1
+    GIT_TAG v1.15.3
     GIT_SHALLOW TRUE
     GIT_PROGRESS TRUE
     )
@@ -453,7 +453,7 @@ It's easier (much less code) to play sounds than draw graphics to the screen, so
 FetchContent_Declare(
   soloud
   GIT_REPOSITORY https://github.com/jarikomppa/soloud
-  GIT_TAG        master # tested with: e82fd32c1f62183922f08c14c814a02b58db1873
+  GIT_TAG        e82fd32c1f62183922f08c14c814a02b58db1873
   GIT_SHALLOW TRUE
   GIT_PROGRESS TRUE
 )
@@ -511,12 +511,12 @@ When our graphics manager starts up, it will initialize the WebGPU API, compile 
 First things first. Let's add WebGPU to our `CMakeLists.txt`. In your list of packages, add:
 
 ```
-## Can change `wgpu` to `dawn`
-set(WEBGPU_BACKEND "wgpu" CACHE STRING "WebGPU backend (wgpu or dawn)")
+## Can change `dawn` to `wgpu`
+set(WEBGPU_BACKEND "dawn" CACHE STRING "WebGPU backend (wgpu or dawn)")
 FetchContent_Declare(
   webgpu
   GIT_REPOSITORY https://github.com/yig/WebGPU-distribution
-  GIT_TAG        main
+  GIT_TAG        cs425-2025
   GIT_SHALLOW TRUE
   GIT_PROGRESS TRUE
 )
@@ -525,7 +525,7 @@ FetchContent_MakeAvailable( webgpu )
 FetchContent_Declare(
   glfw3webgpu
   GIT_REPOSITORY https://github.com/eliemichel/glfw3webgpu
-  GIT_TAG        main # tested with 798c55686d1d4479a49de392916c01f7be5d2c1a
+  GIT_TAG        8f14534e79c590e8a7f7795ea42e01bedea9e137
   GIT_SHALLOW TRUE
   GIT_PROGRESS TRUE
 )
@@ -656,7 +656,7 @@ That `vec3` and `vec2` vector types comes from the [glm](https://github.com/g-tr
 FetchContent_Declare(
     glm
     GIT_REPOSITORY https://github.com/g-truc/glm.git
-    GIT_TAG 1.0.1
+    GIT_TAG 2d4c4b4dd31fde06cfffad7915c2b3006402322f
     GIT_SHALLOW TRUE
     GIT_PROGRESS TRUE
     )
@@ -911,7 +911,7 @@ For actually reading images from disk and decoding them into CPU memory, we'll u
 FetchContent_Declare(
   stb
   GIT_REPOSITORY https://github.com/nothings/stb/
-  GIT_TAG        master # tested with f75e8d1cad7d90d72ef7a4661f1b994ef78b4e31
+  GIT_TAG        f58f558c120e9b32c217290b80bad1a0729fbb2c
   GIT_SHALLOW TRUE
   GIT_PROGRESS TRUE
 )
@@ -1221,7 +1221,7 @@ FetchContent_MakeAvailable( lua )
 FetchContent_Declare(
     sol2
     GIT_REPOSITORY https://github.com/yig/sol2
-    GIT_TAG develop
+    GIT_TAG cs425-2025
     GIT_SHALLOW TRUE
     GIT_PROGRESS TRUE
     )
@@ -1539,7 +1539,7 @@ You don't need anything else. You might want:
     FetchContent_Declare(
         imgui
         GIT_REPOSITORY https://github.com/ocornut/imgui
-        GIT_TAG v1.91.0
+        GIT_TAG v1.92.1
         GIT_SHALLOW TRUE
         GIT_PROGRESS TRUE
         )
@@ -1550,6 +1550,14 @@ You don't need anything else. You might want:
     target_include_directories( imgui PUBLIC "${imgui_SOURCE_DIR}" "${imgui_SOURCE_DIR}/backends" )
     target_link_libraries( imgui PUBLIC glfw webgpu )
     set_target_properties( imgui PROPERTIES CXX_STANDARD 17 )
+    ## Exactly one of IMGUI_IMPL_WEBGPU_BACKEND_DAWN or IMGUI_IMPL_WEBGPU_BACKEND_WGPU must be defined.
+    if( WEBGPU_BACKEND STREQUAL "dawn" )
+        target_compile_definitions( imgui PUBLIC IMGUI_IMPL_WEBGPU_BACKEND_DAWN )
+    elseif( WEBGPU_BACKEND STREQUAL "wgpu" )
+        target_compile_definitions( imgui PUBLIC IMGUI_IMPL_WEBGPU_BACKEND_WGPU )
+    else()
+        message( FATAL_ERROR "Invalid WEBGPU_BACKEND value: ${WEBGPU_BACKEND}. Must be 'wgpu' or 'dawn'." )
+    endif()
     ```
     and add the library `imgui`. You can then include `<imgui.h>`, `<backends/imgui_impl_wgpu.h>`, and `<backends/imgui_impl_glfw.h>`. For an example, see [Learn WebGPU's Simple GUI example](https://eliemichel.github.io/LearnWebGPU/basic-3d-rendering/some-interaction/simple-gui.html). It boils down to: (1) Call `ImGui::CreateContext();` followed by `ImGui_ImplGlfw_InitForOther()` and `ImGui_ImplWGPU_Init()` on startup. (2) Call `ImGui_ImplGlfw_Shutdown()` followed by `ImGui::DestroyContext()` at shutdown. (3) Call `ImGui_ImplWGPU_NewFrame()`, `ImGui_ImplGlfw_NewFrame()`, and `ImGui::NewFrame()` at the beginning of the GUI manager's draw function and `ImGui::EndFrame()`, `ImGui::Render()`, and `ImGui_ImplWGPU_RenderDrawData()` at the end. Put your GUI drawing commands in between.
 * Networking. This is a big topic. Some options:
@@ -1725,3 +1733,4 @@ You don't need anything else. You might want:
 * 2024-12-16: Added comment about vsync and timeapi.h
 * 2025-01-03: Script manager `new_enum` uses the more-efficient-to-compile variant.
 * 2025-08-22: Tweaked some discussion around setting up CMake.
+* 2025-08-22: Updated FetchContent tags to recent and stable versions. GraphicsManager content needs to be updated.
