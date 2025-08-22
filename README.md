@@ -264,7 +264,16 @@ This is just pseudocode. Alternatively, your engine's `RunGameLoop()` could call
 
 You will also need to consider how the managers can access each other. Eventually, we will have even more managers. For this next checkpoint, you don't need to create an input manager. Fortunately, if the managers can access the engine, they can access each other. One possibility is to make an engine global variable. In C++17, you can declare it right in the engine header as an [inline variable](https://stackoverflow.com/a/47502744). For example, if your class were named `Foo`, you could declare `inline Foo gFoo`, where the `g` prefix is [Hungarian notation](https://en.wikipedia.org/wiki/Hungarian_notation).) See [here](globals/globals.h) for an example. If you are strongly allergic to global variables, the engine can instead pass a reference (or pointer) to itself to all the managers so that they can access each other. (References can never be stored uninitialized. If your managers will store a reference to the `Engine`, `Engine`'s constructor will have to pass `*this` to the constructors of all the managers in an [initializer list](https://en.cppreference.com/w/cpp/language/constructor), as in `Engine() : graphics( *this ) {}`. The managers in turn will need an initializer list to initialize their `Engine&`, as in `GraphicsManager( Engine& e ) : engine( e ) {}`. You can see an example in [here](demo/constructor_reference.cpp). If you want to wait to pass the `Engine&` until a startup method, you will have to use the "pimpl pattern" (see [here](https://www.fluentcpp.com/2017/09/22/make-pimpl-using-unique_ptr/) or [here](pimpl/house.h)). It's easier to store an `Engine*`, but then the compiler won't raise an error if you forget to set it.)
 
-Managing the time step means making sure that your game loop runs 60 times per second. The code inside the loop should take less than 1/60 of a second, so your engine needs to sleep until the next iteration ([tick](https://gamedev.stackexchange.com/questions/81608/what-is-a-tick-in-the-context-of-game-development)) should start. You can manage the timestep using C++'s [`std::this_thread::sleep_for()`](https://en.cppreference.com/w/cpp/thread/sleep_for) and passing it a C++ [`std::chrono::duration<>`](https://en.cppreference.com/w/cpp/chrono/duration). You can get a double-valued timer by calling [`glfwGetTime()`](https://www.glfw.org/docs/3.0/group__time.html) (which you can subtract and create a `std::chrono::duration<double>` from). See below for how to include `GLFW`. You don't need GLFW to get the current time. You can instead use the C++ standard library directly by subtracting two [`std::chrono::time_point`](https://en.cppreference.com/w/cpp/chrono/time_point)s, which you can get via [`std::chrono::steady_clock::now()`](https://en.cppreference.com/w/cpp/chrono/steady_clock/now). For example, `const auto t1 = std::chrono::steady_clock::now()` stores the current time in a variable `t1`. For example, you can create a 0.1 second duration via `const auto one_tenth_of_a_second = std::chrono::duration<real>( 1./10. )`. You will need to `#include <thread>` and `#include <chrono>` to access the C++ standard library's functionality. You can see an example [here](demo/chrono_sleep_for.cpp). As another alternative, you could use [`sokol_time`](https://github.com/floooh/sokol/blob/master/sokol_time.h). You can
+Managing the time step means making sure that your game loop runs at a predictable, fixed rate (e.g. 60 times per second). The code inside the loop should take less than 1/60 of a second, so your engine needs to sleep until the next iteration ([tick](https://gamedev.stackexchange.com/questions/81608/what-is-a-tick-in-the-context-of-game-development)) should start.
+Up until the 2024 version of this guide, I recommended using C++'s [`std::this_thread::sleep_for()`](https://en.cppreference.com/w/cpp/thread/sleep_for) and passing it a C++ [`std::chrono::duration<>`](https://en.cppreference.com/w/cpp/chrono/duration) based on the time remaining until the next tick. However, that caused problems for Windows users and, ultimately, we want to synchronize our drawing to the display's refresh ("vsync"). Once you implement [graphics](#graphics), the function that shows the frame to the user (`wgpuSurfacePresent()`) will also wait until the next display refresh.
+This makes our job in the game loop simpler (assuming we eventually implement graphics). We should check how much time has elapsed since the last time we ran the loop. That's the time that has accumulated since we ran our game loop. If we have accumulated more than one tick, update the game state by calling `input.Update()` and `UpdateCallback()`. Subtract one tick from the accumulated time and repeat until we've accumulated less than a tick. (You will have a second loop updating game state inside the main game loop.) Finally, draw and repeat the entire game loop.
+
+How do you know how much time has passed? You can get the time in seconds as a floating point number (`double` actually) by calling [`glfwGetTime()`](https://www.glfw.org/docs/3.0/group__time.html). Next we'll include `GLFW` with a [graphics manager that creates a window](#the-graphicsmanager). (We can set the display refresh programmatically via [`glfwWindowHint(GLFW_REFRESH_RATE, 60)`](https://www.glfw.org/docs/3.3/window_guide.html#GLFW_REFRESH_RATE). It only works in full-screen, though. When drawing in a window, it's up to the user to change their display properties.)
+
+
+> 🤖: See [Game Programming Patterns](https://gameprogrammingpatterns.com/game-loop.html) or [Fix Your Timestep](https://gafferongames.com/post/fix_your_timestep/) or [How to make your game run at 60fps](https://medium.com/@tglaiel/how-to-make-your-game-run-at-60fps-24c61210fe75) for more advanced approaches to managing time steps in loops.
+
+> 🤖: You don't need GLFW to get the current time. You can instead use the C++ standard library directly. You can get the current time as a [`std::chrono::time_point`](https://en.cppreference.com/w/cpp/chrono/time_point) via [`std::chrono::steady_clock::now()`](https://en.cppreference.com/w/cpp/chrono/steady_clock/now). For example, `const auto t1 = std::chrono::steady_clock::now()` stores the current time in a variable `t1`. You can create a 0.1 second duration via `const auto one_tenth_of_a_second = std::chrono::duration<real>( 1./10. )`. You will need to `#include <chrono>` to access this C++ standard library functionality. You can see an example [here](demo/chrono_sleep_for.cpp). As another alternative, you could use [`sokol_time`](https://github.com/floooh/sokol/blob/master/sokol_time.h). You can
 ```
 FetchContent_Declare(
   sokol
@@ -279,38 +288,6 @@ add_library( sokol INTERFACE )
 target_include_directories( sokol INTERFACE ${sokol_SOURCE_DIR} )
 ```
 to download the headers and add `sokol` to your `target_link_libraries()` to access the header.
-
-See [Game Programming Patterns](https://gameprogrammingpatterns.com/game-loop.html) or [Fix Your Timestep](https://gafferongames.com/post/fix_your_timestep/) or [How to make your game run at 60fps](https://medium.com/@tglaiel/how-to-make-your-game-run-at-60fps-24c61210fe75) for more advanced approaches to managing time steps in loops.
-
-> 🖥️: (The following will make sense after implementing [graphics](#graphics).) The default `WGPUPresentMode` (specified in the `WGPUSurfaceConfiguration` parameter to `wgpuSurfaceConfigure`) is FIFO, which means that calls to `wgpuSurfacePresent()` wait for the next display refresh ("vsync"). If your display refresh rate is 60 hertz, it's already doing the wait you want. If it's 120 hertz, then the cost of spinning is 50%. It's not uncommon to just draw in your loop and update() if enough time has passed (one of the accumulator-style game loops). In other words, relying on `wgpuSurfacePresent()` as a combined wait-and-draw function.
-
-**N.B.** Some Windows users have found that `std::this_thread::sleep_for()` sleeps too long. To increase the resolution, the following might work. In your engine's startup method:
-```c++
-#if _WIN32
-timeBeginPeriod(1);
-#endif
-```
-
-You will need to include the relevant header (some people report success including `timeapi.h` instead of `Windows.h`):
-```c++
-#if _WIN32
-#include <Windows.h>
-#endif
-```
-
-You should also be a good citizen and restore the resolution in your engine's shutdown method:
-```c++
-#if _WIN32
-timeEndPeriod(1);
-#endif
-```
-
-In your `CMakeLists.txt`:
-```
-if( WIN32 )
-    target_link_libraries( illengine PRIVATE winmm )
-endif()
-```
 
 
 ## The `GraphicsManager`
@@ -496,8 +473,10 @@ The modern way to program GPUs is to describe all the state involved in the GPU'
 
 * [Learn WebGPU (in C++)](https://eliemichel.github.io/LearnWebGPU/): A C++ tutorial. This was my primary source for learning WebGPU. It covers more topics than we need. If you are looking for more information about something, this is a good place to start.
 * [WebGPU Fundamentals](https://webgpufundamentals.org/): A JavaScript tutorial. This tutorial has nice diagrams.
-* [WebGPU Specification](https://www.w3.org/TR/webgpu/): The API spec. If you are wondering what a parameter is in excruciating detail, this is the place to look. I use it by searching for symbols.
-* [`webgpu.h`](https://github.com/webgpu-native/webgpu-headers/blob/main/webgpu.h): The official C header developed along with the spec. It's more succinct than the specification, and shows the data structures precisely. I use it by searching for symbols.
+* [MDN WebGPU API](https://developer.mozilla.org/en-US/docs/Web/API/WebGPU_API): MDN documentation is the generally the best resource for all web API documentation. It's more readable than the full specification.
+* [WebGPU Specification](https://www.w3.org/TR/webgpu/): The official (JavaScript) API specification. If you are wondering what a parameter is in detail, this is the place to look. I use it by searching for symbols.
+* [`WebGPU Headers`]: The official C API specification. The documentation here covers only things unique to the C API.
+* [`webgpu.h`](https://github.com/webgpu-native/webgpu-headers/blob/main/webgpu.h): The official C header developed along with the specification. It's more succinct than the specification, and shows the data structures precisely. I use it by searching for symbols.
 * [Tour of WGSL](https://google.github.io/tour-of-wgsl/): This is a nice introduction to the shading language.
 * [WGSL WebGPU Shading Language Specification](https://www.w3.org/TR/WGSL/): This is the specification for the shading language.
 * [WebGPU Samples](https://webgpu.github.io/webgpu-samples/): These samples are written in JavaScript, but our C++ programming style is quite similar.
@@ -1734,3 +1713,5 @@ You don't need anything else. You might want:
 * 2025-01-03: Script manager `new_enum` uses the more-efficient-to-compile variant.
 * 2025-08-22: Tweaked some discussion around setting up CMake.
 * 2025-08-22: Updated FetchContent tags to recent and stable versions. GraphicsManager content needs to be updated.
+* 2025-08-22: Updated time step to recommend relying on vsync.
+* 2025-08-22: Added new WebGPU resource URLs.
