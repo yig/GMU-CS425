@@ -63,7 +63,7 @@ You also need a compiler:
 
 One you have a compiler and `cmake` installed, we are ready to begin.
 
-> 🤖: Previous versions of this guide used [`xmake`](https://xmake.io/) as the build system. It has a lot going for it, like a clean language and built-in package manager. However, it's esoteric, so I switched this year's guide to the standard CMake. You can see the previous instructions and even try xmake by switching to the 2023 branch of this repository.
+> 🤖: Previous versions of this guide once used [`xmake`](https://xmake.io/) as the build system. It has a lot going for it, like a clean language and built-in package manager. However, it's esoteric, so I switched the guide to the more popular CMake in 2024. You can see the previous instructions and even try xmake by switching to the 2023 branch of this repository.
 
 ## Making a project
 
@@ -71,7 +71,7 @@ Create a new directory. Since we're making a "little engine", I called mine `ill
 Create a file `CMakeLists.txt` and put the following inside:
 
 ```
-cmake_minimum_required(VERSION 3.14...3.30)
+cmake_minimum_required(VERSION 3.14...3.31)
 project(
     illengine # Name this whatever you want
     LANGUAGES CXX C
@@ -81,8 +81,10 @@ add_executable( helloworld demo/helloworld.cpp )
 set_target_properties( helloworld PROPERTIES CXX_STANDARD 20 )
 ```
 
-This declares that we require a relatively recent version of CMake, our project's name (choose something other than `illengine`), and that we'll be using C++ and C.
-It also declares a target program named `helloworld`.
+This declares that we require a somewhat recent version of CMake (and have tested with a much more recent version).
+This declares our project's name (choose something other than `illengine`).
+This declared that the project uses C++ and C.
+This also declares a target program named `helloworld`.
 We want to use the C++20 standard. ([This](https://github.com/mortennobel/cpp-cheatsheet) is a pretty good modern C++ cheat sheet.)
 This Hello, World! program will verify that your environment is working correctly.
 Let's put the program in a `demo` directory. Create `demo/helloworld.cpp` and put the most basic C++ program inside:
@@ -129,9 +131,6 @@ Hello, World!
 * Use `ccmake -B build-dir` to choose compile-time options. (Note the extra `c`.) One useful option is `CMAKE_BUILD_TYPE`. You can choose `Release` (optimized code generation), `Debug` (unoptimized code with debug information) or `RelWithDebInfo` (optimized code with debug information; may be hard to debug since compilers move code around when optimizing). You can pass options on the command line with `-D`, as in `cmake -B build-dir -DCMAKE_BUILD_TYPE=Debug`.
 * You can ask `cmake` to generate a Visual Studio Solution or an Xcode file. With those, you can open the project in your IDE and use its visual debugger. For example, adding `-G Xcode` (as in `cmake -B build-xcode -G Xcode`) will generate a file that can be opened with the Xcode IDE on macOS. Running `cmake --help` will print your available generators in place of `Xcode`.
 * `cmake -B build -G Ninja` will use the [Ninja build system](https://ninja-build.org), which is faster than the default one. You'll need to install it. (On macOS, `brew install ninja`.)
-* There are a few flags cmake -DCMAKE_BUILD_TYPE=Debug .. to specify compilation with debug information for use with a debugger.
-cmake -DCMAKE_BUILD_TYPE=Release .. to specify compilation of an optimized build. Your code will run much faster.
-cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo .. to specify compilation of an optimized build with debug information. Your code will run much faster, but you will still sort of be able to debug it (compilers move code around when optimizing).
 * Adding `set( CMAKE_EXPORT_COMPILE_COMMANDS ON )` to your `CMakeLists.txt` will export the information needed for editors that use the `clangd` language server and for tools like `clang-tidy`. This can also be done by adding `-D CMAKE_EXPORT_COMPILE_COMMANDS=1` to the command line when you run `cmake -B ...`.
 
 
@@ -1725,3 +1724,4 @@ You don't need anything else. You might want:
 * 2024-12-02: Added table of contents.
 * 2024-12-16: Added comment about vsync and timeapi.h
 * 2025-01-03: Script manager `new_enum` uses the more-efficient-to-compile variant.
+* 2025-08-22: Tweaked some discussion around setting up CMake.
