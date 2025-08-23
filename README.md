@@ -526,7 +526,7 @@ The first `to_ptr()` function legally returns a pointer to a temporary. The seco
 
 Our goal when starting up our graphics manager is to initialize `WebGPU` (by creating a `WGPUInstance`, `WGPUSurface`, `WGPUAdapter`, `WGPUDevice`, and `WGPUQueue`, [oh my](https://staging.cohostcdn.org/attachment/45fea200-d670-4fab-9788-6462930f8eba/wgpu1-2.0.png)) and prepare structures we will use when drawing: vertex and uniform (global) data (`WGPUBuffer`s) and the pipeline (`WGPURenderPipeline`). We'll store all these as instance variables. `WGPUInstance` is the WebGPU API itself, `WGPUSurface` is WebGPU's information about the window we want to draw into, `WGPUAdapter` is a GPU, `WGPUDevice` is a configured GPU ready to use, and `WGPUQueue` queues commands to execute on the GPU.
 
-To initialize WebGPU, we start by calling `WGPUInstance instance = wgpuCreateInstance( to_ptr( WGPUInstanceDescriptor{} ) )`. We must do this after setting up `GLFW` (in our graphics manager's startup function). The curly-braces are C++ for initialize all members to zero if they don't have constructors. (It's called [aggregate initialization](https://en.cppreference.com/w/cpp/language/aggregate_initialization); [designated initializers](https://www.cppstories.com/2021/designated-init-cpp20) are a special kind.) `WebGPU` uses zeros to mean default values, which are often what we want. `WebGPU` is a C API, so initializing structs to zero is our responsibility. We can also pass `nullptr` when a function parameter is marked "optional" (in the [spec](https://www.w3.org/TR/webgpu/)) or `WGPU_NULLABLE` (in [`webgpu.h`](https://github.com/webgpu-native/webgpu-headers/blob/main/webgpu.h)).  `wgpuCreateInstance()` will return null upon failure. You can check for that and print a message and call `glfwTerminate()`.
+To initialize WebGPU, we start by calling `WGPUInstance instance = wgpuCreateInstance( to_ptr( WGPUInstanceDescriptor{} ) )`. We must do this after setting up `GLFW` (in our graphics manager's startup function). The curly-braces are C++ for initialize all members to zero if they don't have constructors. (It's called [aggregate initialization](https://en.cppreference.com/w/cpp/language/aggregate_initialization); [designated initializers](https://www.cppstories.com/2021/designated-init-cpp20) are a special kind.) `WebGPU` often uses zeros to mean default values, which is often what we want. `WebGPU` is a C API, so initializing structs to zero is our responsibility. We can also pass `nullptr` when a function parameter is marked "optional" (in the [spec](https://www.w3.org/TR/webgpu/)) or `WGPU_NULLABLE` (in [`webgpu.h`](https://github.com/webgpu-native/webgpu-headers/blob/main/webgpu.h)). `wgpuCreateInstance()` will return null upon failure. You can check for that and print a message and call `glfwTerminate()`.
 
 Next we need to initialize the rest of the sequence (`WGPUSurface`, `WGPUAdapter`, `WGPUDevice`, `WGPUQueue`). The code is fairly boilerplate. Requesting an adapter and a device requires a callback function, perhaps because JavaScript is asynchronous. We don't have `await` in C++, so the code looks a bit uglier:
 
@@ -536,46 +536,61 @@ WGPUSurface surface = glfwCreateWindowWGPUSurface( instance, window );
 WGPUAdapter adapter = nullptr;
 wgpuInstanceRequestAdapter(
     instance,
-    to_ptr( WGPURequestAdapterOptions{ .compatibleSurface = surface } ),
-    []( WGPURequestAdapterStatus status, WGPUAdapter adapter, char const* message, void* adapter_ptr ) {
-        if( status != WGPURequestAdapterStatus_Success ) {
-            std::cerr << "Failed to get a WebGPU adapter: " << message << std::endl;
-            glfwTerminate();
-        }
-        
-        *static_cast<WGPUAdapter*>(adapter_ptr) = adapter;
-    },
-    &(adapter)
-    );
+    to_ptr( WGPURequestAdapterOptions{ .featureLevel = WGPUFeatureLevel_Core, .compatibleSurface = surface } ),
+    WGPURequestAdapterCallbackInfo{
+        .mode = WGPUCallbackMode_AllowSpontaneous,
+        .callback = []( WGPURequestAdapterStatus status, WGPUAdapter adapter, WGPUStringView message, void* adapter_ptr, void* ) {
+            if( status != WGPURequestAdapterStatus_Success ) {
+                std::cerr << "Failed to get a WebGPU adapter: " << std::string_view( message.data, message.length ) << std::endl;
+                glfwTerminate();
+            }
 
-WGPUDevice device = nullptr;
+            *static_cast<WGPUAdapter*>(adapter_ptr) = adapter;
+        },
+        .userdata1 = &(adapter)
+    }
+);
+while( !adapter ) wgpuInstanceProcessEvents( instance );
+assert( adapter );
+
 wgpuAdapterRequestDevice(
     adapter,
-    nullptr,
-    []( WGPURequestDeviceStatus status, WGPUDevice device, char const* message, void* device_ptr ) {
-        if( status != WGPURequestDeviceStatus_Success ) {
-            std::cerr << "Failed to get a WebGPU device: " << message << std::endl;
-            glfwTerminate();
-        }
-        
-        *static_cast<WGPUDevice*>(device_ptr) = device;
-    },
-    &(device)
+    to_ptr( WGPUDeviceDescriptor{
+        // Add an error callback for more debug info
+        .uncapturedErrorCallbackInfo = { .callback = []( WGPUDevice const* device, WGPUErrorType type, WGPUStringView message, void*, void* ) {
+            std::cerr << "WebGPU uncaptured error type " << int(type) << " with message: " << std::string_view( message.data, message.length ) << std::endl;
+        }}
+    }),
+    WGPURequestDeviceCallbackInfo{
+        .mode = WGPUCallbackMode_AllowSpontaneous,
+        .callback = []( WGPURequestDeviceStatus status, WGPUDevice device, WGPUStringView message, void* device_ptr, void* ) {
+            if( status != WGPURequestDeviceStatus_Success ) {
+                std::cerr << "Failed to get a WebGPU device: " << std::string_view( message.data, message.length ) << std::endl;
+                glfwTerminate();
+            }
+            
+            *static_cast<WGPUDevice*>(device_ptr) = device;
+        },
+        .userdata1 = &(device)
+    }
 );
-
-// An error callback to help with debugging
-wgpuDeviceSetUncapturedErrorCallback(
-    device,
-    []( WGPUErrorType type, char const* message, void* ) {
-        std::cerr << "WebGPU uncaptured error type " << int(type) << " with message: " << message << std::endl;
-    },
-    nullptr
-    );
+while( !device ) wgpuInstanceProcessEvents( instance );
+assert( device );
 
 WGPUQueue queue = wgpuDeviceGetQueue( device );
 ```
 
-You should make these all instance variables so your graphics manager's shutdown can call `wgpuInstanceRelease()`, `wgpuSurfaceRelease()`, `wgpuAdapterRelease()`, `wgpuDeviceRelease()`, and `wgpuQueueRelease()` in reverse initialization order, too. (Nice [RAII](https://en.cppreference.com/w/cpp/language/raii) C++ wrappers for WebGPU are in development [1](https://source.chromium.org/chromium/chromium/src/+/main:out/Debug/gen/third_party/dawn/include/dawn/webgpu_cpp.h) [2](https://eliemichel.github.io/LearnWebGPU/advanced-techniques/raii.html). In fact, I made a simple one for you: [`webgpu_raii`](https://github.com/yig/webgpu_raii/tree/2023-11). With RAII, the release functions will be called automatically when the variables go out of scope. That means it's enough to declare them as instance variables in the right order.)
+You should make these all instance variables so your graphics manager's shutdown can call `wgpuInstanceRelease()`, `wgpuSurfaceRelease()`, `wgpuAdapterRelease()`, `wgpuDeviceRelease()`, and `wgpuQueueRelease()` in reverse initialization order, too. (Nice [RAII](https://en.cppreference.com/w/cpp/language/raii) C++ wrappers for WebGPU are in development [1](https://source.chromium.org/chromium/chromium/src/+/main:out/webview-Debug/gen/third_party/dawn/include/dawn/webgpu_cpp.h) [2](https://eliemichel.github.io/LearnWebGPU/advanced-techniques/raii.html). In fact, I made a simple one for you: [`webgpu_raii`](https://github.com/yig/webgpu_raii/tree/wgpu-native-v24.0.3.1). With RAII, the release functions will be called automatically when the variables go out of scope. That means it's enough to declare them as instance variables in the right order.)
+
+> 🔮: If those `while(...) wgpuInstanceProcessEvents( instance );` look ugly to you, you can replace them with a call to `wgpuInstanceWaitAny()` and the `WGPUFuture` return value from `wgpuInstanceRequestAdapter()` and `wgpuAdapterRequestDevice()`. (Dawn supports this, but wgpu-native doesn't yet.) For example:
+```c++
+WGPUFutureWaitInfo wait_info = { future };
+if( wgpuInstanceWaitAny( instance, 1, &wait_info, 1000000000 ) != WGPUWaitStatus_Success ) {
+    std::cerr << "Timed out getting a WebGPU adapter." << '\n';
+    glfwTerminate();
+}
+```
+> You will also need to set `.mode = WGPUCallbackMode_WaitAnyOnly` and create the `WGPUInstance` with `wgpuCreateInstance(to_ptr(WGPUInstanceDescriptor{.features = {.timedWaitAnyEnable = true, .timedWaitAnyMaxCount = 1}}));`
 
 For the remainder of this checkpoint, I will describe all the pieces of a simple way to draw sprites with a modern graphics pipeline. It's not the only way to do it, but it suffices for our purposes. Once you get the hang of WebGPU, you are welcome to try a different approach or enhance my approach.
 
@@ -605,7 +620,7 @@ This is declaring an array of (anonymous) structs with the attributes we want fo
 
 ```c++
 WGPUBuffer vertex_buffer = wgpuDeviceCreateBuffer( device, to_ptr( WGPUBufferDescriptor{
-    .label = "Vertex Buffer",
+    .label = WGPUStringView( "Vertex Buffer", WGPU_STRLEN ),
     .usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex,
     .size = sizeof(vertices)
     }) );
@@ -617,7 +632,7 @@ Tell the `queue` to copy the data by writing into the GPU buffer `vertex_buffer`
 wgpuQueueWriteBuffer( queue, vertex_buffer, 0, vertices, sizeof(vertices) );
 ```
 
-The GPU now has a copy of `vertices`, so we are fine letting its memory become automatically de-allocated when the enclosing scope of our graphics manager's startup function terminates. You can make `vertex_buffer` an instance variable and `wgpuBufferRelease()` it during shutdown (or use RAII via [`webgpu_raii`](https://github.com/yig/webgpu_raii/tree/2023-11)).
+The GPU now has a copy of `vertices`, so we are fine letting its memory become automatically de-allocated when the enclosing scope of our graphics manager's startup function terminates. You can make `vertex_buffer` an instance variable and `wgpuBufferRelease()` it during shutdown (or use RAII via [`webgpu_raii`](https://github.com/yig/webgpu_raii/tree/wgpu-native-v24.0.3.1)).
 
 The approach I will describe is called instanced rendering. Each instance of drawing the rectangle will get a different translation and scale (and possibly rotation!). You can use the following struct for that data.
 
@@ -662,11 +677,23 @@ wgpuSurfaceConfigure( surface, to_ptr( WGPUSurfaceConfiguration{
     .format = wgpuSurfaceGetPreferredFormat( surface, adapter ),
     .usage = WGPUTextureUsage_RenderAttachment,
     .width = (uint32_t)width,
-    .height = (uint32_t)height
+    .height = (uint32_t)height,
+    .presentMode = WGPUPresentMode_Fifo // Explicitly set this because of a Dawn bug
     }) );
 ```
 
 **N.B.** The surface configuration is based on the window size. If the user resizes your window, rendering will break. Turn off resizing with `glfwWindowHint( GLFW_RESIZABLE, GLFW_FALSE );` before you create the window (`glfwCreateWindow()`), or else re-configure the surface with the above code in a callback you pass to `glfwSetFramebufferSizeCallback()`.
+
+**N.B.** The `wgpuSurfaceGetPreferredFormat()` function was [removed from WebGPU until later](https://github.com/webgpu-native/webgpu-headers/issues/290). In the meantime, you can add this implementation somewhere in your code:
+```c++
+WGPUTextureFormat wgpuSurfaceGetPreferredFormat( WGPUSurface surface, WGPUAdapter adapter ) {
+    WGPUSurfaceCapabilities capabilities{};
+    wgpuSurfaceGetCapabilities( surface, adapter, &capabilities );
+    const WGPUTextureFormat result = capabilities.formats[0];
+    wgpuSurfaceCapabilitiesFreeMembers( capabilities );
+    return result;
+}
+```
 
 The final stop before actually creating the pipeline is creating the pipeline's shader module. WebGPU shaders are written in [WebGPU Shading Language (WGSL)](https://www.w3.org/TR/WGSL/). You can put vertex and fragment shaders together in the same file. Remember that these programs access per-vertex/fragment data as well as global data. One weird thing to understand about a lot of GPU programming APIs, including WebGPU, is that we label variables in our shader programs with numerical indices, and then refer to those indices when telling the pipeline which data to run on. Per-vertex variable indices are labelled with "locations" and global constants (uniforms) are labelled with "bindings". Let's see our shaders:
 
@@ -724,17 +751,17 @@ At some point during startup (before or after creating the pipeline), we need to
 
 ```c++
 WGPUBuffer uniform_buffer = wgpuDeviceCreateBuffer( device, to_ptr( WGPUBufferDescriptor{
-    .label = "Uniform Buffer",
+    .label = WGPUStringView( "Uniform Buffer", WGPU_STRLEN ),
     .usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform,
     .size = sizeof(Uniforms)
     }) );
 ```
 
-You can make `uniform_buffer` an instance variable and `wgpuBufferRelease()` it during shutdown (or use RAII via [`webgpu_raii`](https://github.com/yig/webgpu_raii/tree/2023-11)).
+You can make `uniform_buffer` an instance variable and `wgpuBufferRelease()` it during shutdown (or use RAII via [`webgpu_raii`](https://github.com/yig/webgpu_raii/tree/wgpu-native-v24.0.3.1)).
 
 Next the shader declares a `sampler` called `texSampler`. The sampler is what we use to reduce aliasing artifacts when reading data from our textures. Without it, all we can do is "nearest neighbor" interpolation. (If you prefer nearest neighbor interpolation, you can delete the sampler and replace the fragment shader line with `let color = textureLoad( texData, vec2i( in.texcoords * vec2f(textureDimensions(texData)) ), 0 ).rgba;`.)
 
-You'll also want to create a sampler at some point during startup (and release it with `wgpuSamplerRelease()` during shutdown or use [`webgpu_raii`](https://github.com/yig/webgpu_raii/tree/2023-11)):
+You'll also want to create a sampler at some point during startup (and release it with `wgpuSamplerRelease()` during shutdown or use [`webgpu_raii`](https://github.com/yig/webgpu_raii/tree/wgpu-native-v24.0.3.1)):
 
 ```c++
 WGPUSampler sampler = wgpuDeviceCreateSampler( device, to_ptr( WGPUSamplerDescriptor{
@@ -761,11 +788,12 @@ const char* source = R"(
 Creating the shader module is the last thing we have to do before creating the pipeline. It's almost as simple as just passing the string as a `char*`, but there's an extra struct involved which implements a kind of polymorphism allowing some WebGPU implementations to accept other kinds of shaders:
 
 ```c++
-WGPUShaderModuleWGSLDescriptor code_desc = {};
-code_desc.chain.sType = WGPUSType_ShaderModuleWGSLDescriptor;
-code_desc.code = source; // The shader source as a `char*`
+WGPUShaderSourceWGSL source_desc = {};
+source_desc.chain.sType = WGPUSType_ShaderSourceWGSL;
+source_desc.code = WGPUStringView( source, std::string_view(source).length() );
+// Point to the code descriptor from the shader descriptor.
 WGPUShaderModuleDescriptor shader_desc = {};
-shader_desc.nextInChain = &code_desc.chain;
+shader_desc.nextInChain = &source_desc.chain;
 WGPUShaderModule shader_module = wgpuDeviceCreateShaderModule( device, &shader_desc );
 ```
 
@@ -777,13 +805,14 @@ WGPURenderPipeline pipeline = wgpuDeviceCreateRenderPipeline( device, to_ptr( WG
     // Describe the vertex shader inputs
     .vertex = {
         .module = shader_module,
-        .entryPoint = "vertex_shader_main",
+        .entryPoint = WGPUStringView{ "vertex_shader_main", std::string_view("vertex_shader_main").length() },
         // Vertex attributes.
         .bufferCount = 2,
         .buffers = to_ptr<WGPUVertexBufferLayout>({
             // We have one buffer with our per-vertex position and UV data. This data never changes.
             // Note how the type, byte offset, and stride (bytes between elements) exactly matches our `vertex_buffer`.
             {
+                .stepMode = WGPUVertexStepMode_Vertex,
                 .arrayStride = 4*sizeof(float),
                 .attributeCount = 2,
                 .attributes = to_ptr<WGPUVertexAttribute>({
@@ -803,10 +832,10 @@ WGPURenderPipeline pipeline = wgpuDeviceCreateRenderPipeline( device, to_ptr( WG
             },
             // We will use a second buffer with our per-sprite translation and scale. This data will be set in our draw function.
             {
-                .arrayStride = sizeof(InstanceData),
                 // This data is per-instance. All four vertices will get the same value. Each instance of drawing the vertices will get a different value.
                 // The type, byte offset, and stride (bytes between elements) exactly match the array of `InstanceData` structs we will upload in our draw function.
                 .stepMode = WGPUVertexStepMode_Instance,
+                .arrayStride = sizeof(InstanceData),
                 .attributeCount = 2,
                 .attributes = to_ptr<WGPUVertexAttribute>({
                     // Translation as a 3D vector.
@@ -840,7 +869,7 @@ WGPURenderPipeline pipeline = wgpuDeviceCreateRenderPipeline( device, to_ptr( WG
     // Describe the fragment shader and its output
     .fragment = to_ptr( WGPUFragmentState{
         .module = shader_module,
-        .entryPoint = "fragment_shader_main",
+        .entryPoint = WGPUStringView{ "fragment_shader_main", std::string_view("fragment_shader_main").length() },
         
         // Our fragment shader outputs a single color value per pixel.
         .targetCount = 1,
@@ -869,7 +898,7 @@ WGPURenderPipeline pipeline = wgpuDeviceCreateRenderPipeline( device, to_ptr( WG
     } ) );
 ```
 
-We now have a graphics pipeline capable of drawing sprites. You can release the `shader_module` with `wgpuShaderModuleRelease()` (or use [`webgpu_raii`](https://github.com/yig/webgpu_raii/tree/2023-11)).
+We now have a graphics pipeline capable of drawing sprites. You can release the `shader_module` with `wgpuShaderModuleRelease()` (or use [`webgpu_raii`](https://github.com/yig/webgpu_raii/tree/wgpu-native-v24.0.3.1)).
 
 ### Loading data
 
@@ -880,9 +909,9 @@ bool LoadTexture( const string& name, const string& path );
 ```
 
 (On Windows, don't call it `LoadImage()`. That name is [trampled upon](https://stackoverflow.com/questions/2321713/how-do-i-avoid-name-collision-with-macros-defined-in-windows-header-files).)
-This lets our engine's users load an image from a `path` and then refer it by a convenient `name`. Don't forget to resolve `path` with your resource manager. Let's use an [`std::unordered_map< string, USEFUL STRUCT >`](https://en.cppreference.com/w/cpp/container/unordered_map) as our name-to-image map. (With a map like that called `m`—call yours something better—we can write `m[ name ].property = value;`. That's it! An `std::unordered_map` will instantiate the `USEFUL STRUCT` if it doesn't already exist when looking up the value for a key and return a reference. (If you'd like to know in advance, you can use `m.count( name ) == 0` to check if `m` already has something by that name. In C++20, that shortens to `m.contains( name )`.) You can remove an element via `m.erase( name );`.) You will want it to be an instance variable. `USEFUL STRUCT` should be a little struct you declare to hold the data we want to store about the image. You will want it to have fields for the image's native width and height, so you can compute its natural aspect ratio. You will also want a `WGPUTexture` field to keep the texture you create when loading. (You can also create a `WGPUBindGroup` field and store it in this struct. Creating the bind group is described later under [Drawing a Sprite](#drawing-a-sprite), but can just as well be done in this function.) If you use RAII via [`webgpu_raii`](https://github.com/yig/webgpu_raii/tree/2023-11), then it's enough to store `WGPUTextureRef` (and `WGPUBindGroupRef`) and the resources will be released automatically.
+This lets our engine's users load an image from a `path` and then refer it by a convenient `name`. Don't forget to resolve `path` with your resource manager. Let's use an [`std::unordered_map< string, USEFUL STRUCT >`](https://en.cppreference.com/w/cpp/container/unordered_map) as our name-to-image map. (With a map like that called `m`—call yours something better—we can write `m[ name ].property = value;`. That's it! An `std::unordered_map` will instantiate the `USEFUL STRUCT` if it doesn't already exist when looking up the value for a key and return a reference. (If you'd like to know in advance, you can use `m.count( name ) == 0` to check if `m` already has something by that name. In C++20, that shortens to `m.contains( name )`.) You can remove an element via `m.erase( name );`.) You will want it to be an instance variable. `USEFUL STRUCT` should be a little struct you declare to hold the data we want to store about the image. You will want it to have fields for the image's native width and height, so you can compute its natural aspect ratio. You will also want a `WGPUTexture` field to keep the texture you create when loading. (You can also create a `WGPUBindGroup` field and store it in this struct. Creating the bind group is described later under [Drawing a Sprite](#drawing-a-sprite), but can just as well be done in this function.) If you use RAII via [`webgpu_raii`](https://github.com/yig/webgpu_raii/tree/wgpu-native-v24.0.3.1), then it's enough to store `WGPUTextureRef` (and `WGPUBindGroupRef`) and the resources will be released automatically.
 
-> You may be tempted to make `USEFUL STRUCT`'s destructor call `wgpuTextureDestroy()` and `wgpuTextureRelease()` provided that the `WGPUTexture` field is not `nullptr` (and `WGPUBindGroupRelease()` if the `WGPUBindGroup` field is not `nullptr`). That way, the map would properly free GPU resources as needed when re-assigning a value to a key, when calling `.erase()` or `.clear()`, or when the map itself goes out of scope. However, this is dangerous unless handled correctly. That's because `WGPUTexture` and `WGPUBindGroup` are actually pointers. If you copy a `USEFUL STRUCT`, such as by creating a temporary one and assigning it, you'll have copied the pointers. Now two `USEFUL STRUCT`s are storing the same pointers, and both will release it, which means it may get released too early or released twice. You can prevent this by [deleting the copy constructor and assignment operator](https://stackoverflow.com/questions/33776697/deleting-copy-constructors-and-copy-assignment-operators-which-of-them-are-esse/33776856#33776856) `USEFUL STRUCT(const USEFUL STRUCT&) = delete; USEFUL STRUCT& operator=(const USEFUL STRUCT&) = delete;`. You could also lean in to the reference counting by defining them and calling `wgpuTextureReference()` (and `wgpuBindGroupReference()`); in that case, don't call `wgpuTextureDestroy()`, since you can't be certain someone else isn't still holding a valid reference. Or just use [`webgpu_raii`](https://github.com/yig/webgpu_raii/tree/2023-11).
+> You may be tempted to make `USEFUL STRUCT`'s destructor call `wgpuTextureDestroy()` and `wgpuTextureRelease()` provided that the `WGPUTexture` field is not `nullptr` (and `WGPUBindGroupRelease()` if the `WGPUBindGroup` field is not `nullptr`). That way, the map would properly free GPU resources as needed when re-assigning a value to a key, when calling `.erase()` or `.clear()`, or when the map itself goes out of scope. However, this is dangerous unless handled correctly. That's because `WGPUTexture` and `WGPUBindGroup` are actually pointers. If you copy a `USEFUL STRUCT`, such as by creating a temporary one and assigning it, you'll have copied the pointers. Now two `USEFUL STRUCT`s are storing the same pointers, and both will release it, which means it may get released too early or released twice. You can prevent this by [deleting the copy constructor and assignment operator](https://stackoverflow.com/questions/33776697/deleting-copy-constructors-and-copy-assignment-operators-which-of-them-are-esse/33776856#33776856) `USEFUL STRUCT(const USEFUL STRUCT&) = delete; USEFUL STRUCT& operator=(const USEFUL STRUCT&) = delete;`. You could also lean in to the reference counting by defining them and calling `wgpuTextureReference()` (and `wgpuBindGroupReference()`); in that case, don't call `wgpuTextureDestroy()`, since you can't be certain someone else isn't still holding a valid reference. Or just use [`webgpu_raii`](https://github.com/yig/webgpu_raii/tree/wgpu-native-v24.0.3.1).
 
 For actually reading images from disk and decoding them into CPU memory, we'll use the wonderful `std_image` image loader. The documentation is [the header](https://github.com/nothings/stb/blob/master/stb_image.h). Add it to your `CMakeLists.txt` with
 
@@ -918,7 +947,7 @@ The output parameters `width` and `height` store the image's dimensions. We'll n
 
 ```c++
 WGPUTexture tex = wgpuDeviceCreateTexture( device, to_ptr( WGPUTextureDescriptor{
-    .label = path.c_str(),
+    .label = WGPUStringView( path.c_str(), WGPU_STRLEN ),
     .usage = WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopyDst,
     .dimension = WGPUTextureDimension_2D,
     .size = { (uint32_t)width, (uint32_t)height, 1 },
@@ -933,10 +962,10 @@ We'll copy the image data to the GPU with:
 ```c++
 wgpuQueueWriteTexture(
     queue,
-    to_ptr<WGPUImageCopyTexture>({ .texture = tex }),
+    to_ptr<WGPUTexelCopyTextureInfo>({ .texture = tex }),
     data,
     width * height * 4,
-    to_ptr<WGPUTextureDataLayout>({ .bytesPerRow = (uint32_t)(width*4), .rowsPerImage = (uint32_t)height }),
+    to_ptr<WGPUTexelCopyBufferLayout>({ .bytesPerRow = (uint32_t)(width*4), .rowsPerImage = (uint32_t)height }),
     to_ptr( WGPUExtent3D{ (uint32_t)width, (uint32_t)height, 1 } )
     );
 ```
@@ -969,6 +998,7 @@ When it's time to draw a set of sprites:
         .colorAttachmentCount = 1,
         .colorAttachments = to_ptr<WGPURenderPassColorAttachment>({{
             .view = current_texture_view,
+            .depthSlice = WGPU_DEPTH_SLICE_UNDEFINED, // not a 3D texture
             .loadOp = WGPULoadOp_Clear,
             .storeOp = WGPUStoreOp_Store,
             // Choose the background color.
@@ -1047,7 +1077,7 @@ Multiply that `scale` by whatever scale your sprite asks for.
 Once you have finished creating the `InstanceData` for the sprite, you can copy it to the GPU. At some point at the beginning of the entire draw function, you should allocate a buffer big enough to store an `InstanceData` for each sprite:
 ```c++
 WGPUBuffer instance_buffer = wgpuDeviceCreateBuffer( device, to_ptr<WGPUBufferDescriptor>({
-    .label = "Instance Buffer",
+    .label = WGPUStringView( "Instance Buffer", WGPU_STRLEN ),
     .usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex,
     .size = sizeof(InstanceData) * sprites.size()
     }) );
@@ -1087,7 +1117,7 @@ WGPUBindGroup bind_group = wgpuDeviceCreateBindGroup( device, to_ptr( WGPUBindGr
 wgpuBindGroupLayoutRelease( layout );
 ```
 
-(If you are using [`webgpu_raii`](https://github.com/yig/webgpu_raii/tree/2023-11), you can write `.layout = ref(wgpuRenderPipelineGetBindGroupLayout( pipeline, 0 ))` instead of `auto layout = ...` and `wgpuBindGroupLayoutRelease(layout)`.)
+(If you are using [`webgpu_raii`](https://github.com/yig/webgpu_raii/tree/wgpu-native-v24.0.3.1), you can write `.layout = ref(wgpuRenderPipelineGetBindGroupLayout( pipeline, 0 ))` instead of `auto layout = ...` and `wgpuBindGroupLayoutRelease(layout)`.)
 
 Next, attach it:
 
@@ -1101,7 +1131,7 @@ Now you are ready for the call to `wgpuRenderPassEncoderDraw()`.
 
 ### Cleaning up
 
-At the end of draw, after `wgpuQueueSubmit()`, it's safe to release any resources we created in the function. (This is another place where a C++ [RAII](https://en.cppreference.com/w/cpp/language/raii) wrapper like [`webgpu_raii`](https://github.com/yig/webgpu_raii/tree/2023-11) will improve our lives.) This definitely includes the surface's texture view (`wgpuTextureViewRelease()`), the command encoder (`wgpuCommandEncoderRelease()`), and the render pass encoder (`wgpuRenderPassEncoderRelease()`). This can also include instance data buffer (see above), per-sprite bind groups (`wgpuBindGroupRelease()`), texture views (`wgpuTextureViewRelease()`), and the result of the call to `wgpuRenderPipelineGetBindGroupLayout()` (via `wgpuBindGroupLayoutRelease()`), unless you find a way to keep them around from frame to frame. The bind groups and texture views are unique per image, so you could create them once when loading an image.
+At the end of draw, after `wgpuQueueSubmit()`, it's safe to release any resources we created in the function. (This is another place where a C++ [RAII](https://en.cppreference.com/w/cpp/language/raii) wrapper like [`webgpu_raii`](https://github.com/yig/webgpu_raii/tree/wgpu-native-v24.0.3.1) will improve our lives.) This definitely includes the surface's texture view (`wgpuTextureViewRelease()`), the command encoder (`wgpuCommandEncoderRelease()`), and the render pass encoder (`wgpuRenderPassEncoderRelease()`). This can also include instance data buffer (see above), per-sprite bind groups (`wgpuBindGroupRelease()`), texture views (`wgpuTextureViewRelease()`), and the result of the call to `wgpuRenderPipelineGetBindGroupLayout()` (via `wgpuBindGroupLayoutRelease()`), unless you find a way to keep them around from frame to frame. The bind groups and texture views are unique per image, so you could create them once when loading an image.
 
 ### Extensions
 
@@ -1538,7 +1568,7 @@ You don't need anything else. You might want:
         message( FATAL_ERROR "Invalid WEBGPU_BACKEND value: ${WEBGPU_BACKEND}. Must be 'wgpu' or 'dawn'." )
     endif()
     ```
-    and add the library `imgui`. You can then include `<imgui.h>`, `<backends/imgui_impl_wgpu.h>`, and `<backends/imgui_impl_glfw.h>`. For an example, see [Learn WebGPU's Simple GUI example](https://eliemichel.github.io/LearnWebGPU/basic-3d-rendering/some-interaction/simple-gui.html). It boils down to: (1) Call `ImGui::CreateContext();` followed by `ImGui_ImplGlfw_InitForOther()` and `ImGui_ImplWGPU_Init()` on startup. (2) Call `ImGui_ImplGlfw_Shutdown()` followed by `ImGui::DestroyContext()` at shutdown. (3) Call `ImGui_ImplWGPU_NewFrame()`, `ImGui_ImplGlfw_NewFrame()`, and `ImGui::NewFrame()` at the beginning of the GUI manager's draw function and `ImGui::EndFrame()`, `ImGui::Render()`, and `ImGui_ImplWGPU_RenderDrawData()` at the end. Put your GUI drawing commands in between.
+    and add the library `imgui`. You can then include `<imgui.h>`, `<backends/imgui_impl_wgpu.h>`, and `<backends/imgui_impl_glfw.h>`. For an example, see [Learn WebGPU's Simple GUI example](https://eliemichel.github.io/LearnWebGPU/basic-3d-rendering/some-interaction/simple-gui.html). It boils down to: (1) On startup, call `ImGui::CreateContext();` followed by `ImGui_ImplGlfw_InitForOther()` and `ImGui_ImplWGPU_Init()`. (2) At shutdown, call `ImGui_ImplWGPU_Shutdown()` followed by `ImGui_ImplGlfw_Shutdown()` and `ImGui::DestroyContext()`. (3) Call `ImGui_ImplWGPU_NewFrame()`, `ImGui_ImplGlfw_NewFrame()`, and `ImGui::NewFrame()` at the beginning of the GUI manager's draw function and `ImGui::EndFrame()`, `ImGui::Render()`, and `ImGui_ImplWGPU_RenderDrawData()` at the end. Put your GUI drawing commands in between.
 * Networking. This is a big topic. Some options:
   * [ENet](http://enet.bespin.org/): The tutorial is quite easy to follow and mentions how you would incorporate this into a game loop.
   * [Asio](http://think-async.com/Asio/): This is a very general library. There isn't a tutorial as well-documented as ENet.
@@ -1715,3 +1745,4 @@ You don't need anything else. You might want:
 * 2025-08-22: Updated FetchContent tags to recent and stable versions. GraphicsManager content needs to be updated.
 * 2025-08-22: Updated time step to recommend relying on vsync.
 * 2025-08-22: Added new WebGPU resource URLs.
+* 2025-08-23: Updated to current `webgpu.h`.
