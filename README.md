@@ -110,7 +110,7 @@ To compile, run `cmake --build build-dir`. Unless something has gone wrong, you 
 [100%] Built target helloworld
 ```
 
-You can now run the executable (for me, it's `./build/helloworld`). This will print:
+You can now run the executable (for me, it's `./build-dir/helloworld`). This will print:
 
 ```
 Hello, World!
@@ -1746,3 +1746,4 @@ You don't need anything else. You might want:
 * 2025-08-22: Updated time step to recommend relying on vsync.
 * 2025-08-22: Added new WebGPU resource URLs.
 * 2025-08-23: Updated to current `webgpu.h`.
+* 2025-08-26: Fixed a typo (`build` should have been `build-dir`).
