@@ -132,6 +132,20 @@ Hello, World!
 * You can ask `cmake` to generate a Visual Studio Solution or an Xcode file. With those, you can open the project in your IDE and use its visual debugger. For example, adding `-G Xcode` (as in `cmake -B build-xcode -G Xcode`) will generate a file that can be opened with the Xcode IDE on macOS. Running `cmake --help` will print your available generators in place of `Xcode`.
 * `cmake -B build -G Ninja` will use the [Ninja build system](https://ninja-build.org), which is faster than the default one. You'll need to install it. (On macOS, `brew install ninja`.)
 * Adding `set( CMAKE_EXPORT_COMPILE_COMMANDS ON )` to your `CMakeLists.txt` will export the information needed for editors that use the `clangd` language server and for tools like `clang-tidy`. This can also be done by adding `-D CMAKE_EXPORT_COMPILE_COMMANDS=1` to the command line when you run `cmake -B ...`.
+* While not exactly a CMake command, you can use CMake to turn on compiler features that will alert you to certain kinds of memory errors (at the cost of slower execution):
+```
+option( USE_SANITIZER "Use Address Sanitizer" ON )
+if( USE_SANITIZER )
+    if(MSVC)
+        add_compile_options(/fsanitize=address)
+        add_link_options(/fsanitize=address)
+    elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        ## Also `-fsanitize=memory` for Clang
+        add_compile_options(-fsanitize=address)
+        add_link_options(-fsanitize=address)
+    endif()
+endif()
+```
 
 
 ## Setting up version control
@@ -287,7 +301,7 @@ FetchContent_MakeAvailable( sokol )
 add_library( sokol INTERFACE )
 target_include_directories( sokol INTERFACE ${sokol_SOURCE_DIR} )
 ```
-to download the headers and add `sokol` to your `target_link_libraries()` to access the header.
+> to download the headers and add `sokol` to your `target_link_libraries()` to access the header.
 
 
 ## The `GraphicsManager`
@@ -1747,3 +1761,4 @@ You don't need anything else. You might want:
 * 2025-08-22: Added new WebGPU resource URLs.
 * 2025-08-23: Updated to current `webgpu.h`.
 * 2025-08-26: Fixed a typo (`build` should have been `build-dir`).
+* 2025-09-03: Mentioned address sanitizer
