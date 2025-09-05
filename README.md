@@ -130,8 +130,9 @@ Hello, World!
 * The command `cmake --build build-dir` is equivalent to `cd build-dir` and then `make`. (`make run_helloworld` runs the custom target we created.)
 * Use `ccmake -B build-dir` to choose compile-time options. (Note the extra `c`.) One useful option is `CMAKE_BUILD_TYPE`. You can choose `Release` (optimized code generation), `Debug` (unoptimized code with debug information) or `RelWithDebInfo` (optimized code with debug information; may be hard to debug since compilers move code around when optimizing). You can pass options on the command line with `-D`, as in `cmake -B build-dir -DCMAKE_BUILD_TYPE=Debug`.
 * You can ask `cmake` to generate a Visual Studio Solution or an Xcode file. With those, you can open the project in your IDE and use its visual debugger. For example, adding `-G Xcode` (as in `cmake -B build-xcode -G Xcode`) will generate a file that can be opened with the Xcode IDE on macOS. Running `cmake --help` will print your available generators in place of `Xcode`.
-* `cmake -B build -G Ninja` will use the [Ninja build system](https://ninja-build.org), which is faster than the default one. You'll need to install it. (On macOS, `brew install ninja`.)
+* `cmake -B build-dir -G Ninja` will use the [Ninja build system](https://ninja-build.org), which is faster than the default one. You'll need to install it. (On macOS, `brew install ninja`.)
 * Adding `set( CMAKE_EXPORT_COMPILE_COMMANDS ON )` to your `CMakeLists.txt` will export the information needed for editors that use the `clangd` language server and for tools like `clang-tidy`. This can also be done by adding `-D CMAKE_EXPORT_COMPILE_COMMANDS=1` to the command line when you run `cmake -B ...`.
+* You can specify a different compiler than the default when you first run `cmake -B build-dir`. You can do it by prepending environment variables (`CC=gcc-4.2 CXX=g++-4.2 cmake -B build-dir`) or by adding flags to the CMake command itself (`cmake -D CMAKE_C_COMPILER=gcc-4.2 -D CMAKE_CXX_COMPILER=g++-4.2 -B build-dir`). [Here](https://gitlab.kitware.com/cmake/community/-/wikis/FAQ#how-do-i-use-a-different-compiler) is the CMake wiki page on the topic.
 * While not exactly a CMake command, you can use CMake to turn on compiler features that will alert you to certain kinds of memory errors (at the cost of slower execution):
 ```
 option( USE_SANITIZER "Use Address Sanitizer" ON )
@@ -1761,4 +1762,5 @@ You don't need anything else. You might want:
 * 2025-08-22: Added new WebGPU resource URLs.
 * 2025-08-23: Updated to current `webgpu.h`.
 * 2025-08-26: Fixed a typo (`build` should have been `build-dir`).
-* 2025-09-03: Mentioned address sanitizer
+* 2025-09-03: Mentioned address sanitizer.
+* 2025-09-05: Mentioned how to use CMake with a non-default compiler.
