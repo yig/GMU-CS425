@@ -1235,7 +1235,7 @@ First things first. Let's add `lua` and `sol` to our `CMakeLists.txt` with
 FetchContent_Declare(
     lua
     GIT_REPOSITORY https://github.com/walterschell/Lua
-    GIT_TAG v5.4.5
+    GIT_TAG 504ef66d500fa1fb4f1684b6617b01342eee704a
     GIT_SHALLOW TRUE
     GIT_PROGRESS TRUE
     )
@@ -1764,3 +1764,4 @@ You don't need anything else. You might want:
 * 2025-08-26: Fixed a typo (`build` should have been `build-dir`).
 * 2025-09-03: Mentioned address sanitizer.
 * 2025-09-05: Mentioned how to use CMake with a non-default compiler.
+* 2025-09-06: Update lua version for compatibility with recent CMake.
