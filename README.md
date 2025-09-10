@@ -1016,7 +1016,7 @@ When it's time to draw a set of sprites:
     ```c++
     WGPUSurfaceTexture surface_texture{};
     wgpuSurfaceGetCurrentTexture( surface, &surface_texture );
-    WGPUTextureView current_texture_view = wgpuTextureCreateView( surface_texture.texture, nullptr ) );
+    WGPUTextureView current_texture_view = wgpuTextureCreateView( surface_texture.texture, nullptr );
     ```
 3. Begin our render pass by clearing the screen.
     ```c++
@@ -1051,11 +1051,11 @@ When it's time to draw a set of sprites:
     1. End the render pass with `wgpuRenderPassEncoderEnd( render_pass );`.
     2. Finish encoding our commands and submit them to the GPU's work queue.
         ```c++
-        WGPUCommandBuffer command = wgpuCommandEncoderFinish( encoder, nullptr );
-        wgpuQueueSubmit( queue, 1, &command );
+        WGPUCommandBuffer command_buffer = wgpuCommandEncoderFinish( encoder, nullptr );
+        wgpuQueueSubmit( queue, 1, &command_buffer );
         ```
     3. Present the new frame with: `wgpuSurfacePresent( surface );`
-    4. Cleanup anything you created in the loop (such as the instance data buffer, the surface's texture view, the command encoder, per-sprite bind groups, etc).
+    4. Cleanup anything you created in the loop (such as the instance data buffer, per-sprite bind groups, the surface texture and its texture view, the command encoder, the command buffer, etc).
 
 Steps 7–10 need a bit more elaboration.
 
@@ -1157,7 +1157,7 @@ Now you are ready for the call to `wgpuRenderPassEncoderDraw()`.
 
 ### Cleaning up
 
-At the end of draw, after `wgpuQueueSubmit()`, it's safe to release any resources we created in the function. (This is another place where a C++ [RAII](https://en.cppreference.com/w/cpp/language/raii) wrapper like [`webgpu_raii`](https://github.com/yig/webgpu_raii/tree/wgpu-native-v24.0.3.1) will improve our lives.) This definitely includes the surface's texture view (`wgpuTextureViewRelease()`), the command encoder (`wgpuCommandEncoderRelease()`), and the render pass encoder (`wgpuRenderPassEncoderRelease()`). This can also include instance data buffer (see above), per-sprite bind groups (`wgpuBindGroupRelease()`), texture views (`wgpuTextureViewRelease()`), and the result of the call to `wgpuRenderPipelineGetBindGroupLayout()` (via `wgpuBindGroupLayoutRelease()`), unless you find a way to keep them around from frame to frame. The bind groups and texture views are unique per image, so you could create them once when loading an image.
+At the end of draw, after `wgpuQueueSubmit()`, it's safe to release any resources we created in the function. (This is another place where a C++ [RAII](https://en.cppreference.com/w/cpp/language/raii) wrapper like [`webgpu_raii`](https://github.com/yig/webgpu_raii/tree/wgpu-native-v24.0.3.1) will improve our lives.) This definitely includes the surface texture and its texture view (`wgpuTextureRelease( surface_texture.texture )` and `wgpuTextureViewRelease()`), the command encoder (`wgpuCommandEncoderRelease()`) and the command buffer (`wgpuCommandBufferRelease()`), and the render pass encoder (`wgpuRenderPassEncoderRelease()`). This can also include instance data buffer (see above), per-sprite bind groups (`wgpuBindGroupRelease()`), texture views (`wgpuTextureViewRelease()`), and the result of the call to `wgpuRenderPipelineGetBindGroupLayout()` (via `wgpuBindGroupLayoutRelease()`), unless you find a way to keep them around from frame to frame. The bind groups and texture views are unique per image, so you could create them once when loading an image.
 
 ### Extensions
 
@@ -1777,3 +1777,4 @@ You don't need anything else. You might want:
 * 2025-09-05: Mentioned how to use CMake with a non-default compiler.
 * 2025-09-06: Update lua version for compatibility with recent CMake.
 * 2025-09-09: Pseudocode for a game loop that can run physics independently from rendering.
+* 2025-09-09: Addressed two memory leaks in graphics manager.
