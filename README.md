@@ -281,7 +281,18 @@ You will also need to consider how the managers can access each other. Eventuall
 
 Managing the time step means making sure that your game loop runs at a predictable, fixed rate (e.g. 60 times per second). The code inside the loop should take less than 1/60 of a second, so your engine needs to sleep until the next iteration ([tick](https://gamedev.stackexchange.com/questions/81608/what-is-a-tick-in-the-context-of-game-development)) should start.
 Up until the 2024 version of this guide, I recommended using C++'s [`std::this_thread::sleep_for()`](https://en.cppreference.com/w/cpp/thread/sleep_for) and passing it a C++ [`std::chrono::duration<>`](https://en.cppreference.com/w/cpp/chrono/duration) based on the time remaining until the next tick. However, that caused problems for Windows users and, ultimately, we want to synchronize our drawing to the display's refresh ("vsync"). Once you implement [graphics](#graphics), the function that shows the frame to the user (`wgpuSurfacePresent()`) will also wait until the next display refresh.
-This makes our job in the game loop simpler (assuming we eventually implement graphics). We should check how much time has elapsed since the last time we ran the loop. That's the time that has accumulated since we ran our game loop. If we have accumulated more than one tick, update the game state by calling `input.Update()` and `UpdateCallback()`. Subtract one tick from the accumulated time and repeat until we've accumulated less than a tick. (You will have a second loop updating game state inside the main game loop.) Finally, draw and repeat the entire game loop.
+This makes our job in the game loop simpler (assuming we eventually implement graphics). We should check how much time has elapsed since the last time we ran the loop. That's the time that has accumulated since we ran our game loop. If we have accumulated more than one tick, update the game state by calling `input.Update()` and `UpdateCallback()`. Subtract one tick from the accumulated time and repeat until we've accumulated less than a tick. (You will have a second loop updating game state inside the main game loop.) Finally, draw and repeat the entire game loop. Here is that logic in pseudocode:
+```python
+def RunGameLoop( UpdateCallback ):
+    last_tick = now() - SECONDS_PER_TICK
+    while( True ):
+        while( now() >= last_tick + SECONDS_PER_TICK ):
+            input.Update()
+            UpdateCallback()
+            last_tick += SECONDS_PER_TICK
+        
+        graphics.Draw()
+```
 
 How do you know how much time has passed? You can get the time in seconds as a floating point number (`double` actually) by calling [`glfwGetTime()`](https://www.glfw.org/docs/3.0/group__time.html). Next we'll include `GLFW` with a [graphics manager that creates a window](#the-graphicsmanager). (We can set the display refresh programmatically via [`glfwWindowHint(GLFW_REFRESH_RATE, 60)`](https://www.glfw.org/docs/3.3/window_guide.html#GLFW_REFRESH_RATE). It only works in full-screen, though. When drawing in a window, it's up to the user to change their display properties.)
 
@@ -1765,3 +1776,4 @@ You don't need anything else. You might want:
 * 2025-09-03: Mentioned address sanitizer.
 * 2025-09-05: Mentioned how to use CMake with a non-default compiler.
 * 2025-09-06: Update lua version for compatibility with recent CMake.
+* 2025-09-09: Pseudocode for a game loop that can run physics independently from rendering.
