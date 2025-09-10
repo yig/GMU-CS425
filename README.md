@@ -501,7 +501,7 @@ The modern way to program GPUs is to describe all the state involved in the GPU'
 * [WebGPU Fundamentals](https://webgpufundamentals.org/): A JavaScript tutorial. This tutorial has nice diagrams.
 * [MDN WebGPU API](https://developer.mozilla.org/en-US/docs/Web/API/WebGPU_API): MDN documentation is the generally the best resource for all web API documentation. It's more readable than the full specification.
 * [WebGPU Specification](https://www.w3.org/TR/webgpu/): The official (JavaScript) API specification. If you are wondering what a parameter is in detail, this is the place to look. I use it by searching for symbols.
-* [`WebGPU Headers`]: The official C API specification. The documentation here covers only things unique to the C API.
+* [`WebGPU Headers`](https://webgpu-native.github.io/webgpu-headers/): The official C API specification. The documentation here covers things unique to the C API. It has [articles](https://webgpu-native.github.io/webgpu-headers/articles.html) on topics like memory management ([ownership](https://webgpu-native.github.io/webgpu-headers/Ownership.html)).
 * [`webgpu.h`](https://github.com/webgpu-native/webgpu-headers/blob/main/webgpu.h): The official C header developed along with the specification. It's more succinct than the specification, and shows the data structures precisely. I use it by searching for symbols.
 * [Tour of WGSL](https://google.github.io/tour-of-wgsl/): This is a nice introduction to the shading language.
 * [WGSL WebGPU Shading Language Specification](https://www.w3.org/TR/WGSL/): This is the specification for the shading language.
@@ -1151,13 +1151,13 @@ Next, attach it:
 wgpuRenderPassEncoderSetBindGroup( render_pass, 0, bind_group, 0, nullptr );
 ```
 
-*N.B.* Don't release a bind group you set until after `wgpuRenderPassEncoderEnd()`. (This is due to an issue that was recently fixed in `wgpu-native`, but hasn't yet made it through to [WebGPU-distribution](https://github.com/eliemichel/WebGPU-distribution).) This may force you to awkwardly store bind groups you create as you iterate over sprites in a list. Even better, create the bind group when you load the texture and store it persistently in your name-to-image map.
-
 Now you are ready for the call to `wgpuRenderPassEncoderDraw()`.
 
 ### Cleaning up
 
-At the end of draw, after `wgpuQueueSubmit()`, it's safe to release any resources we created in the function. (This is another place where a C++ [RAII](https://en.cppreference.com/w/cpp/language/raii) wrapper like [`webgpu_raii`](https://github.com/yig/webgpu_raii/tree/wgpu-native-v24.0.3.1) will improve our lives.) This definitely includes the surface texture and its texture view (`wgpuTextureRelease( surface_texture.texture )` and `wgpuTextureViewRelease()`), the command encoder (`wgpuCommandEncoderRelease()`) and the command buffer (`wgpuCommandBufferRelease()`), and the render pass encoder (`wgpuRenderPassEncoderRelease()`). This can also include instance data buffer (see above), per-sprite bind groups (`wgpuBindGroupRelease()`), texture views (`wgpuTextureViewRelease()`), and the result of the call to `wgpuRenderPipelineGetBindGroupLayout()` (via `wgpuBindGroupLayoutRelease()`), unless you find a way to keep them around from frame to frame. The bind groups and texture views are unique per image, so you could create them once when loading an image.
+At the end of draw, after `wgpuQueueSubmit()`, it's safe to [release](https://webgpu-native.github.io/webgpu-headers/Ownership.html) any resources we created in the function. (This is another place where a C++ [RAII](https://en.cppreference.com/w/cpp/language/raii) wrapper like [`webgpu_raii`](https://github.com/yig/webgpu_raii/tree/wgpu-native-v24.0.3.1) will improve our lives.) This definitely includes the surface texture and its texture view (`wgpuTextureRelease( surface_texture.texture )` and `wgpuTextureViewRelease()`), the command encoder (`wgpuCommandEncoderRelease()`) and the command buffer (`wgpuCommandBufferRelease()`), and the render pass encoder (`wgpuRenderPassEncoderRelease()`). This can also include instance data buffer (see above), per-sprite bind groups (`wgpuBindGroupRelease()`), texture views (`wgpuTextureViewRelease()`), and the result of the call to `wgpuRenderPipelineGetBindGroupLayout()` (via `wgpuBindGroupLayoutRelease()`), unless you find a way to keep them around from frame to frame. The bind groups and texture views are unique per image, so you could create them once when loading an image.
+
+*N.B.* If you are using the `wgpu` rather than `dawn` implementation, you must wait to call `wgpuTextureRelease( surface_texture.texture )` until after `wgpuSurfacePresent()`. This is a [bug](https://github.com/gfx-rs/wgpu-native/issues/514).
 
 ### Extensions
 
