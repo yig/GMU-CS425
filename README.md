@@ -1209,7 +1209,7 @@ Another gotcha may arise if you edit the shaders I provide. There is an optional
 
 Those calls to `wgpuDeviceCreatePipelineLayout()` and `wgpuDeviceCreateBindGroupLayout()` technically leak, since we don't call `wgpuPipelineLayoutRelease()` and `wgpuBindGroupLayoutRelease()` on their return values. Since this is for debug code, you can ignore that. Or you could ignore the leaks since we are only ever creating the pipeline once, and the memory should be freed when we release `device` at the end of our program. This is another place where nice [RAII](https://en.cppreference.com/w/cpp/language/raii) C++ wrappers for WebGPU [1](https://source.chromium.org/chromium/chromium/src/+/main:out/Debug/gen/third_party/dawn/include/dawn/webgpu_cpp.h) [2](https://eliemichel.github.io/LearnWebGPU/advanced-techniques/raii.html) can simplify your code.
 
-If you run into some unsolvable issue with the `wgpu` implementation of WebGPU that we're using, it is possible to try [Google's Dawn WebGPU implementation](https://dawn.googlesource.com/dawn). For that, use CMake via [the CMakeLists.txt](cmake/CMakeLists.txt) and set the `WEBGPU_BACKEND` option to `dawn`.
+If you run into some unsolvable issue with the `dawn` implementation of WebGPU that we're using, it is possible to try [Google's Dawn WebGPU implementation](https://dawn.googlesource.com/dawn). For that, use CMake via [the CMakeLists.txt](cmake/CMakeLists.txt) and set the `WEBGPU_BACKEND` option to `wgpu`.
 
 You can manually specify the WebGPU backend if you suspect that. Add a `.backendType = ...` to your `WGPURequestAdapterOptions`. Valid options are in the `WGPUBackendType` enum: `WGPUBackendType_D3D11`, `WGPUBackendType_D3D12`, `WGPUBackendType_Metal`, `WGPUBackendType_Vulkan`, `WGPUBackendType_OpenGL`, `WGPUBackendType_OpenGLES`.
 
@@ -1778,3 +1778,4 @@ You don't need anything else. You might want:
 * 2025-09-06: Update lua version for compatibility with recent CMake.
 * 2025-09-09: Pseudocode for a game loop that can run physics independently from rendering.
 * 2025-09-09: Addressed two memory leaks in graphics manager.
+* 2025-09-22: Instructions updated to try switching to wgpu if there are problems with dawn (rather than vice versa).
