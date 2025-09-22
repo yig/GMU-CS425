@@ -530,7 +530,7 @@ FetchContent_MakeAvailable( webgpu )
 FetchContent_Declare(
   glfw3webgpu
   GIT_REPOSITORY https://github.com/eliemichel/glfw3webgpu
-  GIT_TAG        8f14534e79c590e8a7f7795ea42e01bedea9e137
+  GIT_TAG        fdcabcc54b56b50c12c10f5317abf8ae7ac32c29
   GIT_SHALLOW TRUE
   GIT_PROGRESS TRUE
 )
@@ -1779,3 +1779,4 @@ You don't need anything else. You might want:
 * 2025-09-09: Pseudocode for a game loop that can run physics independently from rendering.
 * 2025-09-09: Addressed two memory leaks in graphics manager.
 * 2025-09-22: Instructions updated to try switching to wgpu if there are problems with dawn (rather than vice versa).
+* 2025-09-22: Changed glfw3webgpu commit to preserve defines.
