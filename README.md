@@ -457,7 +457,7 @@ FetchContent_Declare(
   soloud
   GIT_REPOSITORY https://github.com/jarikomppa/soloud
   GIT_TAG        e82fd32c1f62183922f08c14c814a02b58db1873
-  GIT_SHALLOW TRUE
+  GIT_SHALLOW FALSE
   GIT_PROGRESS TRUE
 )
 FetchContent_MakeAvailable( soloud )
@@ -531,7 +531,7 @@ FetchContent_Declare(
   glfw3webgpu
   GIT_REPOSITORY https://github.com/eliemichel/glfw3webgpu
   GIT_TAG        fdcabcc54b56b50c12c10f5317abf8ae7ac32c29
-  GIT_SHALLOW TRUE
+  GIT_SHALLOW FALSE
   GIT_PROGRESS TRUE
 )
 FetchContent_MakeAvailable( glfw3webgpu )
@@ -677,7 +677,7 @@ FetchContent_Declare(
     glm
     GIT_REPOSITORY https://github.com/g-truc/glm.git
     GIT_TAG 2d4c4b4dd31fde06cfffad7915c2b3006402322f
-    GIT_SHALLOW TRUE
+    GIT_SHALLOW FALSE
     GIT_PROGRESS TRUE
     )
 FetchContent_MakeAvailable( glm )
@@ -946,7 +946,7 @@ FetchContent_Declare(
   stb
   GIT_REPOSITORY https://github.com/nothings/stb/
   GIT_TAG        f58f558c120e9b32c217290b80bad1a0729fbb2c
-  GIT_SHALLOW TRUE
+  GIT_SHALLOW FALSE
   GIT_PROGRESS TRUE
 )
 FetchContent_MakeAvailable( stb )
@@ -1247,7 +1247,7 @@ FetchContent_Declare(
     lua
     GIT_REPOSITORY https://github.com/walterschell/Lua
     GIT_TAG 504ef66d500fa1fb4f1684b6617b01342eee704a
-    GIT_SHALLOW TRUE
+    GIT_SHALLOW FALSE
     GIT_PROGRESS TRUE
     )
 set(LUA_ENABLE_TESTING OFF CACHE BOOL "" FORCE)
@@ -1781,3 +1781,4 @@ You don't need anything else. You might want:
 * 2025-09-22: Instructions updated to try switching to wgpu if there are problems with dawn (rather than vice versa).
 * 2025-09-22: Changed glfw3webgpu commit to preserve defines.
 * 2025-10-07: Added missing ')'
+* 2025-10-23: Switched to GIT_SHALLOW FALSE for unnamed commits.
